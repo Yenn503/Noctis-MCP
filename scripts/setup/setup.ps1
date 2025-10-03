@@ -129,6 +129,8 @@ try {
         Write-Host "✓ All tests passed ($testCount tests)" -ForegroundColor Green
     } else {
         Write-Host "⚠ Some tests failed (this might be OK if C2 servers aren't running)" -ForegroundColor Yellow
+        Write-Host "Test output:" -ForegroundColor Gray
+        Write-Host $testResult -ForegroundColor Gray
     }
 } catch {
     Write-Host "⚠ Test suite encountered issues" -ForegroundColor Yellow
