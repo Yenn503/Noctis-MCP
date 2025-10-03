@@ -1,0 +1,96 @@
+# Noctis-MCP: AI-Driven Malware Development Platform
+# Open Source Community Project
+# Python 3.8+ Required
+
+# ============================================================================
+# CORE FRAMEWORK DEPENDENCIES
+# ============================================================================
+flask>=3.0.0,<4.0.0              # Web framework for API server
+requests>=2.31.0,<3.0.0          # HTTP library for API calls
+psutil>=5.9.0,<6.0.0             # System utilities for process management
+fastmcp>=0.2.0,<1.0.0            # MCP framework for AI agent communication
+
+# ============================================================================
+# ASYNC & PERFORMANCE
+# ============================================================================
+aiohttp>=3.9.0,<4.0.0            # Async HTTP client
+asyncio>=3.4.3                   # Async I/O support
+
+# ============================================================================
+# DATA HANDLING & PARSING
+# ============================================================================
+pyyaml>=6.0.1,<7.0.0             # YAML configuration parsing
+toml>=0.10.2                     # TOML configuration support
+jsonschema>=4.20.0,<5.0.0        # JSON schema validation
+
+# ============================================================================
+# CODE ANALYSIS & PARSING
+# ============================================================================
+pycparser>=2.21                  # C code parsing
+tree-sitter>=0.20.4              # Universal code parser (for C/C++)
+chardet>=5.2.0                   # Character encoding detection
+
+# ============================================================================
+# SECURITY & CRYPTO
+# ============================================================================
+cryptography>=41.0.0,<43.0.0     # Encryption utilities
+pycryptodome>=3.19.0             # Additional crypto algorithms
+
+# ============================================================================
+# DATABASE & STORAGE
+# ============================================================================
+sqlalchemy>=2.0.0,<3.0.0         # ORM for knowledge base
+sqlite3                          # Lightweight database (built-in)
+
+# ============================================================================
+# LOGGING & MONITORING
+# ============================================================================
+colorlog>=6.8.0                  # Colored console logging
+tqdm>=4.66.0                     # Progress bars
+
+# ============================================================================
+# TESTING & DEVELOPMENT
+# ============================================================================
+pytest>=7.4.0                    # Testing framework
+pytest-asyncio>=0.21.0           # Async test support
+black>=23.12.0                   # Code formatting
+flake8>=7.0.0                    # Linting
+mypy>=1.8.0                      # Type checking
+
+# ============================================================================
+# OPTIONAL: ADVANCED FEATURES
+# ============================================================================
+# Uncomment if using advanced binary analysis
+# capstone>=5.0.1                # Disassembly framework
+# keystone-engine>=0.9.2         # Assembly framework
+# pefile>=2023.2.7               # PE file analysis
+
+# Uncomment if integrating with C2 frameworks
+# sliver-client>=0.0.18          # Sliver C2 client
+# mythic-client>=0.0.5           # Mythic C2 client
+
+# ============================================================================
+# WINDOWS-SPECIFIC DEPENDENCIES
+# ============================================================================
+# pywin32>=306 ; sys_platform == 'win32'    # Windows API access
+# wmi>=1.5.1 ; sys_platform == 'win32'      # Windows Management Instrumentation
+
+# ============================================================================
+# MITRE ATT&CK FRAMEWORK
+# ============================================================================
+mitreattack-python>=3.0.3        # MITRE ATT&CK framework integration
+
+# ============================================================================
+# INSTALLATION NOTES
+# ============================================================================
+# 1. Python 3.8 or higher required
+# 2. Visual Studio Build Tools required for compilation on Windows
+# 3. Git for version control
+#
+# Installation:
+#   pip install -r requirements.txt
+#
+# Development Installation:
+#   pip install -r requirements.txt
+#   pip install -e .
+

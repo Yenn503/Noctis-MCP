@@ -1,0 +1,115 @@
+MIT License
+
+Copyright (c) 2024 Noctis-MCP Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+LEGAL DISCLAIMER & AUTHORIZED USE NOTICE
+================================================================================
+
+⚠️ WARNING: This software is designed for AUTHORIZED SECURITY RESEARCH ONLY.
+
+AUTHORIZED USE:
+- Penetration testing with written authorization
+- Red team engagements within organizational approval
+- Security research on systems you own or have explicit permission to test
+- Educational purposes in controlled laboratory environments
+- Bug bounty programs within defined program scope
+
+UNAUTHORIZED USE:
+The techniques, tools, and methodologies provided by this software can be used
+to create malware. UNAUTHORIZED USE IS ILLEGAL and may violate:
+
+- Computer Fraud and Abuse Act (CFAA) - United States
+- Computer Misuse Act - United Kingdom
+- Cybercrime laws in your jurisdiction
+- Terms of Service of cloud providers and software vendors
+
+DISCLAIMER OF LIABILITY:
+The authors, contributors, and maintainers of Noctis-MCP:
+
+1. Provide this software "AS IS" without warranty of any kind
+2. Disclaim all liability for misuse of this software
+3. Are NOT responsible for any illegal activities conducted with this tool
+4. Do NOT endorse or encourage unauthorized computer access
+5. Assume NO liability for damages resulting from use of this software
+
+BY USING THIS SOFTWARE, YOU AGREE:
+- You will ONLY use this software for authorized, legal purposes
+- You have obtained proper authorization before testing any systems
+- You are solely responsible for compliance with all applicable laws
+- You will NOT use this software for malicious purposes
+- You understand the legal risks and accept full responsibility
+
+ETHICAL USE:
+This project is built for the security community to:
+- Improve defensive capabilities by understanding offensive techniques
+- Conduct authorized security assessments professionally
+- Advance security research in a responsible manner
+- Educate security professionals on modern evasion techniques
+
+If you discover vulnerabilities using this software:
+- Follow responsible disclosure practices
+- Report to appropriate vendors through official channels
+- Do NOT exploit vulnerabilities on unauthorized systems
+- Share knowledge with the community ethically
+
+EDUCATIONAL PURPOSE:
+This software is intended to educate security professionals about:
+- Modern malware development techniques
+- EDR/AV evasion methodologies
+- Red team operations
+- Defensive strategies
+
+Users are expected to apply this knowledge responsibly and legally.
+
+NO MALICIOUS INTENT:
+The Noctis-MCP project and its contributors:
+- Do NOT support or condone cybercrime
+- Do NOT provide this software for malicious purposes
+- Encourage responsible security research
+- Promote ethical hacking practices
+
+INDEMNIFICATION:
+You agree to indemnify and hold harmless the Noctis-MCP authors, contributors,
+and maintainers from any claims, damages, or legal action arising from your
+use or misuse of this software.
+
+GOVERNING LAW:
+This license and disclaimer shall be governed by applicable international
+cybersecurity laws and the laws of your jurisdiction.
+
+ACCEPTANCE:
+By downloading, using, or contributing to this software, you acknowledge that
+you have read, understood, and agree to be bound by the terms of this license
+and legal disclaimer.
+
+================================================================================
+
+For questions about authorized use, contact the project maintainers.
+
+To report misuse of this software, please contact appropriate law enforcement
+authorities in your jurisdiction.
+
+Noctis-MCP is an OPEN SOURCE EDUCATIONAL PROJECT.
+Use responsibly. Use legally. Use ethically.
+
+Last Updated: 2024-10-03
+

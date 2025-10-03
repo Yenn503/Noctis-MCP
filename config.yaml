@@ -1,0 +1,113 @@
+# Noctis-MCP Configuration File
+# ==============================
+# Configure server settings, compilation paths, and behavior
+
+# Server Settings
+server:
+  host: "127.0.0.1"
+  port: 8888
+  debug: false
+  timeout: 300  # seconds
+  workers: 4
+
+# Paths
+paths:
+  examples: "Examples"
+  techniques: "techniques"
+  templates: "templates"
+  output: "output"
+  cache: "cache"
+  logs: "logs"
+  data: "data"
+
+# Compilation Settings
+compilation:
+  # Windows Visual Studio / MSBuild
+  msbuild_path: "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe"
+  vs_version: "2022"
+  target_arch: "x64"
+  configuration: "Release"
+  
+  # Optional: MinGW for cross-compilation (Linux)
+  mingw_path: null
+  
+  # Compilation cache
+  enable_cache: true
+  cache_duration: 3600  # seconds
+
+# OPSEC Settings
+opsec:
+  default_level: "high"  # low, medium, high
+  auto_fix: true  # Automatically fix OPSEC issues
+  scan_strings: true
+  scan_imports: true
+  entropy_check: true
+  
+  # Thresholds
+  string_detection_threshold: 5  # Alert if > 5 suspicious strings
+  import_detection_threshold: 3  # Alert if > 3 suspicious imports
+
+# Learning Engine
+learning:
+  enabled: true
+  knowledge_base: "data/knowledge_base.db"
+  track_results: true
+  auto_improve: true  # Automatically apply learned improvements
+
+# C2 Integration (Optional)
+c2_frameworks:
+  sliver:
+    enabled: false
+    server: "http://localhost:31337"
+    mtls: true
+  
+  havoc:
+    enabled: false
+    server: "http://localhost:40056"
+  
+  mythic:
+    enabled: false
+    server: "http://localhost:7443"
+
+# Testing
+testing:
+  enable_av_testing: false  # WARNING: Only enable in isolated VM
+  defender_path: "C:/Program Files/Windows Defender/MpCmdRun.exe"
+  virustotal_api_key: null  # Set to enable VT scanning
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "logs/noctis.log"
+  max_size: 10485760  # 10MB
+  backup_count: 5
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Security
+security:
+  require_auth: false  # Enable authentication (Phase 2 feature)
+  api_key: null
+  allowed_ips: []  # Empty = allow all
+  rate_limit: 100  # requests per minute
+
+# Feature Flags
+features:
+  code_generation: true
+  compilation: true
+  opsec_analysis: true
+  learning_engine: true
+  c2_integration: false  # Phase 4 feature
+  auto_testing: false  # Phase 4 feature
+  
+# MITRE ATT&CK Integration
+mitre:
+  enabled: true
+  framework_version: "14.1"
+  auto_map: true  # Automatically map techniques to ATT&CK
+
+# Community
+community:
+  enable_telemetry: false  # Anonymous usage statistics
+  check_updates: true
+  contribution_mode: true  # Show contribution hints
+
