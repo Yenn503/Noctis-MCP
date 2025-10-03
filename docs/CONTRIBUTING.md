@@ -268,7 +268,7 @@ python utils/technique_indexer.py --path Examples/YourUsername/NewTechnique/
 python server/noctis_server.py
 
 # 4. Test via API
-curl -X POST http://localhost:8888/api/techniques/query \
+curl -X POST http://localhost:5000/api/techniques/query \
   -H "Content-Type: application/json" \
   -d '{"category": "your_category"}'
 
