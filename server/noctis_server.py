@@ -495,11 +495,11 @@ def compile_code():
         }), 400
     
     try:
-        # Import WindowsCompiler
-        from compilation.windows_compiler import WindowsCompiler
+        # Import unified compiler (auto-detects Windows/Linux)
+        from compilation import get_compiler
         
-        # Initialize compiler
-        compiler = WindowsCompiler(output_dir='compiled')
+        # Initialize compiler (Windows: MSBuild, Linux: MinGW)
+        compiler = get_compiler(output_dir='compiled')
         
         # Compile code
         logger.info(f"Compiling {output_name} for {architecture} with {optimization}")
@@ -639,6 +639,347 @@ def analyze_opsec():
         }), 500
 
 
+# ============================================================================
+# C2 INTEGRATION ENDPOINTS (Phase 4)
+# ============================================================================
+
+@app.route('/api/c2/sliver/generate', methods=['POST'])
+def generate_sliver_beacon():
+    """
+    Generate Sliver C2 beacon with Noctis obfuscation
+    
+    Requirements:
+        - Sliver C2 must be installed and running
+        - sliver-client must be in PATH
+    
+    Request JSON:
+    {
+        "listener_host": "c2.example.com",
+        "listener_port": 443,
+        "protocol": "https",  # https, http, dns, tcp, mtls
+        "architecture": "x64",  # x64, x86
+        "techniques": ["NOCTIS-T124", "NOCTIS-T118"],  # Optional
+        "obfuscate": true,
+        "beacon_name": "custom_name"  # Optional
+    }
+    
+    Returns:
+        JSON with generation results
+    """
+    try:
+        data = request.get_json()
+        
+        # Required parameters
+        listener_host = data.get('listener_host')
+        listener_port = data.get('listener_port')
+        
+        if not listener_host or not listener_port:
+            return jsonify({
+                'success': False,
+                'error': 'listener_host and listener_port are required'
+            }), 400
+        
+        # Optional parameters
+        protocol = data.get('protocol', 'https')
+        architecture = data.get('architecture', 'x64')
+        techniques = data.get('techniques', [])
+        obfuscate = data.get('obfuscate', True)
+        beacon_name = data.get('beacon_name')
+        
+        # Import Sliver adapter
+        from c2_adapters.sliver_adapter import generate_sliver_beacon
+        
+        # Generate beacon
+        logger.info(f"Generating Sliver beacon: {protocol}://{listener_host}:{listener_port}")
+        
+        result = generate_sliver_beacon(
+            listener_host=listener_host,
+            listener_port=listener_port,
+            protocol=protocol,
+            architecture=architecture,
+            techniques=techniques,
+            obfuscate=obfuscate,
+            verbose=True
+        )
+        
+        # Return result
+        if result.success:
+            logger.info(f"Sliver beacon generated successfully")
+            return jsonify({
+                'success': True,
+                'beacon_path': result.beacon_path,
+                'shellcode_path': result.shellcode_path,
+                'beacon_size': result.beacon_size,
+                'techniques_applied': result.techniques_applied,
+                'obfuscation_summary': result.obfuscation_summary,
+                'opsec_score': result.opsec_score,
+                'compilation_time': result.compilation_time,
+                'metadata': result.metadata,
+                'timestamp': result.timestamp.isoformat()
+            })
+        else:
+            logger.error(f"Sliver beacon generation failed: {result.error_message}")
+            return jsonify({
+                'success': False,
+                'error': result.error_message
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error generating Sliver beacon: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/c2/havoc/generate', methods=['POST'])
+def generate_havoc_demon_endpoint():
+    """
+    Generate Havoc C2 demon with Noctis obfuscation
+    
+    Requirements:
+        - Havoc C2 must be installed and running
+        - Havoc teamserver must be accessible
+    
+    Request JSON:
+    {
+        "listener_host": "c2.example.com",
+        "listener_port": 443,
+        "protocol": "https",  # https, http, smb
+        "architecture": "x64",  # x64, x86
+        "sleep_technique": "Ekko",  # Foliage, Ekko, WaitForSingleObjectEx
+        "techniques": ["NOCTIS-T124"],  # Optional
+        "obfuscate": true,
+        "indirect_syscalls": true,
+        "stack_duplication": true
+    }
+    
+    Returns:
+        JSON with generation results
+    """
+    try:
+        data = request.get_json()
+        
+        # Required parameters
+        listener_host = data.get('listener_host')
+        listener_port = data.get('listener_port')
+        
+        if not listener_host or not listener_port:
+            return jsonify({
+                'success': False,
+                'error': 'listener_host and listener_port are required'
+            }), 400
+        
+        # Optional parameters
+        protocol = data.get('protocol', 'https')
+        architecture = data.get('architecture', 'x64')
+        sleep_technique = data.get('sleep_technique', 'Ekko')
+        techniques = data.get('techniques', [])
+        obfuscate = data.get('obfuscate', True)
+        indirect_syscalls = data.get('indirect_syscalls', True)
+        stack_duplication = data.get('stack_duplication', True)
+        
+        # Import Havoc adapter
+        from c2_adapters.havoc_adapter import generate_havoc_demon
+        
+        # Generate demon
+        logger.info(f"Generating Havoc demon: {protocol}://{listener_host}:{listener_port}")
+        logger.info(f"Sleep technique: {sleep_technique}")
+        
+        result = generate_havoc_demon(
+            listener_host=listener_host,
+            listener_port=listener_port,
+            protocol=protocol,
+            architecture=architecture,
+            sleep_technique=sleep_technique,
+            techniques=techniques,
+            obfuscate=obfuscate,
+            indirect_syscalls=indirect_syscalls,
+            stack_duplication=stack_duplication
+        )
+        
+        # Return result
+        if result.success:
+            logger.info(f"Havoc demon generated successfully")
+            return jsonify({
+                'success': True,
+                'beacon_path': result.beacon_path,
+                'shellcode_path': result.shellcode_path,
+                'beacon_size': result.beacon_size,
+                'techniques_applied': result.techniques_applied,
+                'obfuscation_summary': result.obfuscation_summary,
+                'opsec_score': result.opsec_score,
+                'compilation_time': result.compilation_time,
+                'metadata': result.metadata,
+                'timestamp': result.timestamp.isoformat()
+            })
+        else:
+            logger.error(f"Havoc demon generation failed: {result.error_message}")
+            return jsonify({
+                'success': False,
+                'error': result.error_message
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error generating Havoc demon: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/c2/mythic/generate', methods=['POST'])
+def generate_mythic_agent_endpoint():
+    """
+    Generate Mythic C2 agent with Noctis obfuscation
+    
+    Requirements:
+        - Mythic C2 must be installed and running
+        - API token must be provided
+    
+    Request JSON:
+    {
+        "listener_host": "c2.example.com",
+        "listener_port": 80,
+        "agent_type": "apollo",  # apollo, apfell, poseidon, merlin, atlas
+        "c2_profile": "http",  # http, https, dns, smb, websocket
+        "architecture": "x64",  # x64, x86, arm64
+        "api_token": "your_mythic_api_token",
+        "techniques": ["NOCTIS-T124"],  # Optional
+        "obfuscate": true
+    }
+    
+    Returns:
+        JSON with generation results
+    """
+    try:
+        data = request.get_json()
+        
+        # Required parameters
+        listener_host = data.get('listener_host')
+        listener_port = data.get('listener_port')
+        api_token = data.get('api_token')
+        
+        if not listener_host or not listener_port:
+            return jsonify({
+                'success': False,
+                'error': 'listener_host and listener_port are required'
+            }), 400
+        
+        if not api_token:
+            return jsonify({
+                'success': False,
+                'error': 'api_token is required for Mythic integration'
+            }), 400
+        
+        # Optional parameters
+        agent_type = data.get('agent_type', 'apollo')
+        c2_profile = data.get('c2_profile', 'http')
+        architecture = data.get('architecture', 'x64')
+        techniques = data.get('techniques', [])
+        obfuscate = data.get('obfuscate', True)
+        
+        # Import Mythic adapter
+        from c2_adapters.mythic_adapter import generate_mythic_agent
+        
+        # Generate agent
+        logger.info(f"Generating Mythic agent: {agent_type} with {c2_profile}")
+        
+        result = generate_mythic_agent(
+            listener_host=listener_host,
+            listener_port=listener_port,
+            agent_type=agent_type,
+            c2_profile=c2_profile,
+            architecture=architecture,
+            api_token=api_token,
+            techniques=techniques,
+            obfuscate=obfuscate
+        )
+        
+        # Return result
+        if result.success:
+            logger.info(f"Mythic agent generated successfully")
+            return jsonify({
+                'success': True,
+                'beacon_path': result.beacon_path,
+                'shellcode_path': result.shellcode_path,
+                'beacon_size': result.beacon_size,
+                'techniques_applied': result.techniques_applied,
+                'obfuscation_summary': result.obfuscation_summary,
+                'opsec_score': result.opsec_score,
+                'compilation_time': result.compilation_time,
+                'metadata': result.metadata,
+                'timestamp': result.timestamp.isoformat()
+            })
+        else:
+            logger.error(f"Mythic agent generation failed: {result.error_message}")
+            return jsonify({
+                'success': False,
+                'error': result.error_message
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error generating Mythic agent: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/c2/frameworks', methods=['GET'])
+def get_c2_frameworks():
+    """
+    Get list of supported C2 frameworks
+    
+    Returns:
+        JSON with supported frameworks and their capabilities
+    """
+    return jsonify({
+        'success': True,
+        'frameworks': [
+            {
+                'name': 'Sliver',
+                'status': 'implemented',
+                'protocols': ['https', 'http', 'dns', 'tcp', 'mtls'],
+                'architectures': ['x64', 'x86'],
+                'formats': ['shellcode', 'exe', 'dll'],
+                'features': [
+                    'Multiple C2 protocols',
+                    'Beacon/Session modes',
+                    'Advanced evasion',
+                    'Noctis obfuscation integration'
+                ]
+            },
+            {
+                'name': 'Havoc',
+                'status': 'implemented',
+                'protocols': ['http', 'https', 'smb'],
+                'architectures': ['x64', 'x86'],
+                'formats': ['shellcode', 'exe', 'dll'],
+                'features': [
+                    'Sleep obfuscation (Ekko, Foliage)',
+                    'Indirect syscalls',
+                    'Stack duplication',
+                    'Noctis obfuscation integration'
+                ]
+            },
+            {
+                'name': 'Mythic',
+                'status': 'implemented',
+                'protocols': ['http', 'https', 'websocket', 'dns', 'smb'],
+                'architectures': ['x64', 'x86', 'arm64'],
+                'formats': ['exe', 'dll', 'shellcode', 'service_exe'],
+                'features': [
+                    'Multiple agent types (Apollo, Poseidon, Merlin)',
+                    'Modular C2 profiles',
+                    'REST API integration',
+                    'Noctis obfuscation integration'
+                ]
+            }
+        ]
+    })
+
+
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     """Get statistics about the technique database"""
@@ -759,13 +1100,16 @@ def main():
     print(f"\n[*] Server starting on http://{host}:{port}")
     print(f"[*] Techniques loaded: {len(technique_manager.techniques)}")
     print(f"\n[*] API Endpoints:")
-    print(f"   - GET  /health                  - Health check")
-    print(f"   - GET  /api/techniques          - List all techniques")
-    print(f"   - GET  /api/techniques/<id>     - Get technique by ID")
-    print(f"   - GET  /api/categories          - List categories")
-    print(f"   - GET  /api/stats               - Database statistics")
-    print(f"   - POST /api/generate            - Generate code (Phase 2)")
-    print(f"   - POST /api/compile             - Compile code (Phase 2)")
+    print(f"   - GET  /health                      - Health check")
+    print(f"   - GET  /api/techniques              - List all techniques")
+    print(f"   - GET  /api/techniques/<id>         - Get technique by ID")
+    print(f"   - GET  /api/categories              - List categories")
+    print(f"   - GET  /api/stats                   - Database statistics")
+    print(f"   - POST /api/generate                - Generate code")
+    print(f"   - POST /api/compile                 - Compile code")
+    print(f"   - POST /api/analyze/opsec           - OPSEC analysis")
+    print(f"   - GET  /api/c2/frameworks           - List C2 frameworks")
+    print(f"   - POST /api/c2/sliver/generate      - Generate Sliver beacon (NEW!)")
     print(f"\n[!] Press Ctrl+C to stop the server\n")
     
     # Run server
