@@ -65,6 +65,7 @@ class TechniqueIndexer:
         self.examples_root = Path(examples_root)
         self.techniques: List[TechniqueMetadata] = []
         self.technique_counter = 1
+        self.total_instances = 0  # Track total detections
         
         # Known technique patterns to look for
         self.technique_patterns = {
@@ -94,7 +95,7 @@ class TechniqueIndexer:
                 print(f"\n[+] Scanning project: {project_dir.name}")
                 self._scan_project(project_dir)
         
-        print(f"\n[+] Found {len(self.techniques)} techniques")
+        print(f"\n[+] Found {len(self.techniques)} unique techniques ({self.total_instances} total detections across source files)")
         return self.techniques
     
     def _scan_project(self, project_path: Path):
@@ -128,13 +129,22 @@ class TechniqueIndexer:
         # Detect which techniques are present
         for technique_name, pattern in self.technique_patterns.items():
             if re.search(pattern, content, re.IGNORECASE):
-                # Check if we already have this technique from this project
+                self.total_instances += 1
+                
+                # Check if we already have this technique GLOBALLY
                 existing = next(
-                    (t for t in techniques if t.name == technique_name and project_path.name in t.source_project),
+                    (t for t in self.techniques if t.name == technique_name.replace('_', ' ').title()),
                     None
                 )
                 
-                if not existing:
+                if existing:
+                    # Add this file to existing technique's source files
+                    relative_path = str(file_path.relative_to(self.examples_root))
+                    if relative_path not in existing.source_files:
+                        existing.source_files.append(relative_path)
+                        print(f"   [+] Found: {technique_name} in {file_path.name} (added to existing)")
+                else:
+                    # Create new technique
                     technique = self._create_technique_metadata(
                         technique_name,
                         file_path,
@@ -142,7 +152,7 @@ class TechniqueIndexer:
                         content
                     )
                     techniques.append(technique)
-                    print(f"   [+] Found: {technique_name} in {file_path.name}")
+                    print(f"   [+] Found: {technique_name} in {file_path.name} (NEW)")
         
         return techniques
     
