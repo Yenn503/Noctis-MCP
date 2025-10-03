@@ -665,7 +665,7 @@ print(beacon.config)
 
 ### Custom Technique Development
 
-See **[DEVELOPMENT.md](DEVELOPMENT.md)** for creating custom techniques.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for creating custom techniques.
 
 ### Batch Generation
 
