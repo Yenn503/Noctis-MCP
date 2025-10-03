@@ -3,10 +3,16 @@ REM Noctis-MCP Setup Launcher (Windows)
 REM ====================================
 REM Simple batch file to launch PowerShell setup script
 
+REM Get the directory of this script and change to repo root
+set "SCRIPT_DIR=%~dp0"
+cd /d "%SCRIPT_DIR%..\..\"
+
 echo.
 echo ================================================
 echo   Noctis-MCP Windows Setup
 echo ================================================
+echo.
+echo Repository: %CD%
 echo.
 
 REM Check if PowerShell is available
@@ -21,7 +27,7 @@ if %ERRORLEVEL% NEQ 0 (
 REM Run PowerShell setup script
 echo Starting PowerShell setup script...
 echo.
-powershell -ExecutionPolicy Bypass -File setup.ps1
+powershell -ExecutionPolicy Bypass -File "%SCRIPT_DIR%setup.ps1"
 
 if %ERRORLEVEL% EQU 0 (
     echo.

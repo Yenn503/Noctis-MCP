@@ -12,6 +12,13 @@ import platform
 import subprocess
 from pathlib import Path
 
+# Get repository root (parent of scripts directory)
+SCRIPT_DIR = Path(__file__).parent.resolve()
+REPO_ROOT = SCRIPT_DIR.parent
+
+# Add repository root to Python path for imports
+sys.path.insert(0, str(REPO_ROOT))
+
 # ANSI colors
 GREEN = '\033[0;32m'
 YELLOW = '\033[1;33m'
@@ -208,7 +215,7 @@ required_files = [
 ]
 
 for file_path in required_files:
-    exists = Path(file_path).exists()
+    exists = (REPO_ROOT / file_path).exists()
     if exists:
         checks_passed += check_item(f"{file_path}", True)
     else:

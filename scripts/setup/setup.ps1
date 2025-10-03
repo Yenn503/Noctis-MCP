@@ -2,8 +2,17 @@
 # =============================================
 # PowerShell script for Windows setup
 
+# Get the repository root (2 levels up from this script)
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = Split-Path -Parent (Split-Path -Parent $ScriptDir)
+
+# Change to repository root
+Set-Location $RepoRoot
+
 Write-Host "🚀 Noctis-MCP Automated Setup (Windows)" -ForegroundColor Cyan
 Write-Host "=========================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "📂 Repository: $RepoRoot" -ForegroundColor White
 Write-Host ""
 
 # Check if running as Administrator
