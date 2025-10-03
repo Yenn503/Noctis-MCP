@@ -105,7 +105,47 @@ source venv/bin/activate  # Linux
 # Start API server
 python server/noctis_server.py
 
-# Server runs on http://localhost:5000
+# Server runs on http://localhost:8888
+```
+
+### Cursor IDE Integration (MCP)
+
+To use Noctis-MCP with Cursor IDE for AI-powered malware development:
+
+**1. Configure MCP in Cursor:**
+
+Create or edit `~/.cursor/mcp.json` (Windows: `%APPDATA%\Cursor\User\mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "noctis-mcp": {
+      "command": "python",
+      "args": [
+        "C:/path/to/Noctis-MCP/noctis_mcp_client/noctis_mcp.py",
+        "--server",
+        "http://localhost:8888"
+      ],
+      "description": "Noctis-MCP - AI Malware Development Platform",
+      "timeout": 300,
+      "alwaysAllow": []
+    }
+  }
+}
+```
+
+**2. Restart Cursor IDE**
+
+**3. Start Noctis-MCP Server:**
+```bash
+python server/noctis_server.py
+```
+
+**4. Use AI Chat in Cursor:**
+```
+You: "Generate a Sliver HTTPS beacon for 192.168.1.100 with API hashing and polymorphic obfuscation"
+
+AI: [Generates beacon with full evasion techniques]
 ```
 
 ### Basic Usage
@@ -128,7 +168,7 @@ print(f"OPSEC Score: {result.opsec_score}/10")
 
 **REST API:**
 ```bash
-curl -X POST http://localhost:5000/api/c2/sliver/generate \
+curl -X POST http://localhost:8888/api/c2/sliver/generate \
   -H "Content-Type: application/json" \
   -d '{
     "listener_host": "192.168.1.100",
