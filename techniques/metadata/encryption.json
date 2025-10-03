@@ -6,7 +6,9 @@
   "source_files": [
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Resource.h"
   ],
-  "mitre_attack": [],
+  "mitre_attack": [
+    "T1027"
+  ],
   "dependencies": [],
   "compatible_with": [],
   "incompatible_with": [],

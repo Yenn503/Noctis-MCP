@@ -6,7 +6,11 @@
   "source_files": [
     "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\GpuManipulation.h"
   ],
-  "mitre_attack": [],
+  "mitre_attack": [
+    "T1027",
+    "T1055",
+    "T1564"
+  ],
   "dependencies": [
     "Windows.h",
     "d3d11.h"

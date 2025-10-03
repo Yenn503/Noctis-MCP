@@ -6,7 +6,12 @@
   "source_files": [
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.h"
   ],
-  "mitre_attack": [],
+  "mitre_attack": [
+    "T1055",
+    "T1055.001",
+    "T1055.002",
+    "T1055.012"
+  ],
   "dependencies": [
     "Windows.h"
   ],

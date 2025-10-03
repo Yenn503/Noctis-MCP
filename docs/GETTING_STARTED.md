@@ -191,7 +191,7 @@ Expected output:
 [2025-10-03 10:00:00] INFO: Starting Noctis-MCP Server
 [2025-10-03 10:00:00] INFO: Platform: Linux
 [2025-10-03 10:00:00] INFO: Compiler: MinGW-w64
-[2025-10-03 10:00:00] INFO: Techniques loaded: 126
+[2025-10-03 10:00:00] INFO: Techniques loaded: 10
 [2025-10-03 10:00:00] INFO: Server running on http://127.0.0.1:5000
 ```
 
@@ -204,7 +204,7 @@ curl http://localhost:5000/api/stats
 # Expected response:
 # {
 #   "status": "online",
-#   "techniques": 126,
+#   "techniques": 10,
 #   "compilers": ["mingw"],
 #   "c2_frameworks": ["sliver", "havoc", "mythic"]
 # }

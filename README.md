@@ -15,7 +15,7 @@
 
 Noctis-MCP is a malware development framework that combines:
 
-- **Technique Library**: 126+ indexed techniques from MaldevAcademy and community sources
+- **Technique Library**: 10 active techniques with full metadata (126 source files indexed)
 - **Code Generation**: Intelligent assembly of techniques into working C/C++ code
 - **Cross-Platform Compilation**: MSBuild (Windows) and MinGW (Linux)
 - **C2 Integration**: Native support for Sliver, Havoc, and Mythic frameworks
@@ -170,16 +170,17 @@ generate_sliver_beacon(
 │Technique│  │   Code   │  │Compiler │  │    C2    │
 │ Library │  │Assembler │  │ Engine  │  │ Adapters │
 └────────┘  └──────────┘  └─────────┘  └──────────┘
-   126+        Smart       MSBuild/      Sliver/
+    10          Smart       MSBuild/      Sliver/
 techniques   Assembly      MinGW        Havoc/Mythic
 ```
 
 ### Core Components
 
 **1. Technique Library** (`techniques/`)
-- 126+ techniques from MaldevAcademy, TheSilencer, and community
-- JSON metadata with MITRE ATT&CK mappings
-- Categories: API hashing, syscalls, injection, persistence, encryption
+- 10 active techniques with full metadata (126 source files indexed)
+- JSON metadata with MITRE ATT&CK mappings (12 unique TTPs)
+- Categories: API hashing, syscalls, injection, persistence, encryption, unhooking, evasion
+- Source: MaldevAcademy, TheSilencer, and community projects
 
 **2. Code Assembler** (`server/code_assembler.py`)
 - Intelligent function extraction from source files
@@ -202,6 +203,33 @@ techniques   Assembly      MinGW        Havoc/Mythic
 - API hashing (DJB2, ROT13+XOR, CRC32)
 - Control flow flattening
 - Polymorphic code generation
+
+---
+
+## MITRE ATT&CK Integration
+
+Noctis-MCP maps all techniques to the **MITRE ATT&CK framework** for standardized threat intelligence:
+
+```bash
+# Get all MITRE mappings
+curl http://localhost:8888/api/mitre
+
+# Query techniques by MITRE ID
+curl "http://localhost:8888/api/techniques?mitre=T1055"
+```
+
+**Coverage Highlights:**
+- **T1055** (Process Injection): 5 techniques including syscalls, VEH, injection
+- **T1027** (Obfuscated Files): 4 techniques including encryption, GPU evasion
+- **T1106** (Native API): Syscalls, API hashing
+- **T1562.001** (Impair Defenses): Unhooking techniques
+- **T1027.003** (Steganography): Payload hiding in images
+
+Use MITRE mappings to:
+- Select techniques based on threat model
+- Understand detection coverage
+- Build attack chains aligned with ATT&CK tactics
+- Generate reports for red team engagements
 
 ---
 
@@ -256,7 +284,9 @@ techniques   Assembly      MinGW        Havoc/Mythic
 | Metric | Value |
 |--------|-------|
 | Total Code | ~18,000 lines |
-| Techniques | 126+ indexed |
+| Active Techniques | 10 (with full metadata) |
+| Source Files Indexed | 126 |
+| MITRE TTPs Mapped | 12 unique |
 | C2 Frameworks | 3 (Sliver, Havoc, Mythic) |
 | MCP Tools | 14 AI-accessible |
 | Tests | 186 total, 49 integration |

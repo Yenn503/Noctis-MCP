@@ -6,7 +6,9 @@
   "source_files": [
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Unook.c"
   ],
-  "mitre_attack": [],
+  "mitre_attack": [
+    "T1562.001"
+  ],
   "dependencies": [
     "Structs.h",
     "Windows.h",

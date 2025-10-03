@@ -83,9 +83,25 @@ Categories:
 ### Query by MITRE ATT&CK
 
 ```python
-response = requests.get('http://localhost:5000/api/techniques', params={
-    'mitre_ttp': 'T1055'  # Process Injection
+response = requests.get('http://localhost:8888/api/techniques', params={
+    'mitre': 'T1055'  # Process Injection
 })
+
+# Returns all techniques that implement T1055
+techniques = response.json()['techniques']
+print(f"Found {len(techniques)} techniques for T1055")
+# Output: Found 5 techniques for T1055
+```
+
+**Get Complete MITRE Mapping:**
+```python
+response = requests.get('http://localhost:8888/api/mitre')
+mappings = response.json()['mappings']
+
+# Show coverage
+print("MITRE ATT&CK Coverage:")
+for ttp, techniques in mappings.items():
+    print(f"  {ttp}: {len(techniques)} technique(s)")
 ```
 
 ### Get Technique Details
@@ -475,15 +491,48 @@ if result.success:
     print(f"Techniques: {result.techniques_applied}")
 ```
 
-### Workflow 3: Targeted Malware Development
+### Workflow 3: MITRE ATT&CK-Based Selection
+
+```python
+# Client requirement: "Test our detection for T1055 (Process Injection)"
+
+# 1. Find all T1055 techniques
+response = requests.get('http://localhost:8888/api/techniques', params={'mitre': 'T1055'})
+t1055_techniques = response.json()['techniques']
+
+print(f"Available T1055 techniques: {len(t1055_techniques)}")
+for tech in t1055_techniques:
+    print(f"  - {tech['technique_id']}: {tech['name']}")
+
+# Output:
+# Available T1055 techniques: 5
+#   - NOCTIS-T118: Syscalls
+#   - NOCTIS-T085: Veh
+#   - NOCTIS-T119: Injection
+#   ... etc
+
+# 2. Generate malware using these techniques
+technique_ids = [tech['technique_id'] for tech in t1055_techniques[:3]]
+response = requests.post('http://localhost:8888/api/generate', json={
+    'techniques': technique_ids,
+    'target_os': 'Windows 11',
+    'obfuscate': True
+})
+
+# 3. Report shows MITRE coverage
+print(f"Testing MITRE ATT&CK TTP: T1055 (Process Injection)")
+print(f"Techniques applied: {technique_ids}")
+```
+
+### Workflow 4: Targeted Malware Development
 
 ```python
 # For Windows 11 + Defender
 techniques_win11_defender = [
-    "NOCTIS-T124",  # API hashing
-    "NOCTIS-T118",  # AES string encryption
-    "NOCTIS-T125",  # Trap flag syscalls
-    "NOCTIS-T201"   # GPU memory hiding
+    "NOCTIS-T124",  # API hashing (T1027.009, T1106)
+    "NOCTIS-T118",  # Syscalls (T1106, T1055)
+    "NOCTIS-T123",  # Encryption (T1027)
+    "NOCTIS-T116"   # Unhooking (T1562.001)
 ]
 
 # Generate and compile
