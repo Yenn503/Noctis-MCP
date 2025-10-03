@@ -1,207 +1,39 @@
-# Noctis-MCP .gitignore
-# Open Source Community Project
-
-# ============================================================================
 # Python
-# ============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# ============================================================================
-# Virtual Environments
-# ============================================================================
 venv/
 env/
 ENV/
-env.bak/
-venv.bak/
-noctis_env/
-hexstrike_env/
+*.egg-info/
+dist/
+build/
 
-# ============================================================================
-# IDE & Editors
-# ============================================================================
+# Logs
+*.log
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+
+# OS
 .DS_Store
-
-# ============================================================================
-# Noctis-MCP Specific
-# ============================================================================
-# Generated malware binaries (DO NOT COMMIT)
-*.exe
-*.dll
-*.bin
-*.dat
-
-# Compiled outputs
-build/
-output/
-binaries/
-compiled/
-compiled_projects/
-
-# Knowledge base (contains operational data)
-data/knowledge_base.db
-data/knowledge_base.db-journal
-data/*.sqlite
-data/*.db
-
-# Cached artifacts
-cache/
-.cache/
-*.cache
-
-# Logs
-logs/
-*.log
-noctis.log
-server.log
-debug.log
-
-# Configuration with sensitive data
-.env
-.env.local
-config/local.yaml
-config/secrets.yaml
-noctis-mcp-config.json
-*-mcp-config.json
-
-# Test outputs
-test_results/
-test_binaries/
-test_output/
-
-# Progress tracking (user-specific notes)
-progress/
-PHASE*.md
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-
-# Duplicate/old directories
-mcp/
-
-# ============================================================================
-# Security & Sensitive Data
-# ============================================================================
-# C2 configurations (may contain server IPs)
-c2_configs/
-*.c2profile
-sliver_*.cfg
-havoc_*.yaotl
-
-# API keys and credentials
-credentials.json
-api_keys.yaml
-tokens.txt
-
-# Payload storage (do not commit actual payloads)
-payloads/*.bin
-payloads/*.exe
-payloads/*.dll
-
-# ============================================================================
-# Build Artifacts (Visual Studio / MSBuild)
-# ============================================================================
-*.vcxproj.user
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-.vs/
-x64/
-x86/
-Debug/
-Release/
-*.obj
-*.pdb
-*.ilk
-*.exp
-*.lib
-
-# ============================================================================
-# Generated Code
-# ============================================================================
-generated/
-auto_generated/
-*.generated.c
-*.generated.cpp
-*.generated.h
-
-# ============================================================================
-# Testing & Coverage
-# ============================================================================
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.nox/
-
-# ============================================================================
-# Documentation
-# ============================================================================
-docs/_build/
-site/
-
-# ============================================================================
-# OS Specific
-# ============================================================================
-# Windows
 Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
+*.bak
 
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
+# Project specific - Old locations (for migration)
+compiled/
+test_output/
+logs/
 
-# Linux
-.directory
-.Trash-*
+# Build directory
+build/*
+!build/.gitkeep
 
-# ============================================================================
-# Keep These (Examples for Community)
-# ============================================================================
-# We keep the Examples/ folder for reference
-!Examples/**/*.c
-!Examples/**/*.cpp
-!Examples/**/*.h
-!Examples/**/*.asm
-!Examples/**/*.py
-!Examples/**/*.md
-
-# Keep template files
-!templates/**/*
-
-# Keep documentation
-!docs/**/*
-
+# Temporary
+*.tmp
+*.temp
