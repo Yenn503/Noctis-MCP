@@ -26,7 +26,7 @@ Get server statistics and status.
 {
   "status": "online",
   "version": "1.0.0",
-  "techniques": 126,
+  "techniques": 10,
   "compilers": ["mingw"],
   "c2_frameworks": ["sliver", "havoc", "mythic"],
   "platform": "Linux"
@@ -43,22 +43,35 @@ Query available techniques.
 
 **Parameters:**
 - `category` (optional): Filter by category
-- `mitre_ttp` (optional): Filter by MITRE ATT&CK TTP
+- `mitre` (optional): Filter by MITRE ATT&CK TTP (e.g., T1055)
 - `search` (optional): Search by keyword
+
+**Examples:**
+```bash
+# Get all techniques
+curl http://localhost:8888/api/techniques
+
+# Filter by MITRE ATT&CK
+curl "http://localhost:8888/api/techniques?mitre=T1055"
+
+# Filter by category
+curl "http://localhost:8888/api/techniques?category=syscalls"
+```
 
 **Response:**
 ```json
 {
   "success": true,
+  "count": 5,
   "techniques": [
     {
-      "technique_id": "NOCTIS-T124",
-      "name": "Indirect Syscalls (HellsHall)",
-      "category": "syscalls",
-      "mitre_attack": ["T1055", "T1106"],
+      "technique_id": "NOCTIS-T118",
+      "name": "Syscalls",
+      "category": "evasion/unhooking",
+      "mitre_attack": ["T1106", "T1055"],
       "opsec": {
-        "detection_risk": "low",
-        "stability": "high"
+        "detection_risk": "unknown",
+        "stability": "unknown"
       }
     }
   ]
@@ -89,6 +102,76 @@ Get detailed information about a specific technique.
     }
   }
 }
+```
+
+---
+
+### MITRE ATT&CK Mapping
+
+#### GET /api/mitre
+
+Get all MITRE ATT&CK mappings showing which techniques implement which TTPs.
+
+**Response:**
+```json
+{
+  "success": true,
+  "mappings": {
+    "T1055": [
+      {"id": "NOCTIS-T118", "name": "Syscalls"},
+      {"id": "NOCTIS-T119", "name": "Injection"}
+    ],
+    "T1027": [
+      {"id": "NOCTIS-T123", "name": "Encryption"}
+    ],
+    "T1106": [
+      {"id": "NOCTIS-T118", "name": "Syscalls"},
+      {"id": "NOCTIS-T124", "name": "Api Hashing"}
+    ],
+    "T1562.001": [
+      {"id": "NOCTIS-T116", "name": "Unhooking"}
+    ]
+  }
+}
+```
+
+**Common MITRE TTPs Covered:**
+
+| TTP | Name | Techniques |
+|-----|------|-----------|
+| T1055 | Process Injection | 5 techniques |
+| T1027 | Obfuscated Files or Information | 4 techniques |
+| T1106 | Native API | 2 techniques |
+| T1562.001 | Impair Defenses: Disable/Modify Tools | 1 technique |
+| T1027.003 | Steganography | 1 technique |
+| T1027.009 | Indicator Removal from Tools | 1 technique |
+
+**Example Usage:**
+```bash
+# Get all MITRE mappings
+curl http://localhost:8888/api/mitre
+
+# Find all techniques that use T1055 (Process Injection)
+curl "http://localhost:8888/api/techniques?mitre=T1055"
+
+# Use in red team planning
+# "I need techniques for T1055 and T1027"
+techniques=$(curl -s "http://localhost:8888/api/techniques?mitre=T1055" | jq -r '.techniques[].technique_id')
+```
+
+**Python Example:**
+```python
+import requests
+
+# Get MITRE coverage
+response = requests.get('http://localhost:8888/api/mitre')
+mappings = response.json()['mappings']
+
+# Find techniques for specific TTP
+if 'T1055' in mappings:
+    print(f"Process Injection techniques: {len(mappings['T1055'])}")
+    for tech in mappings['T1055']:
+        print(f"  - {tech['id']}: {tech['name']}")
 ```
 
 ---

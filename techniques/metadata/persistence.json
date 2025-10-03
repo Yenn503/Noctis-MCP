@@ -6,7 +6,10 @@
   "source_files": [
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Structs.h"
   ],
-  "mitre_attack": [],
+  "mitre_attack": [
+    "T1547",
+    "T1053"
+  ],
   "dependencies": [
     "Windows.h"
   ],

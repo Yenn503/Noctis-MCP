@@ -5,7 +5,7 @@ Noctis-MCP Comprehensive Test Suite
 
 Single test file that validates ALL major functionality in one run.
 
-## Quick Validation (42 smoke tests):
+## Quick Validation (47 smoke tests):
 - Dependencies (7 tests) - Python 3.11+, Flask, FastMCP, Requests, Cryptography, PyCryptodome, Pytest
 - Compilers (2 tests) - MinGW-w64 x64/x86 (Linux) or MSBuild (Windows)
 - Module imports (13 tests) - All core modules load correctly
@@ -14,6 +14,7 @@ Single test file that validates ALL major functionality in one run.
 - Obfuscation (4 tests) - String encryption, API hashing, control flow, polymorphic
 - C2 adapters (6 tests) - Sliver, Havoc, Mythic (initialization + config validation)
 - API server (3 tests) - Flask initialization, configuration, startup (1 skipped)
+- MITRE mapping (5 tests) - Metadata population, TTP validation, coverage, API endpoint, populate script
 - Unit tests (1 test) - Runs full pytest suite (98 tests, 87 pass, 11 skip)
 - MCP client (2 tests) - FastMCP initialization + 14 registered tools
 
@@ -399,10 +400,122 @@ except Exception as e:
 
 
 # ============================================================================
-# TEST 9: UNIT TESTS
+# TEST 9: MITRE ATT&CK MAPPING
 # ============================================================================
 
-print_header("TEST 9: Unit Test Suite")
+print_header("TEST 9: MITRE ATT&CK Mapping")
+
+try:
+    import requests
+    import json
+    
+    # Note: These tests require the server to be running
+    # We'll test against technique metadata files directly
+    from pathlib import Path
+    
+    metadata_dir = Path('techniques/metadata')
+    
+    # Test 1: Check if metadata files have MITRE mappings
+    mitre_populated_count = 0
+    total_techniques = 0
+    
+    for json_file in metadata_dir.glob('*.json'):
+        if json_file.name == 'index.json':
+            continue
+        
+        try:
+            with open(json_file, 'r') as f:
+                data = json.load(f)
+                total_techniques += 1
+                if data.get('mitre_attack') and len(data['mitre_attack']) > 0:
+                    mitre_populated_count += 1
+        except:
+            pass
+    
+    test_result(
+        "Metadata files have MITRE mappings", 
+        mitre_populated_count > 0,
+        f"{mitre_populated_count}/{total_techniques} techniques mapped"
+    )
+    
+    # Test 2: Validate MITRE TTP format
+    valid_ttps = 0
+    invalid_ttps = []
+    
+    for json_file in metadata_dir.glob('*.json'):
+        if json_file.name == 'index.json':
+            continue
+        
+        try:
+            with open(json_file, 'r') as f:
+                data = json.load(f)
+                for ttp in data.get('mitre_attack', []):
+                    # MITRE TTPs should match pattern: T####[.###]
+                    import re
+                    if re.match(r'^T\d{4}(\.\d{3})?$', ttp):
+                        valid_ttps += 1
+                    else:
+                        invalid_ttps.append(f"{data['technique_id']}: {ttp}")
+        except:
+            pass
+    
+    test_result(
+        "MITRE TTP format validation",
+        len(invalid_ttps) == 0,
+        f"{valid_ttps} valid TTPs" if len(invalid_ttps) == 0 else f"{len(invalid_ttps)} invalid"
+    )
+    
+    # Test 3: Check MITRE coverage categories
+    all_ttps = set()
+    for json_file in metadata_dir.glob('*.json'):
+        if json_file.name == 'index.json':
+            continue
+        
+        try:
+            with open(json_file, 'r') as f:
+                data = json.load(f)
+                all_ttps.update(data.get('mitre_attack', []))
+        except:
+            pass
+    
+    test_result(
+        "MITRE TTP coverage",
+        len(all_ttps) >= 10,
+        f"{len(all_ttps)} unique TTPs covered"
+    )
+    
+    # Test 4: Try API endpoint (if server is running)
+    try:
+        response = requests.get('http://localhost:8888/api/mitre', timeout=2)
+        if response.status_code == 200:
+            mappings = response.json().get('mappings', {})
+            test_result(
+                "MITRE API endpoint",
+                len(mappings) > 0,
+                f"Returned {len(mappings)} TTPs"
+            )
+        else:
+            test_skip("MITRE API endpoint", "Server not responding")
+    except:
+        test_skip("MITRE API endpoint", "Server not running - start with: python server/noctis_server.py")
+    
+    # Test 5: Verify populate script exists
+    populate_script = Path('utils/populate_mitre_mappings.py')
+    test_result(
+        "MITRE population script exists",
+        populate_script.exists(),
+        "utils/populate_mitre_mappings.py"
+    )
+    
+except Exception as e:
+    test_result("MITRE Mapping", False, str(e))
+
+
+# ============================================================================
+# TEST 10: UNIT TESTS
+# ============================================================================
+
+print_header("TEST 10: Unit Test Suite")
 
 try:
     # Run pytest if available
@@ -433,10 +546,10 @@ except Exception as e:
 
 
 # ============================================================================
-# TEST 10: MCP CLIENT
+# TEST 11: MCP CLIENT
 # ============================================================================
 
-print_header("TEST 10: MCP Client")
+print_header("TEST 11: MCP Client")
 
 try:
     from noctis_mcp_client.noctis_mcp import mcp

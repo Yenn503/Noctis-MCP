@@ -7,7 +7,10 @@
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\ApiHashing.c",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.c"
   ],
-  "mitre_attack": [],
+  "mitre_attack": [
+    "T1027.009",
+    "T1106"
+  ],
   "dependencies": [
     "Windows.h"
   ],
