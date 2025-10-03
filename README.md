@@ -1,4 +1,8 @@
+<div align="center">
+
 # Noctis-MCP
+
+![Noctis-MCP Logo](Noctis.png)
 
 **AI-Driven Malware Development Platform with C2 Integration**
 
@@ -6,6 +10,8 @@
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey)](https://github.com/Yenn503/Noctis-MCP)
 [![Tests](https://img.shields.io/badge/tests-49%20passing-success)](https://github.com/Yenn503/Noctis-MCP)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+</div>
 
 **Legal Disclaimer**: This tool is designed exclusively for authorized security research, penetration testing, and red team operations. Unauthorized use of malware development tools is illegal. Users assume full responsibility for compliance with applicable laws.
 
