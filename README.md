@@ -1,6 +1,6 @@
 <div align="center">
 
-![Noctis-MCP Logo](NoctisFinal.png)
+![Noctis-MCP Logo](NoctisAI.png)
 
 **AI-Driven Malware Development Platform with C2 Integration**
 
