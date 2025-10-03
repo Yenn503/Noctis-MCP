@@ -1,0 +1,34 @@
+{
+  "technique_id": "NOCTIS-T124",
+  "name": "Api Hashing",
+  "category": "evasion/obfuscation",
+  "description": "Obfuscates API calls by hashing function names to evade static analysis",
+  "source_files": [
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\ApiHashing.c",
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.c"
+  ],
+  "mitre_attack": [],
+  "dependencies": [
+    "Windows.h"
+  ],
+  "compatible_with": [],
+  "incompatible_with": [],
+  "opsec": {
+    "detection_risk": "unknown",
+    "stability": "unknown",
+    "tested_on": [],
+    "bypasses": [],
+    "detected_by": []
+  },
+  "code_blocks": {
+    "file": "ApiHashing.c",
+    "functions": [
+      "GetProcAddressH",
+      "GetModuleHandleH"
+    ]
+  },
+  "variants": [],
+  "author": "Unknown",
+  "source_project": "MyOwn",
+  "last_updated": "2025-10-03T03:00:18.804705"
+}

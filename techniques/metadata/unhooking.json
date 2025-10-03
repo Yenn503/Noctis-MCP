@@ -1,0 +1,36 @@
+{
+  "technique_id": "NOCTIS-T116",
+  "name": "Unhooking",
+  "category": "evasion/unhooking",
+  "description": "Removes EDR/AV hooks from DLLs to restore original functionality",
+  "source_files": [
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Unook.c"
+  ],
+  "mitre_attack": [],
+  "dependencies": [
+    "Structs.h",
+    "Windows.h",
+    "Common.h",
+    "Debug.h"
+  ],
+  "compatible_with": [],
+  "incompatible_with": [],
+  "opsec": {
+    "detection_risk": "unknown",
+    "stability": "unknown",
+    "tested_on": [],
+    "bypasses": [],
+    "detected_by": []
+  },
+  "code_blocks": {
+    "file": "Unook.c",
+    "functions": [
+      "XmRestoreOriginalSections",
+      "XmPersistVirtualSection"
+    ]
+  },
+  "variants": [],
+  "author": "Unknown",
+  "source_project": "MyOwn",
+  "last_updated": "2025-10-03T03:00:18.793468"
+}

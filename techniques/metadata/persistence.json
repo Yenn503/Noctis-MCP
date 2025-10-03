@@ -1,0 +1,30 @@
+{
+  "technique_id": "NOCTIS-T126",
+  "name": "Persistence",
+  "category": "persistence",
+  "description": "Establishes persistence mechanisms for long-term access",
+  "source_files": [
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Structs.h"
+  ],
+  "mitre_attack": [],
+  "dependencies": [
+    "Windows.h"
+  ],
+  "compatible_with": [],
+  "incompatible_with": [],
+  "opsec": {
+    "detection_risk": "unknown",
+    "stability": "unknown",
+    "tested_on": [],
+    "bypasses": [],
+    "detected_by": []
+  },
+  "code_blocks": {
+    "file": "Structs.h",
+    "functions": []
+  },
+  "variants": [],
+  "author": "Unknown",
+  "source_project": "MyOwn",
+  "last_updated": "2025-10-03T03:00:18.814202"
+}
