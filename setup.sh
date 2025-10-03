@@ -77,10 +77,11 @@ else
 fi
 echo ""
 
-# Step 4: Check compiler (Linux only)
+# Step 4: Check compiler (OS-specific)
+echo "🔨 Checking MinGW compiler..."
+
 if [[ "$OS" == "Linux" ]]; then
-    echo "🔨 Checking MinGW compiler..."
-    
+    # Linux: Auto-install via apt
     if command -v x86_64-w64-mingw32-gcc &> /dev/null; then
         MINGW_VERSION=$(x86_64-w64-mingw32-gcc --version | head -n1)
         echo -e "${GREEN}✓${NC} MinGW x64 found: $MINGW_VERSION"
@@ -97,8 +98,35 @@ if [[ "$OS" == "Linux" ]]; then
     if command -v i686-w64-mingw32-gcc &> /dev/null; then
         echo -e "${GREEN}✓${NC} MinGW x86 found"
     fi
-    echo ""
+
+elif [[ "$OS" == "Darwin" ]]; then
+    # macOS: Check if installed, guide to Homebrew if not
+    if command -v x86_64-w64-mingw32-gcc &> /dev/null; then
+        MINGW_VERSION=$(x86_64-w64-mingw32-gcc --version | head -n1)
+        echo -e "${GREEN}✓${NC} MinGW x64 found: $MINGW_VERSION"
+    else
+        echo -e "${YELLOW}⚠${NC} MinGW not found!"
+        echo ""
+        echo "On macOS, install MinGW via Homebrew:"
+        echo ""
+        echo "  brew install mingw-w64"
+        echo ""
+        echo "If you don't have Homebrew, install it first:"
+        echo "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        echo ""
+        read -p "Press Enter to continue without MinGW (you can install it later)..." -r
+    fi
+    
+    if command -v i686-w64-mingw32-gcc &> /dev/null; then
+        echo -e "${GREEN}✓${NC} MinGW x86 found"
+    fi
+
+else
+    echo -e "${YELLOW}⚠${NC} Unknown OS: $OS"
+    echo "MinGW installation may require manual setup"
 fi
+
+echo ""
 
 # Step 5: Run tests
 echo "🧪 Running test suite..."
