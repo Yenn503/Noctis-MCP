@@ -195,55 +195,64 @@ class HavocAdapter(C2Adapter):
         """
         Generate Havoc demon shellcode.
         
+        ⚠️  IMPORTANT: Havoc Service API is not yet available.
+        See: https://havocframework.com/docs/service_api (Coming Soon)
+        
+        Until the API is released, demons must be generated manually
+        via the Havoc GUI client. This method provides configuration
+        instructions for manual generation.
+        
         Args:
-            output_path: Path to save shellcode
+            output_path: Path where shellcode should be saved
         
         Returns:
-            Tuple of (success, output_message)
+            Tuple of (False, manual_instructions_message)
         """
-        if not self.havoc_client:
-            return False, "Havoc client not found. Install from: https://github.com/HavocFramework/Havoc"
-        
         if self.verbose:
-            print(f"[*] Generating Havoc demon shellcode...")
+            print(f"[!] Havoc Service API not yet available")
+            print(f"[*] Manual demon generation required")
         
-        # Build Havoc demon generation command
-        # Note: This is a simplified implementation
-        # Real implementation would use Havoc's Python API or REST API
+        manual_instructions = f"""
+╔════════════════════════════════════════════════════════════════╗
+║       HAVOC C2 - MANUAL DEMON GENERATION REQUIRED              ║
+╚════════════════════════════════════════════════════════════════╝
+
+⚠️  Havoc Service API Status: Coming Soon
+📚 Documentation: https://havocframework.com/docs/service_api
+
+MANUAL STEPS:
+
+1️⃣  Start Havoc Teamserver:
+   $ cd /path/to/Havoc/teamserver
+   $ sudo ./teamserver server --profile profiles/havoc.yaotl -v
+
+2️⃣  Connect Havoc GUI Client:
+   $ ./havoc-client
+
+3️⃣  Generate Demon with these settings:
+   ┌─────────────────────────────────────┐
+   │ Listener:    {self.config.protocol}://{self.config.listener_host}:{self.config.listener_port}
+   │ Architecture: {self.config.architecture.value}
+   │ Format:       shellcode
+   │ Sleep Tech:   {self.config.sleep_technique}
+   │ Indirect Syscalls: {self.config.indirect_syscalls}
+   │ Stack Dup:    {self.config.stack_duplication}
+   └─────────────────────────────────────┘
+
+4️⃣  Export demon shellcode from GUI
+
+5️⃣  Save to: {output_path}
+
+6️⃣  Apply Noctis obfuscation (optional):
+   $ python -c "from server.obfuscation import *; ..."
+
+────────────────────────────────────────────────────────────────
+This adapter will be fully automated once Havoc releases their
+Service API. For now, manual generation via GUI is required.
+────────────────────────────────────────────────────────────────
+"""
         
-        cmd = self._build_generate_command(output_path)
-        
-        try:
-            if self.verbose:
-                print(f"[*] Generating Havoc demon via Python API...")
-                print(f"[*] Teamserver: {self.teamserver_host}:{self.teamserver_port}")
-            
-            # Execute Havoc demon generation via Python API
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=60
-            )
-            
-            if result.returncode != 0:
-                error_msg = result.stderr if result.stderr else result.stdout
-                return False, f"Havoc demon generation failed: {error_msg}"
-            
-            # Verify the output file was created
-            if not os.path.exists(output_path):
-                return False, f"Demon shellcode not found at {output_path}"
-            
-            if self.verbose:
-                file_size = os.path.getsize(output_path)
-                print(f"[+] Demon generated successfully: {file_size} bytes")
-            
-            return True, f"Havoc demon generated: {output_path}"
-            
-        except subprocess.TimeoutExpired:
-            return False, "Havoc demon generation timeout (60s)"
-        except Exception as e:
-            return False, f"Havoc demon generation failed: {str(e)}"
+        return False, manual_instructions
     
     def _build_generate_command(self, output_path: str) -> List[str]:
         """Build Havoc demon generation command"""
