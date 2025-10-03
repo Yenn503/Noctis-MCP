@@ -1,19 +1,23 @@
 {
-  "technique_id": "NOCTIS-T119",
+  "technique_id": "NOCTIS-T005",
   "name": "Injection",
   "category": "injection",
   "description": "Injects code into remote processes for execution",
   "source_files": [
-    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.h"
+    "MyOwn/TheSilencer/TheSilencer-main/Loader/Inject.c",
+    "MyOwn/TheSilencer/TheSilencer-main/Loader/Common.h",
+    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/main.c",
+    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/Inject.c",
+    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/Common.h"
   ],
-  "mitre_attack": [
-    "T1055",
-    "T1055.001",
-    "T1055.002",
-    "T1055.012"
-  ],
+  "mitre_attack": [],
   "dependencies": [
-    "Windows.h"
+    "windows.h",
+    "CtAes.h",
+    "Debug.h",
+    "Structs.h",
+    "Common.h",
+    "FunctionPntrs.h"
   ],
   "compatible_with": [],
   "incompatible_with": [],
@@ -25,29 +29,15 @@
     "detected_by": []
   },
   "code_blocks": {
-    "file": "Common.h",
+    "file": "Inject.c",
     "functions": [
-      "XmScheduleAsyncOperation",
-      "XmCalculateNetworkHash",
-      "XmInvokeSystemCall",
-      "XmFetchSystemCall",
-      "GetModuleHandleH",
-      "XmBypassUAC",
-      "XmInitializeNetworkProtocols",
-      "XmPrintBanner",
-      "XmFetchResourceData",
-      "GetProcAddressH",
-      "XmCopyNetworkBuffer",
       "XmAllocateEncryptedSection",
-      "XmSetInvokeId",
-      "XmGenerateSessionId",
-      "XmRestoreOriginalSections",
-      "XmBypassEtwProtection",
-      "XmConcatProtocolString"
+      "XmExtractCryptoConfig",
+      "XmScheduleAsyncOperation"
     ]
   },
   "variants": [],
   "author": "Unknown",
   "source_project": "MyOwn",
-  "last_updated": "2025-10-03T03:00:18.797667"
+  "last_updated": "2025-10-03T14:06:04.634742"
 }

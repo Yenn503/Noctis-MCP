@@ -177,6 +177,14 @@ if python -c "from server.noctis_server import app" 2>/dev/null; then
 else
     echo -e "${RED}✗${NC} Flask server import failed"
 fi
+
+# Verify technique database
+TECHNIQUE_COUNT=$(python -c "import json; print(json.load(open('techniques/metadata/index.json'))['total_techniques'])" 2>/dev/null)
+if [ ! -z "$TECHNIQUE_COUNT" ]; then
+    echo -e "${GREEN}✓${NC} Technique database loaded: ${TECHNIQUE_COUNT} unique techniques"
+else
+    echo -e "${YELLOW}⚠${NC} Technique database not found (run: python utils/technique_indexer.py)"
+fi
 echo ""
 
 # Step 7: Final summary
