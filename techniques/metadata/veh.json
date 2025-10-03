@@ -1,0 +1,47 @@
+{
+  "technique_id": "NOCTIS-T085",
+  "name": "Veh",
+  "category": "evasion/advanced",
+  "description": "Manipulates vectored exception handlers to bypass EDR monitoring",
+  "source_files": [
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Utilities.h"
+  ],
+  "mitre_attack": [],
+  "dependencies": [
+    "Hashes.h",
+    "Windows.h",
+    "Structures.h"
+  ],
+  "compatible_with": [],
+  "incompatible_with": [],
+  "opsec": {
+    "detection_risk": "unknown",
+    "stability": "unknown",
+    "tested_on": [],
+    "bypasses": [],
+    "detected_by": []
+  },
+  "code_blocks": {
+    "file": "Utilities.h",
+    "functions": [
+      "OverwriteFirstVectoredExceptionHandler",
+      "RtlAnsiStringToUnicodeString",
+      "RtlInitUnicodeString",
+      "RestoreFirstVectoredExceptionHandler",
+      "RtlInitAnsiString",
+      "GetModuleHandleH",
+      "OverwriteFirstVectoredExceptionHandlerEx",
+      "GetNtProcAddress",
+      "GetProcAddressH",
+      "GetResourceDataPayload",
+      "GetNtdllBaseAddress",
+      "Aes128CTRCrypt",
+      "StartCountingPrimes",
+      "RtlFreeUnicodeString"
+    ]
+  },
+  "variants": [],
+  "author": "MalDev Academy",
+  "source_project": "MaldevAcademy",
+  "last_updated": "2025-10-03T03:00:18.727896"
+}

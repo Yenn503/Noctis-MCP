@@ -1,0 +1,31 @@
+{
+  "technique_id": "NOCTIS-T066",
+  "name": "Gpu Evasion",
+  "category": "evasion/advanced",
+  "description": "Moves malicious code to GPU memory to evade memory scanners",
+  "source_files": [
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\GpuManipulation.h"
+  ],
+  "mitre_attack": [],
+  "dependencies": [
+    "Windows.h",
+    "d3d11.h"
+  ],
+  "compatible_with": [],
+  "incompatible_with": [],
+  "opsec": {
+    "detection_risk": "unknown",
+    "stability": "unknown",
+    "tested_on": [],
+    "bypasses": [],
+    "detected_by": []
+  },
+  "code_blocks": {
+    "file": "GpuManipulation.h",
+    "functions": []
+  },
+  "variants": [],
+  "author": "MalDev Academy",
+  "source_project": "MaldevAcademy",
+  "last_updated": "2025-10-03T03:00:18.658188"
+}

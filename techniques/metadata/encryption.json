@@ -1,0 +1,28 @@
+{
+  "technique_id": "NOCTIS-T123",
+  "name": "Encryption",
+  "category": "encryption",
+  "description": "Encrypts payloads to evade signature-based detection",
+  "source_files": [
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Resource.h"
+  ],
+  "mitre_attack": [],
+  "dependencies": [],
+  "compatible_with": [],
+  "incompatible_with": [],
+  "opsec": {
+    "detection_risk": "unknown",
+    "stability": "unknown",
+    "tested_on": [],
+    "bypasses": [],
+    "detected_by": []
+  },
+  "code_blocks": {
+    "file": "Resource.h",
+    "functions": []
+  },
+  "variants": [],
+  "author": "Unknown",
+  "source_project": "MyOwn",
+  "last_updated": "2025-10-03T03:00:18.802399"
+}

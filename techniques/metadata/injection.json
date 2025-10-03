@@ -1,0 +1,48 @@
+{
+  "technique_id": "NOCTIS-T119",
+  "name": "Injection",
+  "category": "injection",
+  "description": "Injects code into remote processes for execution",
+  "source_files": [
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.h"
+  ],
+  "mitre_attack": [],
+  "dependencies": [
+    "Windows.h"
+  ],
+  "compatible_with": [],
+  "incompatible_with": [],
+  "opsec": {
+    "detection_risk": "unknown",
+    "stability": "unknown",
+    "tested_on": [],
+    "bypasses": [],
+    "detected_by": []
+  },
+  "code_blocks": {
+    "file": "Common.h",
+    "functions": [
+      "XmScheduleAsyncOperation",
+      "XmCalculateNetworkHash",
+      "XmInvokeSystemCall",
+      "XmFetchSystemCall",
+      "GetModuleHandleH",
+      "XmBypassUAC",
+      "XmInitializeNetworkProtocols",
+      "XmPrintBanner",
+      "XmFetchResourceData",
+      "GetProcAddressH",
+      "XmCopyNetworkBuffer",
+      "XmAllocateEncryptedSection",
+      "XmSetInvokeId",
+      "XmGenerateSessionId",
+      "XmRestoreOriginalSections",
+      "XmBypassEtwProtection",
+      "XmConcatProtocolString"
+    ]
+  },
+  "variants": [],
+  "author": "Unknown",
+  "source_project": "MyOwn",
+  "last_updated": "2025-10-03T03:00:18.797667"
+}

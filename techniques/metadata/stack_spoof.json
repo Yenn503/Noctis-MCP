@@ -1,0 +1,30 @@
+{
+  "technique_id": "NOCTIS-T073",
+  "name": "Stack Spoof",
+  "category": "evasion/advanced",
+  "description": "Masks call stacks to hide malicious execution chains",
+  "source_files": [
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\StackSpoofing.h"
+  ],
+  "mitre_attack": [],
+  "dependencies": [],
+  "compatible_with": [],
+  "incompatible_with": [],
+  "opsec": {
+    "detection_risk": "unknown",
+    "stability": "unknown",
+    "tested_on": [],
+    "bypasses": [],
+    "detected_by": []
+  },
+  "code_blocks": {
+    "file": "StackSpoofing.h",
+    "functions": [
+      "InitialiseDynamicCallStackSpoofing"
+    ]
+  },
+  "variants": [],
+  "author": "MalDev Academy",
+  "source_project": "MaldevAcademy",
+  "last_updated": "2025-10-03T03:00:18.673385"
+}
