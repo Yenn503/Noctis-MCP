@@ -214,7 +214,7 @@ techniques   Assembly      MinGW        Havoc/Mythic
 | [USER_GUIDE.md](docs/USER_GUIDE.md) | Complete usage guide |
 | [API_REFERENCE.md](docs/API_REFERENCE.md) | API documentation |
 | [C2_INTEGRATION.md](docs/C2_INTEGRATION.md) | C2 framework setup |
-| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Contributing guide |
+| [CONTRIBUTING.md](docs/CONTRIBUTING.md) | Contributing guide |
 
 ---
 
@@ -361,7 +361,7 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ## Contributing
 
-Contributions are welcome! See [DEVELOPMENT.md](docs/DEVELOPMENT.md) for:
+Contributions are welcome! See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for:
 - Code style guidelines
 - Testing requirements
 - Pull request process
