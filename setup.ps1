@@ -169,19 +169,19 @@ Write-Host "=========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "📚 Next steps:" -ForegroundColor Cyan
 Write-Host "  1. Activate venv:     .\venv\Scripts\Activate.ps1" -ForegroundColor White
-Write-Host "  2. Start server:      python server\noctis_server.py" -ForegroundColor White
+Write-Host "  2. Start server:      python server/noctis_server.py" -ForegroundColor White
 Write-Host "  3. Run verification:  python verify_setup.py" -ForegroundColor White
 Write-Host "  4. Run tests:         python test_all.py" -ForegroundColor White
 Write-Host ""
 Write-Host "🎯 Optional C2 setup:" -ForegroundColor Cyan
-Write-Host "  - Sliver:  See docs\C2_INTEGRATION.md" -ForegroundColor White
+Write-Host "  - Sliver:  See docs/C2_INTEGRATION.md" -ForegroundColor White
 Write-Host "  - Havoc:   Manual generation via GUI (API not available)" -ForegroundColor White
-Write-Host "  - Mythic:  See docs\C2_INTEGRATION.md" -ForegroundColor White
+Write-Host "  - Mythic:  See docs/C2_INTEGRATION.md" -ForegroundColor White
 Write-Host ""
 Write-Host "📖 Documentation:" -ForegroundColor Cyan
-Write-Host "  - Getting started:    docs\GETTING_STARTED.md" -ForegroundColor White
-Write-Host "  - User guide:         docs\USER_GUIDE.md" -ForegroundColor White
-Write-Host "  - API reference:      docs\API_REFERENCE.md" -ForegroundColor White
+Write-Host "  - Getting started:    docs/GETTING_STARTED.md" -ForegroundColor White
+Write-Host "  - User guide:         docs/USER_GUIDE.md" -ForegroundColor White
+Write-Host "  - API reference:      docs/API_REFERENCE.md" -ForegroundColor White
 Write-Host ""
 Write-Host "🚀 Happy hacking with Noctis-MCP!" -ForegroundColor Cyan
 
