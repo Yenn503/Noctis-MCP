@@ -1127,36 +1127,49 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ## 🎯 Quick Start
 
-1. **Clone repository**:
-   ```bash
-   git clone <repository-url>
-   cd Noctis-MCP
-   ```
+### Automated Setup (Recommended)
 
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+# 1. Clone repository
+git clone <repository-url>
+cd Noctis-MCP
 
-3. **Index existing techniques**:
-   ```bash
-   python utils/technique_indexer.py
-   ```
+# 2. Run automated setup
+chmod +x setup.sh
+./setup.sh
 
-4. **Start server**:
-   ```bash
-   python server/noctis_server.py
-   ```
+# 3. Verify installation
+python verify_setup.py
 
-5. **Configure Cursor**:
-   - Add MCP configuration to `mcp.json`
-   - Restart Cursor
+# 4. Start using Noctis!
+source venv/bin/activate
+python server/noctis_server.py
+```
 
-6. **Test**:
-   ```
-   Ask AI: "What techniques are available?"
-   Ask AI: "Generate a loader with API hashing"
-   ```
+### Manual Setup
+
+See **[SETUP.md](SETUP.md)** for detailed installation instructions.
+
+### Verification
+
+After setup, run the verification script:
+
+```bash
+python verify_setup.py
+```
+
+Expected output: **"🎉 Noctis-MCP is ready to use!"**
+
+### Quick Test
+
+```bash
+# Start server
+python server/noctis_server.py
+
+# In Cursor AI chat:
+"What C2 frameworks are available?"
+"Generate a Sliver beacon with API hashing"
+```
 
 ---
 
