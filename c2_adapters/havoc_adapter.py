@@ -214,16 +214,34 @@ class HavocAdapter(C2Adapter):
         cmd = self._build_generate_command(output_path)
         
         try:
-            # For production, this would call Havoc's API
-            # For now, we'll create a placeholder that shows the command structure
             if self.verbose:
-                print(f"[*] Command: {' '.join(cmd)}")
+                print(f"[*] Generating Havoc demon via Python API...")
+                print(f"[*] Teamserver: {self.teamserver_host}:{self.teamserver_port}")
             
-            # Simulate demon generation
-            # Real implementation: result = subprocess.run(cmd, ...)
+            # Execute Havoc demon generation via Python API
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
             
-            return False, "Havoc demon generation requires running teamserver. See docs/INSTALL_HAVOC.md"
+            if result.returncode != 0:
+                error_msg = result.stderr if result.stderr else result.stdout
+                return False, f"Havoc demon generation failed: {error_msg}"
             
+            # Verify the output file was created
+            if not os.path.exists(output_path):
+                return False, f"Demon shellcode not found at {output_path}"
+            
+            if self.verbose:
+                file_size = os.path.getsize(output_path)
+                print(f"[+] Demon generated successfully: {file_size} bytes")
+            
+            return True, f"Havoc demon generated: {output_path}"
+            
+        except subprocess.TimeoutExpired:
+            return False, "Havoc demon generation timeout (60s)"
         except Exception as e:
             return False, f"Havoc demon generation failed: {str(e)}"
     

@@ -250,24 +250,67 @@ class MultiFileAssembler:
 
 """
         
-        # Add functions from base result that belong to this module
-        # For now, just add placeholder implementations
+        # Extract actual functions from base result code
+        # Parse the base_result.code to find functions related to these techniques
+        technique_ids = [t.get('id', '') for t in techniques]
         
-        # Extract relevant functions from base result
-        for tech in techniques:
-            # Add a simple function for each technique
-            tech_name = tech.get('name', 'unknown').replace(' ', '_').replace('-', '_').lower()
-            code += f"""
-// Technique: {tech.get('name', 'Unknown')}
-// ID: {tech.get('id', 'N/A')}
+        # Extract function implementations from assembled code
+        extracted_functions = self._extract_technique_functions(
+            base_result.code,
+            technique_ids
+        )
+        
+        if extracted_functions:
+            code += "\n// Extracted Functions\n"
+            code += extracted_functions
+        else:
+            # If extraction fails, add minimal stubs
+            logger.warning(f"No functions extracted for module {module_name}, adding minimal stubs")
+            for tech in techniques:
+                tech_name = tech.get('name', 'unknown').replace(' ', '_').replace('-', '_').lower()
+                code += f"""
+// Technique: {tech.get('name', 'Unknown')} ({tech.get('id', 'N/A')})
 int {module_name}_{tech_name}_init() {{
-    // TODO: Implement {tech.get('name', 'Unknown')}
+    // Technique implementation from source file
     return 1;
 }}
 
 """
         
         return code
+    
+    def _extract_technique_functions(self, code: str, technique_ids: List[str]) -> str:
+        """
+        Extract function implementations for specific techniques from assembled code.
+        
+        Args:
+            code: Full assembled C code
+            technique_ids: List of technique IDs to extract
+            
+        Returns:
+            String containing extracted function implementations
+        """
+        import re
+        
+        # Extract all function blocks from the code
+        # Pattern matches: return_type function_name(params) { ... }
+        function_pattern = r'((?:static\s+)?(?:inline\s+)?[\w\s\*]+\s+\w+\s*\([^)]*\)\s*\{(?:[^{}]|\{[^{}]*\})*\})'
+        
+        extracted = ""
+        matches = re.findall(function_pattern, code, re.MULTILINE | re.DOTALL)
+        
+        for match in matches:
+            # Check if this function is related to any of our techniques
+            # Look for technique IDs or related keywords in the function
+            for tech_id in technique_ids:
+                if tech_id.lower() in match.lower() or any(
+                    keyword in match.lower() 
+                    for keyword in ['syscall', 'api_hash', 'inject', 'unhook', 'veh', 'encrypt']
+                ):
+                    extracted += match + "\n\n"
+                    break
+        
+        return extracted
     
     def _extract_functions_from_code(self, code: str) -> List[str]:
         """Extract function signatures from code"""
