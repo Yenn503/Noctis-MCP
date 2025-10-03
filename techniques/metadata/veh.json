@@ -1,20 +1,30 @@
 {
-  "technique_id": "NOCTIS-T085",
+  "technique_id": "NOCTIS-T010",
   "name": "Veh",
   "category": "evasion/advanced",
   "description": "Manipulates vectored exception handlers to bypass EDR monitoring",
   "source_files": [
-    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Utilities.h"
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/UnpackAndHide.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/TrapSyscallsTampering.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/S1VehOverWrite.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Structures.h",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Utilities.h",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Hashes.h"
   ],
-  "mitre_attack": [
-    "T1027",
-    "T1055",
-    "T1564"
-  ],
+  "mitre_attack": [],
   "dependencies": [
-    "Hashes.h",
+    "Structures.h",
+    "UnpackAndHide.h",
+    "Configuration.h",
+    "DllsQueue.h",
     "Windows.h",
-    "Structures.h"
+    "stdio.h",
+    "GpuManipulation.h",
+    "Utilities.h",
+    "StackSpoofing.h",
+    "DebugMacros.h",
+    "intrin.h",
+    "TrapSyscallsTampering.h"
   ],
   "compatible_with": [],
   "incompatible_with": [],
@@ -26,26 +36,21 @@
     "detected_by": []
   },
   "code_blocks": {
-    "file": "Utilities.h",
+    "file": "UnpackAndHide.c",
     "functions": [
-      "OverwriteFirstVectoredExceptionHandler",
-      "RtlAnsiStringToUnicodeString",
-      "RtlInitUnicodeString",
-      "RestoreFirstVectoredExceptionHandler",
-      "RtlInitAnsiString",
-      "GetModuleHandleH",
-      "OverwriteFirstVectoredExceptionHandlerEx",
-      "GetNtProcAddress",
-      "GetProcAddressH",
-      "GetResourceDataPayload",
-      "GetNtdllBaseAddress",
-      "Aes128CTRCrypt",
-      "StartCountingPrimes",
-      "RtlFreeUnicodeString"
+      "UnhookLoadedDlls",
+      "IsWithinStackBounds",
+      "ResolveImportAddressTable",
+      "SetStackProtection",
+      "LoadDllViaLdr",
+      "SecureCleanupPayloadConfig",
+      "SetPeSectionsMemProtection",
+      "InitializePayloadConfig",
+      "ResolvePeRelocation"
     ]
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T03:00:18.727896"
+  "last_updated": "2025-10-03T14:06:04.684672"
 }

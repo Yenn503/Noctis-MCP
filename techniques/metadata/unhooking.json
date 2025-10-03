@@ -1,19 +1,27 @@
 {
-  "technique_id": "NOCTIS-T116",
+  "technique_id": "NOCTIS-T004",
   "name": "Unhooking",
   "category": "evasion/unhooking",
   "description": "Removes EDR/AV hooks from DLLs to restore original functionality",
   "source_files": [
-    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Unook.c"
+    "MyOwn/TheSilencer/TheSilencer-main/Loader/Unook.c",
+    "MyOwn/TheSilencer/TheSilencer-main/Loader/main.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Main.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/UnhookingDlls.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/UnpackAndHide.c",
+    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/Unook.c",
+    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/main.c",
+    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/HashCalculator/HashCalculator.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Configuration.h",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Hashes.h",
+    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/Common.h"
   ],
-  "mitre_attack": [
-    "T1562.001"
-  ],
+  "mitre_attack": [],
   "dependencies": [
-    "Structs.h",
     "Windows.h",
     "Common.h",
-    "Debug.h"
+    "Debug.h",
+    "Structs.h"
   ],
   "compatible_with": [],
   "incompatible_with": [],
@@ -34,5 +42,5 @@
   "variants": [],
   "author": "Unknown",
   "source_project": "MyOwn",
-  "last_updated": "2025-10-03T03:00:18.793468"
+  "last_updated": "2025-10-03T14:06:04.632238"
 }

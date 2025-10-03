@@ -1,15 +1,15 @@
 {
-  "technique_id": "NOCTIS-T126",
+  "technique_id": "NOCTIS-T007",
   "name": "Persistence",
   "category": "persistence",
   "description": "Establishes persistence mechanisms for long-term access",
   "source_files": [
-    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Structs.h"
+    "MyOwn/TheSilencer/TheSilencer-main/Loader/Structs.h",
+    "MyOwn/TheSilencer/TheSilencer-main/Loader/FunctionPntrs.h",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Structures.h",
+    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/Structs.h"
   ],
-  "mitre_attack": [
-    "T1547",
-    "T1053"
-  ],
+  "mitre_attack": [],
   "dependencies": [
     "Windows.h"
   ],
@@ -29,5 +29,5 @@
   "variants": [],
   "author": "Unknown",
   "source_project": "MyOwn",
-  "last_updated": "2025-10-03T03:00:18.814202"
+  "last_updated": "2025-10-03T14:06:04.644168"
 }

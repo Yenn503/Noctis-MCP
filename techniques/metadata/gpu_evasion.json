@@ -1,19 +1,28 @@
 {
-  "technique_id": "NOCTIS-T066",
+  "technique_id": "NOCTIS-T009",
   "name": "Gpu Evasion",
   "category": "evasion/advanced",
   "description": "Moves malicious code to GPU memory to evade memory scanners",
   "source_files": [
-    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\GpuManipulation.h"
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/UnpackAndHide.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/GpuManipulation.cpp",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/GpuManipulation.h",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Configuration.h"
   ],
-  "mitre_attack": [
-    "T1027",
-    "T1055",
-    "T1564"
-  ],
+  "mitre_attack": [],
   "dependencies": [
+    "Structures.h",
+    "UnpackAndHide.h",
+    "Configuration.h",
+    "DllsQueue.h",
     "Windows.h",
-    "d3d11.h"
+    "stdio.h",
+    "GpuManipulation.h",
+    "Utilities.h",
+    "StackSpoofing.h",
+    "DebugMacros.h",
+    "intrin.h",
+    "TrapSyscallsTampering.h"
   ],
   "compatible_with": [],
   "incompatible_with": [],
@@ -25,11 +34,21 @@
     "detected_by": []
   },
   "code_blocks": {
-    "file": "GpuManipulation.h",
-    "functions": []
+    "file": "UnpackAndHide.c",
+    "functions": [
+      "UnhookLoadedDlls",
+      "IsWithinStackBounds",
+      "ResolveImportAddressTable",
+      "SetStackProtection",
+      "LoadDllViaLdr",
+      "SecureCleanupPayloadConfig",
+      "SetPeSectionsMemProtection",
+      "InitializePayloadConfig",
+      "ResolvePeRelocation"
+    ]
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T03:00:18.658188"
+  "last_updated": "2025-10-03T14:06:04.681597"
 }

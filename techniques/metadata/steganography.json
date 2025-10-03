@@ -1,14 +1,25 @@
 {
-  "technique_id": "NOCTIS-T125",
+  "technique_id": "NOCTIS-T006",
   "name": "Steganography",
   "category": "steganography",
   "description": "Hides payloads in legitimate files using steganographic techniques",
   "source_files": [
-    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Structs.h"
+    "MyOwn/TheSilencer/TheSilencer-main/Loader/Structs.h",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/ExtractPePayloadFromPng/Main.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/ExtractPePayloadFromPng/Reed-Solomon.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/ExtractPePayloadFromPng/Extract.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Reed-Solomon.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/UnpackAndHide.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Utilities.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Extract.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/StackSpoofing.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/ExtractPePayloadFromPng/Reed-Solomon.h",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Structures.h",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/StackSpoofing.h",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Reed-Solomon.h",
+    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/Structs.h"
   ],
-  "mitre_attack": [
-    "T1027.003"
-  ],
+  "mitre_attack": [],
   "dependencies": [
     "Windows.h"
   ],
@@ -28,5 +39,5 @@
   "variants": [],
   "author": "Unknown",
   "source_project": "MyOwn",
-  "last_updated": "2025-10-03T03:00:18.809856"
+  "last_updated": "2025-10-03T14:06:04.640727"
 }

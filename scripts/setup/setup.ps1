@@ -171,6 +171,18 @@ try {
 } catch {
     Write-Host "✗ Flask server import failed" -ForegroundColor Red
 }
+
+# Verify technique database
+try {
+    $techniqueCount = python -c "import json; print(json.load(open('techniques/metadata/index.json'))['total_techniques'])" 2>$null
+    if ($techniqueCount) {
+        Write-Host "✓ Technique database loaded: $techniqueCount unique techniques" -ForegroundColor Green
+    } else {
+        Write-Host "⚠ Technique database not found (run: python utils/technique_indexer.py)" -ForegroundColor Yellow
+    }
+} catch {
+    Write-Host "⚠ Could not verify technique database" -ForegroundColor Yellow
+}
 Write-Host ""
 
 # Step 7: Final summary

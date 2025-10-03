@@ -1,17 +1,32 @@
 {
-  "technique_id": "NOCTIS-T073",
+  "technique_id": "NOCTIS-T008",
   "name": "Stack Spoof",
   "category": "evasion/advanced",
   "description": "Masks call stacks to hide malicious execution chains",
   "source_files": [
-    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\StackSpoofing.h"
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Main.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/UnpackAndHide.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/StackSpoofing.c",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Configuration.h",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/StackSpoofing.h",
+    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Hashes.h"
   ],
-  "mitre_attack": [
-    "T1027",
-    "T1055",
-    "T1564"
+  "mitre_attack": [],
+  "dependencies": [
+    "Structures.h",
+    "UnpackAndHide.h",
+    "shlobj.h",
+    "Extract.h",
+    "Configuration.h",
+    "Windows.h",
+    "stdio.h",
+    "Resource.h",
+    "DebugMacros.h",
+    "Utilities.h",
+    "StackSpoofing.h",
+    "intrin.h",
+    "TrapSyscallsTampering.h"
   ],
-  "dependencies": [],
   "compatible_with": [],
   "incompatible_with": [],
   "opsec": {
@@ -22,13 +37,13 @@
     "detected_by": []
   },
   "code_blocks": {
-    "file": "StackSpoofing.h",
+    "file": "Main.c",
     "functions": [
-      "InitialiseDynamicCallStackSpoofing"
+      "main"
     ]
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T03:00:18.673385"
+  "last_updated": "2025-10-03T14:06:04.665936"
 }
