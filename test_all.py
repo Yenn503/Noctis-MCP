@@ -3,16 +3,36 @@
 Noctis-MCP Comprehensive Test Suite
 ====================================
 
-Single test file that validates all major functionality:
-- Installation and dependencies
-- Compilation (MinGW/MSBuild)
-- Code generation and assembly
-- Obfuscation modules
-- C2 adapters
-- MCP client
-- API server
+Single test file that validates ALL major functionality in one run.
 
-Run this to ensure everything is working correctly.
+## Quick Validation (42 smoke tests):
+- Dependencies (7 tests) - Python 3.11+, Flask, FastMCP, Requests, Cryptography, PyCryptodome, Pytest
+- Compilers (2 tests) - MinGW-w64 x64/x86 (Linux) or MSBuild (Windows)
+- Module imports (13 tests) - All core modules load correctly
+- Code assembly (2 tests) - Technique assembly from database
+- Compilation (2 tests) - Windows PE generation via MinGW/MSBuild
+- Obfuscation (4 tests) - String encryption, API hashing, control flow, polymorphic
+- C2 adapters (6 tests) - Sliver, Havoc, Mythic (initialization + config validation)
+- API server (3 tests) - Flask initialization, configuration, startup (1 skipped)
+- Unit tests (1 test) - Runs full pytest suite (98 tests, 87 pass, 11 skip)
+- MCP client (2 tests) - FastMCP initialization + 14 registered tools
+
+## Comprehensive Unit Tests (via pytest):
+When this script runs the "Unit Tests" section, it executes:
+- test_c2_base.py: 32 tests (C2 configs, adapters, shellcode wrapper)
+- test_sliver_integration.py: 19 tests (Sliver protocols & architectures)
+- test_havoc_integration.py: 13 tests (Havoc sleep techniques & evasion)
+- test_mythic_integration.py: 13 tests (Mythic agent types & protocols)
+- test_linux_compiler.py: 21 tests (MinGW cross-compilation)
+
+Total: 98 unit tests (87 pass, 11 skip without C2 servers/MinGW installed)
+
+Usage:
+    python test_all.py              # Full system validation (1-2 min)
+    python -m pytest tests/ -v      # Detailed unit tests only
+    python verify_setup.py          # Installation check only
+
+This is the PRIMARY test file to verify Noctis-MCP is 100% operational.
 """
 
 import sys
