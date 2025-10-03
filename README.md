@@ -45,14 +45,30 @@ Noctis-MCP is a malware development framework that combines:
 
 ### Installation
 
+**Linux/macOS:**
 ```bash
 # Clone repository
-git clone https://github.com/yo/Noctis-MCP.git
+git clone https://github.com/Yenn503/Noctis-MCP.git
 cd Noctis-MCP
 
-# Automated setup (Linux)
+# Run automated setup
 chmod +x setup.sh
 ./setup.sh
+
+# Verify installation
+python verify_setup.py
+```
+
+**Windows:**
+```powershell
+# Clone repository (PowerShell or CMD)
+git clone https://github.com/Yenn503/Noctis-MCP.git
+cd Noctis-MCP
+
+# Run automated setup (double-click setup.bat or run in PowerShell)
+.\setup.bat
+# OR directly:
+powershell -ExecutionPolicy Bypass -File setup.ps1
 
 # Verify installation
 python verify_setup.py
