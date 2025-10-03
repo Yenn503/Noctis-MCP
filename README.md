@@ -40,24 +40,45 @@ Noctis-MCP is a malware development framework that combines:
 ### Prerequisites
 
 - Python 3.11 or higher
-- **Linux**: MinGW-w64 for Windows cross-compilation
-- **Windows**: Visual Studio Build Tools 2019+
+- **Compiler** (for Windows malware compilation):
+  - **Linux**: MinGW-w64 (auto-installed by setup.sh)
+  - **macOS**: MinGW-w64 (install via Homebrew - see below)
+  - **Windows**: Visual Studio Build Tools 2019+ (detected by setup.ps1)
 
 ### Installation
 
-**Linux/macOS:**
+**Linux:**
 ```bash
 # Clone repository
 git clone https://github.com/Yenn503/Noctis-MCP.git
 cd Noctis-MCP
 
-# Run automated setup
+# Run automated setup (auto-installs MinGW)
 chmod +x setup.sh
 ./setup.sh
 
 # Verify installation
 python verify_setup.py
 ```
+
+**macOS:**
+```bash
+# Clone repository
+git clone https://github.com/Yenn503/Noctis-MCP.git
+cd Noctis-MCP
+
+# ⚠️  IMPORTANT: Install MinGW via Homebrew first
+brew install mingw-w64
+
+# Run automated setup (Python dependencies)
+chmod +x setup.sh
+./setup.sh
+
+# Verify installation
+python verify_setup.py
+```
+
+**Note for macOS:** The setup.sh script will work but won't auto-install MinGW (requires Homebrew). You must install it manually first.
 
 **Windows:**
 ```powershell
