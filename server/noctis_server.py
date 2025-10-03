@@ -952,7 +952,7 @@ def get_c2_frameworks():
             },
             {
                 'name': 'Havoc',
-                'status': 'implemented',
+                'status': 'manual_only',
                 'protocols': ['http', 'https', 'smb'],
                 'architectures': ['x64', 'x86'],
                 'formats': ['shellcode', 'exe', 'dll'],
@@ -960,8 +960,11 @@ def get_c2_frameworks():
                     'Sleep obfuscation (Ekko, Foliage)',
                     'Indirect syscalls',
                     'Stack duplication',
-                    'Noctis obfuscation integration'
-                ]
+                    'Manual demon generation via GUI'
+                ],
+                'api_status': 'Coming Soon',
+                'api_docs': 'https://havocframework.com/docs/service_api',
+                'notes': 'Service API not yet available. Use Havoc GUI client to generate demons manually, then apply Noctis obfuscation.'
             },
             {
                 'name': 'Mythic',
