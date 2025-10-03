@@ -54,11 +54,11 @@ git clone https://github.com/Yenn503/Noctis-MCP.git
 cd Noctis-MCP
 
 # Run automated setup (auto-installs MinGW)
-chmod +x setup.sh
-./setup.sh
+chmod +x scripts/setup/setup.sh
+./scripts/setup/setup.sh
 
 # Verify installation
-python verify_setup.py
+python scripts/verify_setup.py
 ```
 
 **macOS:**
@@ -71,11 +71,11 @@ cd Noctis-MCP
 brew install mingw-w64
 
 # Run automated setup (Python dependencies)
-chmod +x setup.sh
-./setup.sh
+chmod +x scripts/setup/setup.sh
+./scripts/setup/setup.sh
 
 # Verify installation
-python verify_setup.py
+python scripts/verify_setup.py
 ```
 
 **Note for macOS:** The setup.sh script will work but won't auto-install MinGW (requires Homebrew). You must install it manually first.
@@ -87,12 +87,12 @@ git clone https://github.com/Yenn503/Noctis-MCP.git
 cd Noctis-MCP
 
 # Run automated setup (double-click setup.bat or run in PowerShell)
-.\setup.bat
+.\scripts\setup\setup.bat
 # OR directly:
-powershell -ExecutionPolicy Bypass -File setup.ps1
+powershell -ExecutionPolicy Bypass -File scripts\setup\setup.ps1
 
 # Verify installation
-python verify_setup.py
+python scripts\verify_setup.py
 ```
 
 ### First Steps
