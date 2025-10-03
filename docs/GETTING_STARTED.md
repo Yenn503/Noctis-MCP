@@ -30,7 +30,7 @@ Complete installation and configuration guide for Noctis-MCP.
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/Noctis-MCP.git
+git clone https://github.com/Yenn503/Noctis-MCP.git
 cd Noctis-MCP
 
 # Run setup script
