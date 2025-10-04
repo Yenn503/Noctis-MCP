@@ -13,7 +13,7 @@ Each technique has a dedicated JSON file with the following structure:
   "category": "evasion/obfuscation",
   "description": "Obfuscates API calls by hashing function names to evade static analysis",
   "source_files": [
-    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\ApiHashing.c"
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\ApiHashing.c"
   ],
   "mitre_attack": ["T1027.009", "T1106"],
   "dependencies": ["Windows.h"],
@@ -32,7 +32,7 @@ Each technique has a dedicated JSON file with the following structure:
   },
   "variants": [],
   "author": "Unknown",
-  "source_project": "MyOwn",
+  "source_project": "MaldevAcademy",
   "last_updated": "2025-10-03T03:00:18.804705"
 }
 ```
