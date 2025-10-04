@@ -1,31 +1,33 @@
 {
-  "technique_id": "NOCTIS-T008",
+  "technique_id": "NOCTIS-T006",
   "name": "Stack Spoof",
   "category": "evasion/advanced",
   "description": "Masks call stacks to hide malicious execution chains",
   "source_files": [
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Main.c",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/UnpackAndHide.c",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/StackSpoofing.c",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Configuration.h",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/StackSpoofing.h",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Hashes.h"
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Main.c",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\StackSpoofing.c",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\UnpackAndHide.c",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Configuration.h",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Hashes.h",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\StackSpoofing.h"
   ],
-  "mitre_attack": [],
+  "mitre_attack": [
+    "T1027"
+  ],
   "dependencies": [
-    "Structures.h",
-    "UnpackAndHide.h",
-    "shlobj.h",
-    "Extract.h",
-    "Configuration.h",
     "Windows.h",
-    "stdio.h",
-    "Resource.h",
-    "DebugMacros.h",
-    "Utilities.h",
-    "StackSpoofing.h",
     "intrin.h",
-    "TrapSyscallsTampering.h"
+    "shlobj.h",
+    "stdio.h",
+    "Configuration.h",
+    "DebugMacros.h",
+    "Extract.h",
+    "Resource.h",
+    "StackSpoofing.h",
+    "Structures.h",
+    "TrapSyscallsTampering.h",
+    "UnpackAndHide.h",
+    "Utilities.h"
   ],
   "compatible_with": [],
   "incompatible_with": [],
@@ -34,16 +36,61 @@
     "stability": "unknown",
     "tested_on": [],
     "bypasses": [],
-    "detected_by": []
+    "detected_by": [],
+    "code_quality": {
+      "total_lines": 134,
+      "code_lines": 98,
+      "comment_lines": 5,
+      "function_count": 0,
+      "average_function_complexity": 0.0,
+      "max_function_complexity": 0
+    },
+    "dependencies": {
+      "system_headers": [
+        "Windows.h",
+        "intrin.h",
+        "shlobj.h",
+        "stdio.h"
+      ],
+      "project_headers": [
+        "Configuration.h",
+        "DebugMacros.h",
+        "Extract.h",
+        "Resource.h",
+        "StackSpoofing.h",
+        "Structures.h",
+        "TrapSyscallsTampering.h",
+        "UnpackAndHide.h",
+        "Utilities.h"
+      ],
+      "external_libs": [],
+      "functions_called": [
+        "GetModuleHandleH",
+        "GetNtdllBaseAddress",
+        "GetResourceDataPayload",
+        "RtlCopyMemory",
+        "RtlSecureZeroMemory"
+      ],
+      "structs_used": [
+        "_PAYLOAD_FILE"
+      ]
+    }
   },
   "code_blocks": {
     "file": "Main.c",
-    "functions": [
-      "main"
-    ]
+    "functions": [],
+    "total_functions": 0,
+    "quality_metrics": {
+      "total_lines": 134,
+      "code_lines": 98,
+      "comment_lines": 5,
+      "function_count": 0,
+      "average_function_complexity": 0.0,
+      "max_function_complexity": 0
+    }
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T14:06:04.665936"
+  "last_updated": "2025-10-03T23:44:01.580938"
 }

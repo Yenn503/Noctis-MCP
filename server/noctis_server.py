@@ -203,6 +203,7 @@ app.config['JSON_SORT_KEYS'] = False
 # Global instances (initialized in main)
 config: Config = None
 technique_manager: TechniqueManager = None
+agent_registry = None  # Agent registry (initialized in main)
 
 
 # ============================================================================
@@ -214,7 +215,7 @@ def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'version': '1.0.0-alpha',
+        'version': '2.0.0',
         'timestamp': datetime.now().isoformat(),
         'techniques_loaded': len(technique_manager.techniques) if technique_manager else 0
     })
@@ -643,6 +644,120 @@ def analyze_opsec():
 # C2 INTEGRATION ENDPOINTS (Phase 4)
 # ============================================================================
 
+@app.route('/api/learning/report_detection', methods=['POST'])
+def report_detection():
+    """Record AV/EDR detection feedback"""
+    try:
+        from server.learning_engine import LearningEngine, DetectionFeedback
+        from datetime import datetime
+        
+        data = request.get_json()
+        
+        # Initialize learning engine
+        engine = LearningEngine()
+        
+        # Create feedback object
+        feedback = DetectionFeedback(
+            timestamp=datetime.now().isoformat(),
+            techniques_used=data.get('techniques_used', []),
+            av_edr=data.get('av_edr'),
+            detected=data.get('detected'),
+            detection_type=data.get('detection_type'),
+            obfuscation_level=data.get('obfuscation_level'),
+            notes=data.get('notes')
+        )
+        
+        # Record feedback
+        engine.record_detection(feedback)
+        
+        # Get updated stats
+        stats = {}
+        for technique_id in feedback.techniques_used:
+            tech_stats = engine.get_technique_stats(technique_id)
+            if tech_stats:
+                stats[technique_id] = {
+                    'total_uses': tech_stats.total_uses,
+                    'compilation_success_rate': round(tech_stats.compilation_success_rate, 3),
+                    'detection_rate': {
+                        av: round(rate, 3)
+                        for av, rate in tech_stats.detection_rate.items()
+                    }
+                }
+        
+        return jsonify({
+            'success': True,
+            'message': 'Detection feedback recorded successfully',
+            'insights': {
+                'av_edr': feedback.av_edr,
+                'detected': feedback.detected,
+                'techniques_tested': len(feedback.techniques_used)
+            },
+            'stats': stats
+        })
+        
+    except Exception as e:
+        logger.error(f"Error recording detection feedback: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/learning/recommendations', methods=['GET'])
+def get_recommendations():
+    """Get technique recommendations based on learned data"""
+    try:
+        from server.learning_engine import LearningEngine
+        
+        target_av = request.args.get('target_av')
+        category = request.args.get('category')
+        min_success_rate = float(request.args.get('min_success_rate', 0.7))
+        
+        # Initialize learning engine
+        engine = LearningEngine()
+        
+        # Get recommendations
+        recommendations = engine.recommend_techniques(
+            target_av=target_av,
+            category=category,
+            min_success_rate=min_success_rate
+        )
+        
+        # Format results
+        results = []
+        for technique_id, score in recommendations[:10]:  # Top 10
+            tech_stats = engine.get_technique_stats(technique_id)
+            if tech_stats:
+                results.append({
+                    'technique_id': technique_id,
+                    'name': tech_stats.name,
+                    'score': round(score, 3),
+                    'total_uses': tech_stats.total_uses,
+                    'compilation_success_rate': round(tech_stats.compilation_success_rate, 3),
+                    'detection_rates': {
+                        av: round(rate, 3)
+                        for av, rate in tech_stats.detection_rate.items()
+                    }
+                })
+        
+        return jsonify({
+            'success': True,
+            'recommendations': results,
+            'criteria': {
+                'target_av': target_av,
+                'category': category,
+                'min_success_rate': min_success_rate
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting recommendations: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @app.route('/api/c2/sliver/generate', methods=['POST'])
 def generate_sliver_beacon():
     """
@@ -1051,7 +1166,7 @@ def print_banner():
     banner = """
 ====================================================================
                    NOCTIS-MCP SERVER                            
-     AI-Driven Malware Development Platform v1.0-alpha          
+     AI-Driven Malware Development Platform v2.0          
                                                                    
   [*] Dynamic AI Partnership for Red Team Operations                
   [*] Open Source Community Project                                
@@ -1062,7 +1177,7 @@ def print_banner():
 
 def main():
     """Main entry point for the server"""
-    global config, technique_manager, logger
+    global config, technique_manager, logger, agent_registry
     
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Noctis-MCP Server')
@@ -1086,7 +1201,19 @@ def main():
     # Initialize technique manager
     metadata_path = config.get('paths.techniques', 'techniques') + '/metadata'
     technique_manager = TechniqueManager(metadata_path)
-    
+
+    # Initialize agent registry
+    logger.info("Initializing agent registry...")
+    from server.agents import AgentRegistry
+    agent_config = {
+        'db_path': config.get('paths.database', 'data/knowledge_base.db'),
+        'metadata_path': metadata_path,
+        'output_dir': config.get('paths.output', 'output')
+    }
+    AgentRegistry.initialize(agent_config)
+    agent_registry = AgentRegistry
+    logger.info("Agent registry initialized successfully")
+
     # Determine host and port
     host = args.host or config.get('server.host', '127.0.0.1')
     port = args.port or config.get('server.port', 8888)
@@ -1112,7 +1239,13 @@ def main():
     print(f"   - POST /api/compile                 - Compile code")
     print(f"   - POST /api/analyze/opsec           - OPSEC analysis")
     print(f"   - GET  /api/c2/frameworks           - List C2 frameworks")
-    print(f"   - POST /api/c2/sliver/generate      - Generate Sliver beacon (NEW!)")
+    print(f"   - POST /api/c2/sliver/generate      - Generate Sliver beacon")
+    print(f"\n[*] Agent API Endpoints (V2):")
+    print(f"   - POST /api/v2/agents/technique-selection   - AI technique selection")
+    print(f"   - POST /api/v2/agents/malware-development   - Autonomous malware dev")
+    print(f"   - POST /api/v2/agents/opsec-optimization    - OPSEC optimization")
+    print(f"   - POST /api/v2/agents/learning              - Learning feedback")
+    print(f"   - GET  /api/v2/agents/status                - Agent status")
     print(f"\n[!] Press Ctrl+C to stop the server\n")
     
     # Run server
@@ -1129,6 +1262,160 @@ def main():
     except Exception as e:
         logger.error(f"Server error: {e}")
         raise
+
+
+# ============================================================================
+# AGENT-BASED API ENDPOINTS (V2)
+# ============================================================================
+
+@app.route('/api/v2/agents/technique-selection', methods=['POST'])
+def api_v2_technique_selection():
+    """
+    AI-powered technique selection using TechniqueSelectionAgent
+
+    Request body:
+        {
+            "target_av": "Windows Defender",
+            "objective": "evasion",
+            "complexity": "medium",
+            "constraints": {
+                "max_techniques": 5,
+                "min_effectiveness_score": 0.8
+            }
+        }
+    """
+    try:
+        if not agent_registry:
+            return jsonify({'success': False, 'error': 'Agent registry not initialized'}), 500
+
+        params = request.json or {}
+
+        # Get agent and run
+        agent = agent_registry.get_agent('technique_selection')
+        result = agent.run(**params)
+
+        # Return result
+        return jsonify(result.to_dict())
+
+    except Exception as e:
+        logger.error(f"Error in technique selection agent: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/v2/agents/malware-development', methods=['POST'])
+def api_v2_malware_development():
+    """
+    Autonomous malware development using MalwareDevelopmentAgent
+
+    Request body:
+        {
+            "goal": "Create stealthy loader",
+            "target_av": "Windows Defender",
+            "target_os": "Windows",
+            "architecture": "x64",
+            "auto_compile": true,
+            "target_opsec_score": 8.0,
+            "max_techniques": 5
+        }
+    """
+    try:
+        if not agent_registry:
+            return jsonify({'success': False, 'error': 'Agent registry not initialized'}), 500
+
+        params = request.json or {}
+
+        # Get agent and run
+        agent = agent_registry.get_agent('malware_development')
+        result = agent.run(**params)
+
+        # Return result
+        return jsonify(result.to_dict())
+
+    except Exception as e:
+        logger.error(f"Error in malware development agent: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/v2/agents/opsec-optimization', methods=['POST'])
+def api_v2_opsec_optimization():
+    """
+    OPSEC optimization using OpsecOptimizationAgent
+
+    Request body:
+        {
+            "code": "source code here",
+            "target_score": 8.0,
+            "max_iterations": 3
+        }
+    """
+    try:
+        if not agent_registry:
+            return jsonify({'success': False, 'error': 'Agent registry not initialized'}), 500
+
+        params = request.json or {}
+
+        # Get agent and run
+        agent = agent_registry.get_agent('opsec_optimization')
+        result = agent.run(**params)
+
+        # Return result
+        return jsonify(result.to_dict())
+
+    except Exception as e:
+        logger.error(f"Error in OPSEC optimization agent: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/v2/agents/learning', methods=['POST'])
+def api_v2_learning():
+    """
+    Learning agent for feedback collection
+
+    Request body:
+        {
+            "action": "record_detection",
+            "techniques": ["NOCTIS-T001"],
+            "av_edr": "Windows Defender",
+            "detected": false,
+            ...
+        }
+    """
+    try:
+        if not agent_registry:
+            return jsonify({'success': False, 'error': 'Agent registry not initialized'}), 500
+
+        params = request.json or {}
+
+        # Get agent and run
+        agent = agent_registry.get_agent('learning')
+        result = agent.run(**params)
+
+        # Return result
+        return jsonify(result.to_dict())
+
+    except Exception as e:
+        logger.error(f"Error in learning agent: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/v2/agents/status', methods=['GET'])
+def api_v2_agents_status():
+    """Get status of all registered agents"""
+    try:
+        if not agent_registry:
+            return jsonify({'success': False, 'error': 'Agent registry not initialized'}), 500
+
+        status = agent_registry.list_agents()
+
+        return jsonify({
+            'success': True,
+            'agents': status,
+            'total_agents': len(status)
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting agent status: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':

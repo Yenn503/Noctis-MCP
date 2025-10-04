@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "noctis-mcp": {
+      "command": "python",
+      "args": [
+        "C:/Users/lewis/Desktop/Noctis-MCP/noctis_mcp_client/noctis_mcp.py",
+        "--server",
+        "http://localhost:8888"
+      ],
+      "description": "Noctis-MCP v2.0 - AI Malware Development (8 tools: develop, browse, compile, learn, files, help, c2_generate, c2_list)",
+      "timeout": 300,
+      "env": {}
+    }
+  }
+}

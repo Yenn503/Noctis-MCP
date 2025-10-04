@@ -1,38 +1,40 @@
 {
-  "technique_id": "NOCTIS-T003",
+  "technique_id": "NOCTIS-T002",
   "name": "Encryption",
   "category": "encryption",
   "description": "Encrypts payloads to evade signature-based detection",
   "source_files": [
-    "MyOwn/TheSilencer/TheSilencer-main/Loader/HellsHall.c",
-    "MyOwn/TheSilencer/TheSilencer-main/Loader/Common.c",
-    "MyOwn/TheSilencer/TheSilencer-main/Loader/CtAes.c",
-    "MyOwn/TheSilencer/TheSilencer-main/Loader/main.c",
-    "MyOwn/TheSilencer/TheSilencer-main/Loader/Inject.c",
-    "MyOwn/TheSilencer/TheSilencer-main/Loader/Common.h",
-    "MyOwn/TheSilencer/TheSilencer-main/Loader/Resource.h",
-    "MyOwn/TheSilencer/TheSilencer-main/Loader/CtAes.h",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/AES128CTR-NI.c",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/UnpackAndHide.c",
-    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/PayloadEncrypter/CTAES.c",
-    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/PayloadEncrypter/PayloadEncrypter.c",
-    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/HellsHall.c",
-    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/Common.c",
-    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/CtAes.c",
-    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/main.c",
-    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/Inject.c",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Structures.h",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Utilities.h",
-    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/PayloadEncrypter/CTAES.h",
-    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/Common.h",
-    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/Resource.h",
-    "MaldevAcademy/Loader1/MaldevAcademyLdr.1-main/Loader/CtAes.h"
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\AES128CTR-NI.c",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\UnpackAndHide.c",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Common.c",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\CtAes.c",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\HellsHall.c",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Inject.c",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\main.c",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\PayloadEncrypter\\CTAES.c",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\PayloadEncrypter\\PayloadEncrypter.c",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Structures.h",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Utilities.h",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Common.h",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\CtAes.h",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Resource.h",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\PayloadEncrypter\\CTAES.h",
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.c",
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\CtAes.c",
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\HellsHall.c",
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Inject.c",
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\main.c",
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.h",
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\CtAes.h",
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Resource.h"
   ],
-  "mitre_attack": [],
+  "mitre_attack": [
+    "T1027"
+  ],
   "dependencies": [
     "Windows.h",
-    "Common.h",
-    "Structs.h"
+    "wmmintrin.h",
+    "Utilities.h"
   ],
   "compatible_with": [],
   "incompatible_with": [],
@@ -41,18 +43,43 @@
     "stability": "unknown",
     "tested_on": [],
     "bypasses": [],
-    "detected_by": []
+    "detected_by": [],
+    "code_quality": {
+      "total_lines": 150,
+      "code_lines": 104,
+      "comment_lines": 17,
+      "function_count": 0,
+      "average_function_complexity": 0.0,
+      "max_function_complexity": 0
+    },
+    "dependencies": {
+      "system_headers": [
+        "Windows.h",
+        "wmmintrin.h"
+      ],
+      "project_headers": [
+        "Utilities.h"
+      ],
+      "external_libs": [],
+      "functions_called": [],
+      "structs_used": []
+    }
   },
   "code_blocks": {
-    "file": "HellsHall.c",
-    "functions": [
-      "XmFetchSystemCall",
-      "XmFetchSysInvokeInst",
-      "InitDllsConfigStructs"
-    ]
+    "file": "AES128CTR-NI.c",
+    "functions": [],
+    "total_functions": 0,
+    "quality_metrics": {
+      "total_lines": 150,
+      "code_lines": 104,
+      "comment_lines": 17,
+      "function_count": 0,
+      "average_function_complexity": 0.0,
+      "max_function_complexity": 0
+    }
   },
   "variants": [],
-  "author": "Unknown",
-  "source_project": "MyOwn",
-  "last_updated": "2025-10-03T14:06:04.623327"
+  "author": "MalDev Academy",
+  "source_project": "MaldevAcademy",
+  "last_updated": "2025-10-03T23:44:01.541897"
 }

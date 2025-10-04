@@ -1,6 +1,8 @@
 # Getting Started
 
-Complete installation and configuration guide for Noctis-MCP.
+Complete installation and configuration guide for Noctis-MCP v2.0.
+
+> **New to v2.0?** This guide covers installation. See [USER_GUIDE.md](USER_GUIDE.md) for the simplified 8-tool workflow!
 
 ## Prerequisites
 
@@ -140,12 +142,22 @@ LOG_FILE=noctis_server.log
 
 ### Server Configuration
 
+The server now runs on port **8888** by default (changed in v2.0):
+
+```bash
+# Start server (default port 8888)
+python server/noctis_server.py
+
+# Or specify custom port
+python server/noctis_server.py --port 5000
+```
+
 Edit `config.yaml` for advanced settings:
 
 ```yaml
 server:
   host: 127.0.0.1
-  port: 5000
+  port: 8888  # Changed from 5000 in v2.0
   debug: false
   workers: 4
 
@@ -488,6 +500,6 @@ brew install mingw-w64
 
 ---
 
-**Last Updated**: October 3, 2025  
-**Version**: 1.0.0
+**Last Updated**: October 4, 2025
+**Version**: 2.0.0
 
