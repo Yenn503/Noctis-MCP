@@ -54,7 +54,7 @@ develop(
 
 1. **Noctis-MCP Server Running**:
    ```bash
-   cd C:/Users/lewis/Desktop/Noctis-MCP
+   cd C:/path/to/Noctis-MCP
    python server/noctis_server.py --port 8888
    ```
 

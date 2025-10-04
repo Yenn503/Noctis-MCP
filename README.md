@@ -153,7 +153,7 @@ Create or edit `~/.cursor/mcp.json` (Windows: `%APPDATA%\Cursor\User\mcp.json`):
     "noctis-mcp": {
       "command": "python",
       "args": [
-        "C:/Users/lewis/Desktop/Noctis-MCP/noctis_mcp_client/noctis_mcp.py",
+        "C:/path/to/Noctis-MCP/noctis_mcp_client/noctis_mcp.py",
         "--server",
         "http://localhost:8888"
       ],
