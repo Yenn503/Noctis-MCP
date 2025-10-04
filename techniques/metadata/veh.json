@@ -1,30 +1,34 @@
 {
-  "technique_id": "NOCTIS-T010",
+  "technique_id": "NOCTIS-T007",
   "name": "Veh",
   "category": "evasion/advanced",
   "description": "Manipulates vectored exception handlers to bypass EDR monitoring",
   "source_files": [
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/UnpackAndHide.c",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/TrapSyscallsTampering.c",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/S1VehOverWrite.c",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Structures.h",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Utilities.h",
-    "MaldevAcademy/Loader2/MaldevAcademyLdr.2-main/RunPeFile/Hashes.h"
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Main.c",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\S1VehOverWrite.c",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\TrapSyscallsTampering.c",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\UnpackAndHide.c",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Hashes.h",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Structures.h",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Utilities.h"
   ],
-  "mitre_attack": [],
+  "mitre_attack": [
+    "T1562.001"
+  ],
   "dependencies": [
-    "Structures.h",
-    "UnpackAndHide.h",
-    "Configuration.h",
-    "DllsQueue.h",
     "Windows.h",
-    "stdio.h",
-    "GpuManipulation.h",
-    "Utilities.h",
-    "StackSpoofing.h",
-    "DebugMacros.h",
     "intrin.h",
-    "TrapSyscallsTampering.h"
+    "shlobj.h",
+    "stdio.h",
+    "Configuration.h",
+    "DebugMacros.h",
+    "Extract.h",
+    "Resource.h",
+    "StackSpoofing.h",
+    "Structures.h",
+    "TrapSyscallsTampering.h",
+    "UnpackAndHide.h",
+    "Utilities.h"
   ],
   "compatible_with": [],
   "incompatible_with": [],
@@ -33,24 +37,61 @@
     "stability": "unknown",
     "tested_on": [],
     "bypasses": [],
-    "detected_by": []
+    "detected_by": [],
+    "code_quality": {
+      "total_lines": 134,
+      "code_lines": 98,
+      "comment_lines": 5,
+      "function_count": 0,
+      "average_function_complexity": 0.0,
+      "max_function_complexity": 0
+    },
+    "dependencies": {
+      "system_headers": [
+        "Windows.h",
+        "intrin.h",
+        "shlobj.h",
+        "stdio.h"
+      ],
+      "project_headers": [
+        "Configuration.h",
+        "DebugMacros.h",
+        "Extract.h",
+        "Resource.h",
+        "StackSpoofing.h",
+        "Structures.h",
+        "TrapSyscallsTampering.h",
+        "UnpackAndHide.h",
+        "Utilities.h"
+      ],
+      "external_libs": [],
+      "functions_called": [
+        "GetModuleHandleH",
+        "GetNtdllBaseAddress",
+        "GetResourceDataPayload",
+        "RtlCopyMemory",
+        "RtlSecureZeroMemory"
+      ],
+      "structs_used": [
+        "_PAYLOAD_FILE"
+      ]
+    }
   },
   "code_blocks": {
-    "file": "UnpackAndHide.c",
-    "functions": [
-      "UnhookLoadedDlls",
-      "IsWithinStackBounds",
-      "ResolveImportAddressTable",
-      "SetStackProtection",
-      "LoadDllViaLdr",
-      "SecureCleanupPayloadConfig",
-      "SetPeSectionsMemProtection",
-      "InitializePayloadConfig",
-      "ResolvePeRelocation"
-    ]
+    "file": "Main.c",
+    "functions": [],
+    "total_functions": 0,
+    "quality_metrics": {
+      "total_lines": 134,
+      "code_lines": 98,
+      "comment_lines": 5,
+      "function_count": 0,
+      "average_function_complexity": 0.0,
+      "max_function_complexity": 0
+    }
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T14:06:04.684672"
+  "last_updated": "2025-10-03T23:44:01.582905"
 }

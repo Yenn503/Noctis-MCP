@@ -25,10 +25,13 @@ build/
 Thumbs.db
 *.bak
 
-# Project specific - Old locations (for migration)
+# Project specific
 compiled/
+compiled_projects/
 test_output/
+output/
 logs/
+*.log
 
 # Build directory
 build/*
@@ -37,3 +40,14 @@ build/*
 # Temporary
 *.tmp
 *.temp
+*_BACKUP.py
+
+# Database
+data/*.db
+data/*.db-journal
+
+# Testing
+.pytest_cache/
+
+# MCP
+.claude/

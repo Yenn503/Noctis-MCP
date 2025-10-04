@@ -432,7 +432,7 @@ def main():
     print("""
 ====================================================================
               NOCTIS-MCP TECHNIQUE INDEXER                     
-       Indexing Malware Development Techniques v1.0             
+       Indexing Malware Development Techniques v2.0             
 ====================================================================
     """)
     

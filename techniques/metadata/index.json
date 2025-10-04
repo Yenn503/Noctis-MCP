@@ -1,69 +1,69 @@
 {
   "total_techniques": 10,
   "categories": {
+    "steganography": 1,
+    "encryption": 1,
     "evasion/obfuscation": 1,
     "evasion/unhooking": 2,
-    "encryption": 1,
+    "evasion/advanced": 3,
     "injection": 1,
-    "steganography": 1,
-    "persistence": 1,
-    "evasion/advanced": 3
+    "persistence": 1
   },
-  "last_updated": "2025-10-03T14:06:04.751262",
+  "last_updated": "2025-10-03T23:44:01.811126",
   "techniques": [
     {
       "id": "NOCTIS-T001",
-      "name": "Api Hashing",
-      "category": "evasion/obfuscation",
-      "author": "Unknown",
-      "source_project": "MyOwn"
+      "name": "Steganography",
+      "category": "steganography",
+      "author": "MalDev Academy",
+      "source_project": "MaldevAcademy"
     },
     {
       "id": "NOCTIS-T002",
-      "name": "Syscalls",
-      "category": "evasion/unhooking",
-      "author": "Unknown",
-      "source_project": "MyOwn"
+      "name": "Encryption",
+      "category": "encryption",
+      "author": "MalDev Academy",
+      "source_project": "MaldevAcademy"
     },
     {
       "id": "NOCTIS-T003",
-      "name": "Encryption",
-      "category": "encryption",
-      "author": "Unknown",
-      "source_project": "MyOwn"
+      "name": "Api Hashing",
+      "category": "evasion/obfuscation",
+      "author": "MalDev Academy",
+      "source_project": "MaldevAcademy"
     },
     {
       "id": "NOCTIS-T004",
-      "name": "Unhooking",
+      "name": "Syscalls",
       "category": "evasion/unhooking",
-      "author": "Unknown",
-      "source_project": "MyOwn"
+      "author": "MalDev Academy",
+      "source_project": "MaldevAcademy"
     },
     {
       "id": "NOCTIS-T005",
-      "name": "Injection",
-      "category": "injection",
-      "author": "Unknown",
-      "source_project": "MyOwn"
+      "name": "Unhooking",
+      "category": "evasion/unhooking",
+      "author": "MalDev Academy",
+      "source_project": "MaldevAcademy"
     },
     {
       "id": "NOCTIS-T006",
-      "name": "Steganography",
-      "category": "steganography",
-      "author": "Unknown",
-      "source_project": "MyOwn"
+      "name": "Stack Spoof",
+      "category": "evasion/advanced",
+      "author": "MalDev Academy",
+      "source_project": "MaldevAcademy"
     },
     {
       "id": "NOCTIS-T007",
-      "name": "Persistence",
-      "category": "persistence",
-      "author": "Unknown",
-      "source_project": "MyOwn"
+      "name": "Veh",
+      "category": "evasion/advanced",
+      "author": "MalDev Academy",
+      "source_project": "MaldevAcademy"
     },
     {
       "id": "NOCTIS-T008",
-      "name": "Stack Spoof",
-      "category": "evasion/advanced",
+      "name": "Injection",
+      "category": "injection",
       "author": "MalDev Academy",
       "source_project": "MaldevAcademy"
     },
@@ -76,8 +76,8 @@
     },
     {
       "id": "NOCTIS-T010",
-      "name": "Veh",
-      "category": "evasion/advanced",
+      "name": "Persistence",
+      "category": "persistence",
       "author": "MalDev Academy",
       "source_project": "MaldevAcademy"
     }

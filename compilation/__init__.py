@@ -17,7 +17,7 @@ License: MIT
 import platform
 import logging
 
-__version__ = "1.1.0-alpha"
+__version__ = "2.0.0"
 
 logger = logging.getLogger(__name__)
 
