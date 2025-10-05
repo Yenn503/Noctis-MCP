@@ -21,6 +21,10 @@
 
 Next Update is educational classes and modules coming for the techniques used
 
+This is still a work in progress. I have not tested any generated malware against solutions yet, but I have no worries from what I have seen so far. if not, then the results from testing will show, and we can fine-tune from there, making sure it compiles and executes correctly. Just working on the educational feature and also the c2 beacon generation making sure it aligns well with the samples created. 
+
+Feedback is appreciated 😎
+
 ### How It Works
 
 **The AI in your IDE becomes the agent** - it reasons, plans, and makes decisions. **Noctis-MCP provides the intelligence** - real-time access to:
