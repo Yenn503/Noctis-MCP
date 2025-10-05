@@ -13,6 +13,10 @@
 
 </div>
 
+## Join the community 
+
+[![Join Noctis AI on Discord](https://img.shields.io/badge/Join_Noctis_AI-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bBtyAWSkW)
+
 **Legal Disclaimer**: For authorised security research, penetration testing, and red team operations only. Unauthorised use is illegal and prohibited.
 
 ## What is Noctis-AI?
