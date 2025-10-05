@@ -83,9 +83,10 @@ class GeneratedCode:
 
 class SourceFileReader:
     """Reads and parses C/C++ source files"""
-    
-    def __init__(self, examples_root: str = "Examples"):
+
+    def __init__(self, examples_root: str = "Examples", rag_engine=None):
         self.examples_root = Path(examples_root)
+        self.rag_engine = rag_engine
     
     def read_file(self, file_path: Path) -> Optional[SourceFile]:
         """Read and parse a source file"""
@@ -249,19 +250,24 @@ class CodeAssembler:
     """
     Main code assembler that combines techniques into working code
     """
-    
-    def __init__(self, examples_root: str = "Examples", metadata_path: str = "techniques/metadata"):
+
+    def __init__(self, examples_root: str = "Examples", metadata_path: str = "techniques/metadata", rag_engine=None):
         self.examples_root = Path(examples_root)
         self.metadata_path = Path(metadata_path)
-        self.file_reader = SourceFileReader(examples_root)
+        self.rag_engine = rag_engine
+        self.file_reader = SourceFileReader(examples_root, rag_engine=rag_engine)
         self.dependency_resolver = DependencyResolver()
-        
+
         # Cache for parsed files
         self.parsed_files: Dict[str, SourceFile] = {}
         self.all_functions: Dict[str, FunctionDefinition] = {}
-        
+
         # Load technique metadata
         self.techniques = self._load_techniques()
+
+        # Load knowledge base if RAG available
+        if self.rag_engine:
+            self._index_knowledge_base()
     
     def _load_techniques(self) -> Dict[str, Dict]:
         """Load all technique metadata"""
@@ -477,6 +483,39 @@ int main(int argc, char* argv[]) {
 """
         return main_code
     
+    def _index_knowledge_base(self):
+        """Index knowledge base markdown files into RAG system"""
+        knowledge_path = Path("techniques/knowledge")
+        if not knowledge_path.exists():
+            logger.warning("Knowledge base path not found")
+            return
+
+        try:
+            for md_file in knowledge_path.glob("*.md"):
+                logger.info(f"Indexing knowledge: {md_file.name}")
+
+                with open(md_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                # Extract technique ID from filename or content
+                tech_id = md_file.stem  # e.g., "syscalls" from "syscalls.md"
+
+                # Add to RAG
+                self.rag_engine.add_markdown_knowledge(
+                    title=f"Knowledge: {tech_id.title()}",
+                    content=content,
+                    technique_id=f"NOCTIS-{tech_id.upper()}",
+                    metadata={
+                        'source': 'knowledge_base',
+                        'file': str(md_file)
+                    }
+                )
+
+            logger.info("Knowledge base indexing complete")
+
+        except Exception as e:
+            logger.error(f"Failed to index knowledge base: {e}")
+
     def _empty_result(self, error_msg: str) -> GeneratedCode:
         """Return empty result with error"""
         return GeneratedCode(
