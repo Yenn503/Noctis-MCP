@@ -13,7 +13,7 @@
 
 </div>
 
-**⚠️ Legal Disclaimer**: For authorised security research, penetration testing, and red team operations only. Unauthorised use is illegal and prohibited.
+**Legal Disclaimer**: For authorised security research, penetration testing, and red team operations only. Unauthorised use is illegal and prohibited.
 
 ## What is Noctis-AI?
 
@@ -21,7 +21,7 @@
 
 Next Update is educational classes and modules coming for the techniques used
 
-### 🧠 How It Works
+### How It Works
 
 **The AI in your IDE becomes the agent** - it reasons, plans, and makes decisions. **Noctis-MCP provides the intelligence** - real-time access to:
 
@@ -82,7 +82,7 @@ Instead of writing malware from scratch or copying outdated techniques, you simp
 
 - **Python 3.11+** (3.13.2 recommended)
 - **Compiler**: MinGW-w64 (Linux/macOS) or Visual Studio Build Tools (Windows)
-- **MCP-Compatible IDE**: Cursor, VSCode with Claude extension
+- **MCP-Compatible IDE**: Cursor, VSCode etc (co-pilot,claude)
 - **Package Manager**: Homebrew (macOS), apt/dnf (Linux)
 
 ### 🛠️ Installation
