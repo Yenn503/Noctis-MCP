@@ -1184,6 +1184,14 @@ def main():
         from server.rag import RAGEngine
         rag_engine = RAGEngine(persist_dir=agent_config['rag_db_path'])
         logger.info(f"RAG engine initialized: {rag_engine.get_stats()}")
+
+        # Auto-index knowledge base on startup if empty
+        stats = rag_engine.get_stats()
+        if stats.get('knowledge_base', 0) == 0:
+            logger.info("RAG database empty - indexing knowledge base...")
+            indexed = rag_engine.index_knowledge_base('techniques/knowledge')
+            logger.info(f"Indexed {indexed} knowledge chunks")
+
     except Exception as e:
         logger.warning(f"RAG engine initialization failed: {e}")
         logger.warning("Agentic features will be disabled")
@@ -1262,8 +1270,20 @@ def main():
     else:
         print(f"\n[!] RAG System: DISABLED (install dependencies: pip install chromadb sentence-transformers)")
 
+    # Security warning for debug mode
+    if debug:
+        print(f"\n" + "="*70)
+        print(f"⚠️  WARNING: Flask debug mode is ENABLED")
+        print(f"="*70)
+        print(f"  This is a LOCAL DEVELOPMENT TOOL - debug mode is acceptable.")
+        print(f"  However, if exposing to network:")
+        print(f"    - Do NOT bind to 0.0.0.0 or public IP")
+        print(f"    - Debug mode exposes code and enables remote debugger")
+        print(f"    - Use production WSGI server (gunicorn) for networked deployment")
+        print(f"="*70 + "\n")
+
     print(f"\n[!] Press Ctrl+C to stop the server\n")
-    
+
     # Run server
     try:
         app.run(
