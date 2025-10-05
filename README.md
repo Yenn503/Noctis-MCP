@@ -2,7 +2,7 @@
 
 ![Noctis-MCP Logo](NoctisAI.png)
 
-**🤖 AI-Powered Malware Development Platform**
+**AI-Powered Malware Development Platform**
 
 *Intelligence-Driven Red Team Operations*
 
