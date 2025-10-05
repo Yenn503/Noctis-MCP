@@ -13,11 +13,11 @@
 
 </div>
 
-**⚠️ Legal Disclaimer**: For authorized security research, penetration testing, and red team operations only. Unauthorized use is illegal and prohibited.
+**⚠️ Legal Disclaimer**: For authorised security research, penetration testing, and red team operations only. Unauthorised use is illegal and prohibited.
 
 ## 🎯 What is Noctis-MCP?
 
-**Noctis-MCP****RAG-powered malware development platform** that transforms your AI assistant into a sophisticated red team operator. Think of it as having a malware development expert with access to the latest evasion techniques, real-world implementations, and cutting-edge research - all integrated directly into your IDE.
+**Noctis-MCP** malware development platform** that transforms your AI assistant into a sophisticated red team operator. Think of it as having a malware development expert with access to the latest evasion techniques, real-world implementations, and cutting-edge research - all integrated directly into your IDE.
 
 ### 🧠 How It Works
 
@@ -185,7 +185,7 @@ Result: 3,000+ lines of production-ready malware code in seconds
 
 **Example 1: EDR Bypass**
 ```
-User: "Create a Windows Defender bypass using process injection"
+User: "Create a Crowdstrike bypass using process injection"
 
 AI Response:
 - Searches for latest Windows Defender evasion techniques
@@ -226,7 +226,7 @@ AI Response:
 
 ## C2 Integration
 
-Supports Sliver, Havoc, and Mythic frameworks:
+Supports Sliver and Mythic frameworks:
 
 ```python
 import requests
@@ -360,10 +360,10 @@ pip install -r requirements.txt
 ## 🛡️ OPSEC & Security
 
 ### **⚠️ High Risk Activities**
-- Running compiled malware on development machine
-- Testing against production EDR without authorization
-- Using generated code in unauthorized environments
-- Sharing detection results without proper sanitization
+- Running compiled malware on the development machine
+- Testing against production EDR without authorisation
+- Using generated code in unauthorised environments
+- Sharing detection results without proper sanitisation
 
 ### **✅ Best Practices**
 - **Use isolated VMs** for all testing and development
