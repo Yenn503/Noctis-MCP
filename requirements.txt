@@ -40,7 +40,6 @@ pycryptodome>=3.19.0             # Additional crypto algorithms
 # DATABASE & STORAGE
 # ============================================================================
 sqlalchemy>=2.0.0,<3.0.0         # ORM for knowledge base
-sqlite3                          # Lightweight database (built-in)
 
 # ============================================================================
 # LOGGING & MONITORING
