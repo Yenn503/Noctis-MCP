@@ -17,7 +17,7 @@
 
 ## 🎯 What is Noctis-MCP?
 
-**Noctis-MCP** malware development platform** that transforms your AI assistant into a sophisticated red team operator. Think of it as having a malware development expert with access to the latest evasion techniques, real-world implementations, and cutting-edge research - all integrated directly into your IDE.
+**Noctis-MCP** malware development platform that transforms your AI assistant into a sophisticated red team operator. Think of it as having a malware development expert with access to the latest evasion techniques, real-world implementations, and cutting-edge research - all integrated directly into your IDE.
 
 ### 🧠 How It Works
 
