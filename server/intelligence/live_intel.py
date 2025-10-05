@@ -368,14 +368,10 @@ class LiveIntelligence:
 
         try:
             self.rag_engine.add_blog_post(
-                blog_name=post_data["blog"],
                 title=post_data["title"],
-                content=post_data["content"],
+                summary=post_data["content"],
                 url=post_data["url"],
-                metadata={
-                    "published": post_data.get("published", ""),
-                    "summary": post_data.get("summary", "")
-                }
+                published=post_data.get("published", "unknown")
             )
             logger.info(f"Indexed blog post: {post_data['title']}")
             return True
