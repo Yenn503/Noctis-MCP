@@ -327,12 +327,19 @@ def generate_mythic_agent(
         ...     print(f"Agent: {result.beacon_path}")
         ...     print(f"OPSEC: {result.opsec_score}/10")
     """
-    # Create Mythic config
+    # Create Mythic config with proper architecture mapping
+    arch_map = {
+        "x64": Architecture.X64,
+        "x86": Architecture.X86,
+        "arm64": Architecture.ARM64,
+        "arm": Architecture.ARM
+    }
+    
     config = MythicConfig(
         listener_host=listener_host,
         listener_port=listener_port,
         protocol=c2_profile,
-        architecture=Architecture.X64 if architecture == "x64" else Architecture.X86,
+        architecture=arch_map.get(architecture.lower(), Architecture.X64),
         payload_type=agent_type,
         c2_profile=c2_profile,
         api_key=api_token or ""
