@@ -116,7 +116,7 @@ def search_intelligence(
     target_av: str = None,
     sources: str = "all",
     max_results: int = 10
-) -> Dict:
+) -> str:
     """
     🔍 Search RAG system for malware techniques, research, and intelligence.
 
@@ -156,12 +156,13 @@ def search_intelligence(
     """
     sources_list = sources.split(',') if isinstance(sources, str) else [sources]
 
-    return api_post('/api/v2/intelligence/search', {
+    response = api_post('/api/v2/intelligence/search', {
         'query': query,
         'target_av': target_av,
         'sources': sources_list,
         'max_results': max_results
     })
+    return format_response(response, "search")
 
 
 @mcp.tool()
@@ -169,7 +170,7 @@ def analyze_technique(
     technique_id: str,
     target_av: str = None,
     include_code_examples: bool = True
-) -> Dict:
+) -> str:
     """
     🔬 Deep analysis of a specific technique using ALL intelligence sources.
 
@@ -206,11 +207,12 @@ def analyze_technique(
         3. Review comprehensive analysis with code examples
         4. Decide if this technique meets requirements
     """
-    return api_post('/api/v2/intelligence/analyze', {
+    response = api_post('/api/v2/intelligence/analyze', {
         'technique_id': technique_id,
         'target_av': target_av,
         'include_code_examples': include_code_examples
     })
+    return format_response(response, "technique")
 
 
 @mcp.tool()
@@ -218,7 +220,7 @@ def fetch_latest(
     topic: str,
     sources: str = "github,arxiv,blogs",
     days_back: int = 30
-) -> Dict:
+) -> str:
     """
     📡 Fetch and index LATEST intelligence on a topic.
 
@@ -246,11 +248,12 @@ def fetch_latest(
     """
     sources_list = sources.split(',') if isinstance(sources, str) else [sources]
 
-    return api_post('/api/v2/intelligence/fetch-latest', {
+    response = api_post('/api/v2/intelligence/fetch-latest', {
         'topic': topic,
         'sources': sources_list,
         'days_back': days_back
     }, timeout=120)
+    return format_response(response, "general")
 
 
 # ============================================================================
@@ -265,7 +268,7 @@ def generate_code(
     architecture: str = "x64",
     use_rag: bool = True,
     opsec_level: str = "high"
-) -> Dict:
+) -> str:
     """
     💻 Generate code using RAG-informed intelligence.
 
@@ -301,7 +304,7 @@ def generate_code(
         4. Review generated code
         5. optimize_opsec() if needed
     """
-    return api_post('/api/v2/code/generate', {
+    response = api_post('/api/v2/code/generate', {
         'technique_ids': technique_ids,
         'target_av': target_av,
         'target_os': target_os,
@@ -309,6 +312,7 @@ def generate_code(
         'use_rag_context': use_rag,
         'opsec_level': opsec_level
     })
+    return format_response(response, 'code')
 
 
 @mcp.tool()
@@ -317,7 +321,7 @@ def optimize_opsec(
     target_av: str,
     target_score: float = 8.0,
     max_iterations: int = 3
-) -> Dict:
+) -> str:
     """
     🛡️ Optimize code for OPSEC using RAG intelligence about detection patterns.
 
@@ -345,12 +349,13 @@ def optimize_opsec(
         3. If score < target, optimize_opsec(code, "CrowdStrike", 8.5)
         4. Review improvements
     """
-    return api_post('/api/v2/code/optimize-opsec', {
+    response = api_post('/api/v2/code/optimize-opsec', {
         'source_code': source_code,
         'target_av': target_av,
         'target_score': target_score,
         'max_iterations': max_iterations
     })
+    return format_response(response, 'general')
 
 
 # ============================================================================
@@ -362,7 +367,7 @@ def validate_code(
     source_code: str,
     output_name: str = "payload",
     validate_functionality: bool = False
-) -> Dict:
+) -> str:
     """
     ✅ Validate code - compilation check + quality analysis + error feedback.
 
@@ -403,11 +408,12 @@ def validate_code(
            - validate_code(fixed_code) again
         4. If verdict is "ready_for_use", deliver to user
     """
-    return api_post('/api/v2/code/validate', {
+    response = api_post('/api/v2/code/validate', {
         'source_code': source_code,
         'output_name': output_name,
         'validate_functionality': validate_functionality
     })
+    return format_response(response, 'general')
 
 
 # ============================================================================
@@ -420,7 +426,7 @@ def select_techniques(
     target_av: str,
     max_techniques: int = 5,
     complexity: str = "medium"
-) -> Dict:
+) -> str:
     """
     🎯 Intelligent technique selection using RAG + historical effectiveness.
 
@@ -453,7 +459,7 @@ def select_techniques(
         3. analyze_technique() on top recommendations
         4. Make informed decision
     """
-    return api_post('/api/v2/techniques/select', {
+    response = api_post('/api/v2/techniques/select', {
         'goal': goal,
         'target_av': target_av,
         'constraints': {
@@ -461,6 +467,7 @@ def select_techniques(
             'complexity': complexity
         }
     })
+    return format_response(response, 'general')
 
 
 @mcp.tool()
@@ -468,7 +475,7 @@ def compare_techniques(
     technique_ids: List[str],
     target_av: str,
     criteria: str = "effectiveness,stealth,complexity"
-) -> Dict:
+) -> str:
     """
     ⚖️ Compare multiple techniques using RAG intelligence.
 
@@ -489,11 +496,12 @@ def compare_techniques(
     """
     criteria_list = criteria.split(',') if isinstance(criteria, str) else criteria
 
-    return api_post('/api/v2/techniques/compare', {
+    response = api_post('/api/v2/techniques/compare', {
         'technique_ids': technique_ids,
         'target_av': target_av,
         'comparison_criteria': criteria_list
     })
+    return format_response(response, 'comparison')
 
 
 # ============================================================================
@@ -506,7 +514,7 @@ def compile_code(
     output_name: str = "payload",
     architecture: str = "x64",
     optimization: str = "O2"
-) -> Dict:
+) -> str:
     """
     🔨 Compile code to binary.
 
@@ -524,12 +532,13 @@ def compile_code(
             "warnings": [...]
         }
     """
-    return api_post('/api/compile', {
+    response = api_post('/api/compile', {
         'code': source_code,
         'output_name': output_name,
         'architecture': architecture,
         'optimization': optimization
     })
+    return format_response(response, 'general')
 
 
 @mcp.tool()
@@ -538,7 +547,7 @@ def record_feedback(
     target_av: str,
     detected: bool,
     details: str = None
-) -> Dict:
+) -> str:
     """
     📊 Record detection feedback to improve RAG intelligence.
 
@@ -558,12 +567,13 @@ def record_feedback(
             "indexed_to_rag": True
         }
     """
-    return api_post('/api/v2/learning/record-detection', {
+    response = api_post('/api/v2/learning/record-detection', {
         'technique_ids': technique_ids,
         'target_av': target_av,
         'detected': detected,
         'detection_details': details
     })
+    return format_response(response, 'general')
 
 
 # ============================================================================
@@ -571,7 +581,7 @@ def record_feedback(
 # ============================================================================
 
 @mcp.tool()
-def rag_stats() -> Dict:
+def rag_stats() -> str:
     """
     📈 Get RAG system statistics and health.
 
@@ -586,12 +596,285 @@ def rag_stats() -> Dict:
             "detection_patterns": 8
         }
     """
-    return api_get('/api/v2/rag/stats')
+    response = api_get('/api/v2/rag/stats')
+    return format_response(response, 'stats')
 
 
 # ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
+
+# Formatting functions for beautiful MCP tool responses
+def format_response(data: Dict, format_type: str = "general") -> str:
+    """
+    Format MCP tool responses for beautiful display in IDE chat.
+    """
+    if isinstance(data, dict) and 'error' in data:
+        return f"\n[ERROR] {data['error']}\n"
+
+    if format_type == "search":
+        return _format_search_results(data)
+    elif format_type == "technique":
+        return _format_technique_analysis(data)
+    elif format_type == "code":
+        return _format_code_generation(data)
+    elif format_type == "comparison":
+        return _format_technique_comparison(data)
+    elif format_type == "stats":
+        return _format_rag_stats(data)
+    else:
+        return _format_general(data)
+
+def _format_search_results(data: Dict) -> str:
+    """Format intelligence search results"""
+    output = []
+    output.append("\n🔍 === INTELLIGENCE SEARCH RESULTS ===\n")
+    
+    results = data.get('results', [])
+    total = data.get('total_results', 0)
+    
+    if total > 0:
+        output.append(f"✅ Found {total} intelligence sources:\n")
+        
+        for i, result in enumerate(results[:10], 1):  # Show top 10
+            source = result.get('source', 'unknown')
+            title = result.get('title', 'No title')
+            url = result.get('url', '')
+            relevance = result.get('relevance_score', 0)
+            content = result.get('content', '')
+            
+            # Source emoji
+            source_emoji = {
+                'knowledge_base': '📚',
+                'github': '🐙', 
+                'arxiv': '📄',
+                'blog': '📝'
+            }.get(source, '❓')
+            
+            output.append(f"\n📋 [{i}] {source_emoji} {source.upper()}")
+            output.append(f" 📊 Relevance: {relevance:.2f} [{'█' * int(relevance * 10):<10}]")
+            output.append(f" 📝 Title: {title}")
+            
+            if url:
+                output.append(f" 🔗 URL: {url}")
+            
+            # Content preview
+            if content:
+                preview = content[:200] + "..." if len(content) > 200 else content
+                output.append(f" 📄 Content: {preview}")
+    else:
+        output.append("❌ No intelligence sources found")
+    
+    return "\n".join(output)
+
+def _format_technique_analysis(data: Dict) -> str:
+    """Format technique analysis results"""
+    output = []
+    output.append("\n🔬 === TECHNIQUE ANALYSIS ===\n")
+    
+    technique_id = data.get('technique_id', 'Unknown')
+    output.append(f"🎯 Technique: {technique_id}")
+    
+    # Conceptual knowledge
+    knowledge = data.get('conceptual_knowledge', '')
+    if knowledge:
+        output.append(f"\n📚 CONCEPTUAL KNOWLEDGE:")
+        output.append(f"    {knowledge}")
+    
+    # GitHub implementations
+    github = data.get('github_implementations', [])
+    if github:
+        output.append(f"\n🐙 GITHUB IMPLEMENTATIONS ({len(github)}):")
+        for i, impl in enumerate(github[:5], 1):
+            repo = impl.get('repo', 'Unknown')
+            url = impl.get('url', '')
+            output.append(f"    [{i}] {repo}")
+            if url:
+                output.append(f"        🔗 {url}")
+    
+    # Research papers
+    papers = data.get('research_papers', [])
+    if papers:
+        output.append(f"\n📄 RESEARCH PAPERS ({len(papers)}):")
+        for i, paper in enumerate(papers[:3], 1):
+            title = paper.get('title', 'Unknown')
+            url = paper.get('url', '')
+            output.append(f"    [{i}] {title}")
+            if url:
+                output.append(f"        🔗 {url}")
+    
+    # Effectiveness scores
+    effectiveness = data.get('effectiveness_vs_av', {})
+    if effectiveness:
+        output.append(f"\n🛡️ EFFECTIVENESS SCORES:")
+        for av, score in effectiveness.items():
+            bar = '█' * int(score) + '░' * (10 - int(score))
+            output.append(f"    {av}: {score}/10 [{bar}]")
+    
+    # Recommended combinations
+    combinations = data.get('recommended_combinations', [])
+    if combinations:
+        output.append(f"\n🔗 RECOMMENDED COMBINATIONS:")
+        for combo in combinations:
+            output.append(f"    • {combo}")
+    
+    return "\n".join(output)
+
+def _format_code_generation(data: Dict) -> str:
+    """Format code generation results"""
+    output = []
+    output.append("\n💻 === CODE GENERATION COMPLETE ===\n")
+    
+    techniques = data.get('techniques_used', [])
+    if techniques:
+        output.append("🎯 TECHNIQUES IMPLEMENTED:")
+        for i, tech in enumerate(techniques, 1):
+            output.append(f"    [{i}] {tech}")
+        output.append("")
+    
+    # Files saved
+    files = data.get('files_saved', {})
+    if files:
+        output.append("📁 GENERATED FILES:")
+        if 'source_file' in files:
+            output.append(f"    📄 Source Code: {files['source_file']}")
+        if 'header_file' in files:
+            output.append(f"    📋 Header File: {files['header_file']}")
+        if 'output_directory' in files:
+            output.append(f"    📂 Directory: {files['output_directory']}")
+        output.append("")
+    
+    # MITRE TTPs
+    mitre = data.get('mitre_ttps', [])
+    if mitre:
+        output.append("🎯 MITRE ATT&CK TACTICS:")
+        for ttp in mitre:
+            output.append(f"    • {ttp}")
+        output.append("")
+    
+    # Dependencies
+    deps = data.get('dependencies', [])
+    if deps:
+        output.append("📦 DEPENDENCIES:")
+        for dep in deps[:5]:  # Show first 5
+            output.append(f"    • {dep}")
+        if len(deps) > 5:
+            output.append(f"    ... and {len(deps) - 5} more")
+        output.append("")
+    
+    # RAG intelligence used
+    rag = data.get('rag_intelligence_used', {})
+    if rag:
+        output.append("🧠 RAG INTELLIGENCE USED:")
+        github_patterns = rag.get('github_patterns', 0)
+        research_insights = rag.get('research_insights', 0)
+        blog_recommendations = rag.get('blog_recommendations', 0)
+        
+        if github_patterns > 0:
+            output.append(f"    🐙 GitHub Patterns: {github_patterns}")
+        if research_insights > 0:
+            output.append(f"    📄 Research Insights: {research_insights}")
+        if blog_recommendations > 0:
+            output.append(f"    📝 Blog Recommendations: {blog_recommendations}")
+        output.append("")
+    
+    # Warnings
+    warnings = data.get('warnings', [])
+    if warnings:
+        output.append(f"\n[!] WARNINGS:")
+        for warning in warnings:
+            output.append(f"  - {warning}")
+        output.append("")
+    
+    # Code Preview
+    source_code_preview = data.get('source_code', '')
+    if source_code_preview:
+        preview_lines = source_code_preview.split('\n')
+        output.append("\nCode Preview (first 20 lines):")
+        output.append("```c")
+        output.extend(preview_lines[:20])
+        if len(preview_lines) > 20:
+            output.append("... (truncated)")
+        output.append("```")
+    
+    return "\n".join(output)
+
+def _format_technique_comparison(data: Dict) -> str:
+    """Format technique comparison results"""
+    output = []
+    output.append("\n⚖️ === TECHNIQUE COMPARISON ===\n")
+    
+    comparison = data.get('comparison_table', {})
+    if comparison:
+        output.append("📊 COMPARISON TABLE:")
+        for technique, scores in comparison.items():
+            output.append(f"\n🎯 {technique}:")
+            for criterion, score in scores.items():
+                bar = '█' * int(score) + '░' * (10 - int(score))
+                output.append(f"    {criterion}: {score}/10 [{bar}]")
+    
+    winner = data.get('winner_by_criteria', {})
+    if winner:
+        output.append(f"\n🏆 WINNERS BY CRITERIA:")
+        for criterion, technique in winner.items():
+            output.append(f"    {criterion}: {technique}")
+    
+    recommendation = data.get('recommendation', '')
+    if recommendation:
+        output.append(f"\n💡 RECOMMENDATION:")
+        output.append(f"    {recommendation}")
+    
+    return "\n".join(output)
+
+def _format_rag_stats(data: Dict) -> str:
+    """Format RAG system statistics"""
+    output = []
+    output.append("\n📊 === RAG INTELLIGENCE SYSTEM STATUS ===\n")
+    
+    enabled = data.get('enabled', False)
+    status_emoji = "✅" if enabled else "❌"
+    output.append(f"{status_emoji} System Status: {'ENABLED' if enabled else 'DISABLED'}")
+    
+    embedding_model = data.get('embedding_model', 'Unknown')
+    vector_db = data.get('vector_db', 'Unknown')
+    output.append(f"🧠 Embedding Model: {embedding_model}")
+    output.append(f"🗄️ Vector Database: {vector_db}")
+    output.append("")
+    
+    output.append("📚 INTELLIGENCE SOURCES:")
+    knowledge_base = data.get('knowledge_base', 0)
+    github_repos = data.get('github_repos', 0)
+    research_papers = data.get('research_papers', 0)
+    blog_posts = data.get('blog_posts', 0)
+    detection_intel = data.get('detection_intel', 0)
+    
+    output.append(f" 📖 Knowledge Base: {knowledge_base} chunks indexed")
+    output.append(f" 🐙 GitHub Repositories: {github_repos} indexed")
+    output.append(f" 📄 Research Papers: {research_papers} indexed")
+    output.append(f" 📝 Blog Posts: {blog_posts} indexed")
+    output.append(f" 🛡️ Detection Intelligence: {detection_intel} patterns")
+    output.append("")
+    
+    total = knowledge_base + github_repos + research_papers + blog_posts + detection_intel
+    output.append(f"📈 TOTAL INTELLIGENCE: {total} sources indexed")
+    output.append("")
+    
+    output.append("Status: UNKNOWN")
+    
+    return "\n".join(output)
+
+def _format_general(data: Dict) -> str:
+    """Format general responses"""
+    if isinstance(data, dict):
+        output = []
+        for key, value in data.items():
+            if isinstance(value, (dict, list)):
+                output.append(f"{key}: {str(value)[:100]}...")
+            else:
+                output.append(f"{key}: {value}")
+        return "\n".join(output)
+    else:
+        return str(data)
 
 if __name__ == "__main__":
     import argparse
