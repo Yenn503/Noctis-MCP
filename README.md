@@ -139,6 +139,28 @@ response = requests.post("http://localhost:8888/api/c2/sliver/generate", json={
 })
 ```
 
+## Malware Generation & File Management
+
+**Automatic Code Generation & Saving**: The `generate_code` tool creates complete malware implementations with automatic file saving.
+
+### Generated Files
+- **Source files**: `generated_T004_T008_YYYYMMDD_HHMMSS.c` (3,000+ lines of real implementations)
+- **Header files**: `generated_T004_T008_YYYYMMDD_HHMMSS.h` (100+ function declarations)
+- **File paths**: Returned in `files_saved` field of MCP responses
+- **Compiled binaries**: Created in `compiled/` directory when using `compile_code()`
+
+### What Gets Generated
+- **Real function implementations** extracted from GitHub repos (not templates)
+- **Complete malware payloads** with evasion techniques
+- **MITRE ATT&CK mapped** techniques (T1055, T1106, etc.)
+- **RAG-informed code** using patterns from 24+ GitHub repositories
+- **OPSEC optimized** code with string encryption and API hashing
+
+### File Naming Convention
+- `generated_{technique_ids}_{timestamp}.{extension}`
+- Example: `generated_T004_T008_20251005_040526.c` (Syscalls + Injection)
+- Timestamps ensure unique filenames for each generation
+
 ## Update Intelligence
 
 ```bash
