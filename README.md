@@ -15,7 +15,7 @@
 
 **⚠️ Legal Disclaimer**: For authorised security research, penetration testing, and red team operations only. Unauthorised use is illegal and prohibited.
 
-## 🎯 What is Noctis-AI?
+## What is Noctis-AI?
 
 **Noctis-MCP** malware development platform that transforms your AI assistant into a sophisticated red team operator. Think of it as having a malware development expert with access to the latest evasion techniques, real-world implementations, and cutting-edge research - all integrated directly into your IDE.
 
@@ -25,9 +25,9 @@ Next Update is educational classes and modules coming for the techniques used
 
 **The AI in your IDE becomes the agent** - it reasons, plans, and makes decisions. **Noctis-MCP provides the intelligence** - real-time access to:
 
-- **55+ Knowledge Chunks** from security research
-- **24+ GitHub Repositories** with real malware implementations  
-- **30+ Research Papers** from arXiv and security conferences
+- **55+ Knowledge Chunks** from security research for the AI
+- **GitHub Repositories** with real malware implementations  
+- **Research Papers** from arXiv and security conferences
 - **Live Intelligence** from security blogs and threat feeds
 - **Detection Patterns** from EDR/AV testing results
 
@@ -47,7 +47,7 @@ Instead of writing malware from scratch or copying outdated techniques, you simp
 
 **Result:** You get 3,000+ lines of battle-tested malware code in seconds, not hours.
 
-## ✨ Key Features
+## Key Features
 
 ### 🧠 **Intelligence Engine**
 - **RAG-Powered Search**: 55+ knowledge chunks, 24+ GitHub repos, 30+ research papers
