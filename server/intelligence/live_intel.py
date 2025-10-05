@@ -40,13 +40,42 @@ class LiveIntelligence:
         self.github_api = "https://api.github.com"
         self.github_token = os.getenv("GITHUB_TOKEN")  # Optional: for higher rate limits
 
-        # Security blogs RSS feeds
+        # Malware & Red Team Specific Feeds (High Value for Offensive Security)
         self.security_blogs = {
+            # Elite Red Team Blogs
             "MDSec": "https://www.mdsec.co.uk/feed/",
             "Outflank": "https://outflank.nl/blog/feed/",
             "XPN InfoSec": "https://blog.xpnsec.com/rss.xml",
             "TrustedSec": "https://www.trustedsec.com/feed/",
-            "SpecterOps": "https://posts.specterops.io/feed"
+            "SpecterOps": "https://posts.specterops.io/feed",
+
+            # Malware Analysis & Techniques
+            "Malware-Traffic-Analysis": "https://www.malware-traffic-analysis.net/blog-entries.rss",
+            "Malwarebytes Labs": "https://www.malwarebytes.com/blog/feed/index.xml",
+            "Hybrid Analysis Blog": "https://www.hybrid-analysis.com/feed",
+            "VX Underground": "https://www.vx-underground.org/feed.xml",  # Premier malware research
+
+            # Exploit Development & Research
+            "Exploit-DB": "https://www.exploit-db.com/rss.xml",
+            "Project Zero": "https://googleprojectzero.blogspot.com/feeds/posts/default",
+            "ZDI (Zero Day Initiative)": "https://www.zerodayinitiative.com/blog?format=rss",
+
+            # Windows Internals & Evasion
+            "Red Team Notes (ired.team)": "https://www.ired.team/feed",
+            "Pentester Academy": "https://blog.pentesteracademy.com/feed",
+            "0x00sec": "https://0x00sec.org/posts.rss",
+            "Hexacorn": "https://www.hexacorn.com/blog/feed/",  # EDR bypass guru
+
+            # APT & Advanced Techniques
+            "Unit42 Palo Alto": "https://unit42.paloaltonetworks.com/feed/",
+            "Mandiant": "https://www.mandiant.com/resources/blog/rss.xml",
+            "CrowdStrike Blog": "https://www.crowdstrike.com/blog/feed/",
+
+            # General Security News (filtered for malware content)
+            "Bleeping Computer": "https://www.bleepingcomputer.com/feed/",
+            "The Hacker News": "https://feeds.feedburner.com/TheHackersNews",
+            "Dark Reading": "https://www.darkreading.com/rss.xml",
+            "Krebs on Security": "https://krebsonsecurity.com/feed/"
         }
 
         # Rate limiting
@@ -336,14 +365,9 @@ class LiveIntelligence:
         try:
             self.rag_engine.add_research_paper(
                 title=paper_data["title"],
-                authors=paper_data["authors"],
                 abstract=paper_data["summary"],
                 url=paper_data["url"],
-                metadata={
-                    "published": paper_data["published"],
-                    "categories": paper_data["categories"],
-                    "pdf_url": paper_data.get("pdf_url", "")
-                }
+                published=paper_data.get("published", "unknown")
             )
             logger.info(f"Indexed research paper: {paper_data['title']}")
             return True
@@ -405,22 +429,63 @@ class LiveIntelligence:
             "errors": 0
         }
 
-        # Default queries if none provided
+        # Default queries if none provided - MALWARE FOCUSED
         if github_queries is None:
             github_queries = [
+                # Process Injection & Evasion
                 "process injection EDR evasion",
+                "process hollowing doppelganging",
+                "thread hijacking APC injection",
+
+                # Syscalls & API Techniques
                 "syscalls direct NTDLL",
+                "Hell's Gate Halo's Gate",
+                "SysWhispers indirect syscalls",
+
+                # Obfuscation & Evasion
                 "API hashing malware",
+                "string encryption obfuscation",
+                "control flow flattening",
+
+                # EDR/AV Bypass
                 "AMSI bypass",
-                "ETW patching",
-                "shellcode encryption"
+                "ETW patching disable",
+                "NTDLL unhooking",
+                "PPL protected process",
+
+                # Shellcode & Loaders
+                "shellcode encryption loader",
+                "reflective DLL injection",
+                "beacon object files BOF",
+
+                # C2 & Persistence
+                "command control evasion",
+                "persistence techniques Windows",
+                "fileless malware memory",
+
+                # Modern Techniques
+                "Cobalt Strike beacon",
+                "Sliver implant",
+                "stack spoofing call stack",
+                "Heaven's Gate WoW64"
             ]
 
         if arxiv_queries is None:
             arxiv_queries = [
+                # Core Malware Research
                 "malware detection evasion",
                 "adversarial machine learning security",
-                "EDR bypass techniques"
+                "EDR bypass techniques",
+
+                # Advanced Topics
+                "polymorphic metamorphic malware",
+                "syscall hooking detection",
+                "memory forensics evasion",
+                "steganography malware",
+
+                # AI/ML Security
+                "adversarial examples malware",
+                "machine learning evasion attacks"
             ]
 
         logger.info("=== Starting Full Intelligence Refresh ===")
