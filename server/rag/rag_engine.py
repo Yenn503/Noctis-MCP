@@ -71,7 +71,9 @@ class RAGEngine:
         """Get or create collection"""
         try:
             return self.client.get_collection(name)
-        except:
+        except Exception as e:
+            # Collection doesn't exist, create it
+            logger.debug(f"Collection '{name}' not found, creating new collection: {e}")
             return self.client.create_collection(
                 name=name,
                 metadata={"hnsw:space": "cosine"}
