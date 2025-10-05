@@ -607,8 +607,9 @@ class AgenticLearningEngine(LearningEngine):
     autonomous malware development based on target analysis and learning.
     """
     
-    def __init__(self, db_path: str = "data/knowledge_base.db"):
+    def __init__(self, db_path: str = "data/knowledge_base.db", agent_registry: Optional[Any] = None):
         super().__init__(db_path)
+        self.agent_registry = agent_registry
         self.technique_effectiveness = self._init_technique_effectiveness()
         self.av_profiles = self._init_av_profiles()
         self.learning_patterns = {}

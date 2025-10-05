@@ -1176,9 +1176,7 @@ def main():
         'output_dir': config.get('paths.output', 'output'),
         'rag_db_path': config.get('paths.rag_db', 'data/rag_db')
     }
-    AgentRegistry.initialize(agent_config)
     agent_registry = AgentRegistry
-    logger.info("Agent registry initialized successfully")
 
     # Initialize RAG engine for agentic intelligence
     logger.info("Initializing RAG engine...")
@@ -1198,8 +1196,16 @@ def main():
 
     # Initialize learning engine
     from server.learning_engine import AgenticLearningEngine
-    learning_engine = AgenticLearningEngine(agent_config['db_path'])
+    learning_engine = AgenticLearningEngine(
+        db_path=agent_config['db_path'],
+        agent_registry=agent_registry
+    )
     logger.info("Learning engine initialized")
+
+    # Add learning engine to agent config and initialize registry
+    agent_config['learning_engine'] = learning_engine
+    AgentRegistry.initialize(agent_config)
+    logger.info("Agent registry initialized successfully")
 
     # Register agentic API endpoints
     if rag_engine and rag_engine.enabled:
