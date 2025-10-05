@@ -10,6 +10,7 @@ These endpoints use RAG intelligence to provide dynamic responses.
 from flask import Blueprint, request, jsonify
 import logging
 from typing import Dict, List, Optional
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -74,12 +75,15 @@ def search_intelligence():
     """
     Search RAG system for malware intelligence
 
+    AUTO-UPDATES: If results are stale (>7 days), automatically fetches latest intelligence
+
     POST /api/v2/intelligence/search
     {
         "query": "process injection evasion",
         "target_av": "Windows Defender",
         "sources": ["knowledge", "github"],
-        "max_results": 10
+        "max_results": 10,
+        "auto_update": true  # Default: true
     }
     """
     try:
@@ -88,9 +92,45 @@ def search_intelligence():
         target_av = data.get('target_av')
         sources = data.get('sources', ['all'])
         max_results = data.get('max_results', 10)
+        auto_update = data.get('auto_update', True)  # Enable by default
 
         if not query:
             return jsonify({"error": "query parameter required"}), 400
+
+        # Auto-update check: If RAG hasn't been updated in 7 days, fetch latest
+        auto_updated = False
+        if auto_update:
+            import os
+            stats_file = "data/intelligence_stats.json"
+
+            if os.path.exists(stats_file):
+                import json
+                from datetime import datetime, timedelta
+
+                with open(stats_file, 'r') as f:
+                    stats = json.load(f)
+
+                last_run = stats.get('last_run')
+                if last_run:
+                    last_run_date = datetime.fromisoformat(last_run)
+                    days_since = (datetime.now() - last_run_date).days
+
+                    if days_since > 7:
+                        logger.info(f"RAG data is {days_since} days old - auto-updating...")
+
+                        # Quick update (2-3 GitHub searches only)
+                        from server.intelligence import LiveIntelligence
+                        intel = LiveIntelligence(rag_engine=agentic_bp.rag_engine)
+
+                        # Search for query-specific latest repos
+                        repos = intel.search_github_repos(query, max_results=2, min_stars=5)
+                        for repo in repos:
+                            readme = intel.fetch_github_readme(repo["name"])
+                            if readme:
+                                intel.index_github_repo(repo, readme)
+
+                        auto_updated = True
+                        logger.info(f"Auto-updated RAG with {len(repos)} new repos")
 
         # Search RAG
         results = agentic_bp.rag_engine.search_knowledge(
@@ -113,7 +153,8 @@ def search_intelligence():
             "results": formatted_results,
             "query_used": query,
             "sources_searched": sources,
-            "total_results": len(formatted_results)
+            "total_results": len(formatted_results),
+            "auto_updated": auto_updated  # Tell AI if we fetched new intel
         })
 
     except Exception as e:
@@ -234,11 +275,14 @@ def fetch_latest_intelligence():
     """
     Fetch latest intelligence and index into RAG
 
+    SMART CACHING: Won't re-fetch same topic if already fetched in last 24 hours
+
     POST /api/v2/intelligence/fetch-latest
     {
         "topic": "CrowdStrike bypass 2025",
         "sources": ["github", "blogs"],
-        "days_back": 30
+        "days_back": 30,
+        "force": false  # Set true to bypass 24hr cache
     }
     """
     try:
@@ -246,9 +290,30 @@ def fetch_latest_intelligence():
         topic = data.get('topic')
         sources = data.get('sources', ['github', 'arxiv', 'blogs'])
         days_back = data.get('days_back', 30)
+        force = data.get('force', False)
 
         if not topic:
             return jsonify({"error": "topic required"}), 400
+
+        # Check cache (don't re-fetch same topic within 24 hours unless forced)
+        if not force:
+            import os
+            import json
+            from datetime import datetime, timedelta
+
+            cache_file = f"data/fetch_cache_{topic.replace(' ', '_')}.json"
+            if os.path.exists(cache_file):
+                with open(cache_file, 'r') as f:
+                    cache = json.load(f)
+
+                cached_time = datetime.fromisoformat(cache.get('timestamp'))
+                if (datetime.now() - cached_time) < timedelta(hours=24):
+                    logger.info(f"Returning cached results for '{topic}' (fetched {(datetime.now() - cached_time).seconds // 3600}h ago)")
+                    return jsonify({
+                        **cache,
+                        "cached": True,
+                        "cache_age_hours": (datetime.now() - cached_time).seconds // 3600
+                    }), 200
 
         # Import live intelligence module
         from server.intelligence import LiveIntelligence
@@ -285,6 +350,15 @@ def fetch_latest_intelligence():
                     results_summary['indexed'] += 1
 
         results_summary['new_results'] = sum(results_summary['sources'].values())
+
+        # Save to cache
+        import json
+        cache_file = f"data/fetch_cache_{topic.replace(' ', '_')}.json"
+        results_summary['timestamp'] = datetime.now().isoformat()
+        results_summary['cached'] = False
+
+        with open(cache_file, 'w') as f:
+            json.dump(results_summary, f, indent=2)
 
         return jsonify(results_summary)
 
@@ -490,6 +564,100 @@ def rag_stats():
         return jsonify({"error": str(e)}), 500
 
 
+@agentic_bp.route('/intelligence/update', methods=['POST'])
+def update_intelligence():
+    """
+    Update RAG intelligence from live sources
+
+    POST /api/v2/intelligence/update
+    {
+        "mode": "daily|weekly|manual",
+        "github_queries": ["optional", "custom", "queries"],
+        "arxiv_queries": ["optional", "custom", "queries"]
+    }
+    """
+    try:
+        data = request.json or {}
+        mode = data.get('mode', 'daily')
+        github_queries = data.get('github_queries')
+        arxiv_queries = data.get('arxiv_queries')
+
+        logger.info(f"Starting intelligence update: mode={mode}")
+
+        # Import LiveIntelligence
+        from server.intelligence import LiveIntelligence
+        intel = LiveIntelligence(rag_engine=agentic_bp.rag_engine)
+
+        stats = {
+            "mode": mode,
+            "timestamp": datetime.now().isoformat(),
+            "github_repos": 0,
+            "blog_posts": 0,
+            "arxiv_papers": 0,
+            "indexed": 0,
+            "errors": 0
+        }
+
+        if mode == "daily":
+            # Quick daily update
+            daily_github_queries = github_queries or [
+                "EDR bypass 2025",
+                "syscalls evasion",
+                "AMSI bypass",
+                "process injection"
+            ]
+
+            for query in daily_github_queries:
+                repos = intel.search_github_repos(query, max_results=3, min_stars=10)
+                stats["github_repos"] += len(repos)
+
+                for repo in repos:
+                    readme = intel.fetch_github_readme(repo["name"])
+                    if readme and intel.index_github_repo(repo, readme):
+                        stats["indexed"] += 1
+                    else:
+                        stats["errors"] += 1
+
+            # Recent blogs
+            posts = intel.fetch_security_blogs(max_posts_per_blog=2, days_back=7)
+            stats["blog_posts"] = len(posts)
+
+            for post in posts:
+                if intel.index_blog_post(post):
+                    stats["indexed"] += 1
+                else:
+                    stats["errors"] += 1
+
+        elif mode == "weekly":
+            # Comprehensive weekly update
+            result = intel.full_intelligence_refresh(
+                github_queries=github_queries,
+                arxiv_queries=arxiv_queries,
+                fetch_blogs=True
+            )
+            stats.update(result)
+
+        elif mode == "manual":
+            # Custom queries only
+            if not github_queries and not arxiv_queries:
+                return jsonify({"error": "manual mode requires github_queries or arxiv_queries"}), 400
+
+            result = intel.full_intelligence_refresh(
+                github_queries=github_queries or [],
+                arxiv_queries=arxiv_queries or [],
+                fetch_blogs=False
+            )
+            stats.update(result)
+
+        logger.info(f"Intelligence update complete: {stats['indexed']} items indexed")
+
+        return jsonify(stats), 200
+
+    except Exception as e:
+        logger.exception(f"Intelligence update failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 # ================================================================
 # HELPER FUNCTIONS
 # ================================================================
@@ -570,9 +738,9 @@ def validate_code():
 
         # Attempt compilation using existing compilation logic
         try:
-            # Import compilation module
-            from compilation.compiler import Compiler
-            compiler = Compiler()
+            # Import compilation module (FIX: use correct import path)
+            from compilation import get_compiler
+            compiler = get_compiler(output_dir="output")
             compile_result = compiler.compile_file(temp_path, output_name)
 
             if compile_result.get('success'):
@@ -900,8 +1068,13 @@ def record_detection():
     try:
         # Add to detection intelligence collection
         import time
+
+        # Generate embedding for the feedback text (CRITICAL: ChromaDB requires embeddings)
+        embedding = agentic_bp.rag_engine.embedder.encode(feedback_text).tolist()
+
         agentic_bp.rag_engine.detection_intel.upsert(
             ids=[f"feedback_{int(time.time())}"],
+            embeddings=[embedding],  # FIX: Add required embeddings parameter
             documents=[feedback_text],
             metadatas=[{
                 'techniques': ','.join(technique_ids),
@@ -910,6 +1083,7 @@ def record_detection():
                 'date': time.strftime('%Y-%m-%d')
             }]
         )
+        logger.info(f"Indexed detection feedback to RAG: {technique_ids} vs {target_av}")
     except Exception as e:
         logger.warning(f"Could not index feedback to RAG: {e}")
 
