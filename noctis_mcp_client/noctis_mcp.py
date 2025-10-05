@@ -1080,81 +1080,220 @@ def _format_code_generation(data: Dict) -> str:
     return "\n".join(lines)
 
 def _format_technique_comparison(data: Dict) -> str:
-    """Format technique comparison results"""
-    output = []
-    output.append("\n⚖️ === TECHNIQUE COMPARISON ===\n")
+    """Format technique comparison results with enhanced spacing and structure"""
+    import textwrap
+    
+    lines = [
+        "",
+        "╔" + "═" * 78 + "╗",
+        "║" + " ⚖️  TECHNIQUE COMPARISON ".ljust(78) + "║",
+        "╚" + "═" * 78 + "╝",
+        ""
+    ]
     
     comparison = data.get('comparison_table', {})
-    if comparison:
-        output.append("📊 COMPARISON TABLE:")
-        for technique, scores in comparison.items():
-            output.append(f"\n🎯 {technique}:")
-            for criterion, score in scores.items():
-                bar = '█' * int(score) + '░' * (10 - int(score))
-                output.append(f"    {criterion}: {score}/10 [{bar}]")
+    criteria = data.get('comparison_criteria', [])
     
+    if comparison:
+        lines.append("📊 COMPARATIVE ANALYSIS")
+        lines.append("")
+        
+        # Build a comparison matrix
+        for technique, scores in comparison.items():
+            lines.append(f"🎯 {technique.upper()}")
+            lines.append("")
+            
+            for criterion, score in scores.items():
+                score_val = float(score)
+                bar = '█' * int(score_val) + '░' * (10 - int(score_val))
+                
+                # Emoji based on score
+                if score_val >= 8:
+                    emoji = "🟢"
+                elif score_val >= 6:
+                    emoji = "🟡"
+                else:
+                    emoji = "🔴"
+                
+                lines.append(f"   {emoji} {criterion.capitalize():<20} {score_val:.1f}/10  [{bar}]")
+            
+            lines.append("")
+            lines.append("─" * 80)
+            lines.append("")
+    
+    # Winners by criteria
     winner = data.get('winner_by_criteria', {})
     if winner:
-        output.append(f"\n🏆 WINNERS BY CRITERIA:")
+        lines.append("🏆 BEST TECHNIQUE BY CRITERION")
+        lines.append("")
         for criterion, technique in winner.items():
-            output.append(f"    {criterion}: {technique}")
+            lines.append(f"   ✓ {criterion.capitalize():<25} → {technique}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
+    # Recommendation
     recommendation = data.get('recommendation', '')
     if recommendation:
-        output.append(f"\n💡 RECOMMENDATION:")
-        output.append(f"    {recommendation}")
+        lines.append("💡 RECOMMENDATION")
+        lines.append("")
+        for line in textwrap.wrap(recommendation, width=76):
+            lines.append(f"   {line}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
-    return "\n".join(output)
+    lines.append("═" * 80)
+    lines.append("")
+    
+    return "\n".join(lines)
 
 def _format_rag_stats(data: Dict) -> str:
-    """Format RAG system statistics"""
-    output = []
-    output.append("\n📊 === RAG INTELLIGENCE SYSTEM STATUS ===\n")
+    """Format RAG system statistics with enhanced spacing and structure"""
+    lines = [
+        "",
+        "╔" + "═" * 78 + "╗",
+        "║" + " 📊 RAG INTELLIGENCE SYSTEM STATUS ".ljust(78) + "║",
+        "╚" + "═" * 78 + "╝",
+        ""
+    ]
     
     enabled = data.get('enabled', False)
     status_emoji = "✅" if enabled else "❌"
-    output.append(f"{status_emoji} System Status: {'ENABLED' if enabled else 'DISABLED'}")
+    status_text = "ENABLED" if enabled else "DISABLED"
+    
+    lines.append("⚙️  SYSTEM STATUS")
+    lines.append("")
+    lines.append(f"   {status_emoji} Status:  {status_text}")
+    lines.append("")
     
     embedding_model = data.get('embedding_model', 'Unknown')
     vector_db = data.get('vector_db', 'Unknown')
-    output.append(f"🧠 Embedding Model: {embedding_model}")
-    output.append(f"🗄️ Vector Database: {vector_db}")
-    output.append("")
     
-    output.append("📚 INTELLIGENCE SOURCES:")
+    if embedding_model != 'Unknown' or vector_db != 'Unknown':
+        lines.append(f"   🧠 Embedding Model:   {embedding_model}")
+        lines.append(f"   🗄️  Vector Database:   {vector_db}")
+        lines.append("")
+    
+    lines.append("─" * 80)
+    lines.append("")
+    
+    # Intelligence sources
     knowledge_base = data.get('knowledge_base', 0)
     github_repos = data.get('github_repos', 0)
     research_papers = data.get('research_papers', 0)
     blog_posts = data.get('blog_posts', 0)
     detection_intel = data.get('detection_intel', 0)
     
-    output.append(f" 📖 Knowledge Base: {knowledge_base} chunks indexed")
-    output.append(f" 🐙 GitHub Repositories: {github_repos} indexed")
-    output.append(f" 📄 Research Papers: {research_papers} indexed")
-    output.append(f" 📝 Blog Posts: {blog_posts} indexed")
-    output.append(f" 🛡️ Detection Intelligence: {detection_intel} patterns")
-    output.append("")
-    
     total = knowledge_base + github_repos + research_papers + blog_posts + detection_intel
-    output.append(f"📈 TOTAL INTELLIGENCE: {total} sources indexed")
-    output.append("")
     
-    output.append("Status: UNKNOWN")
+    lines.append("📚 INTELLIGENCE SOURCES")
+    lines.append("")
+    lines.append(f"   📖 Knowledge Base:          {knowledge_base:>6} chunks")
+    lines.append(f"   🐙 GitHub Repositories:     {github_repos:>6} repos")
+    lines.append(f"   📄 Research Papers:         {research_papers:>6} papers")
+    lines.append(f"   📝 Blog Posts:              {blog_posts:>6} posts")
+    lines.append(f"   🛡️  Detection Intelligence:  {detection_intel:>6} patterns")
+    lines.append("")
+    lines.append("   " + "─" * 50)
+    lines.append(f"   📈 TOTAL INTELLIGENCE:      {total:>6} sources")
+    lines.append("")
+    lines.append("─" * 80)
+    lines.append("")
     
-    return "\n".join(output)
+    # Health check
+    if enabled and total > 0:
+        lines.append("✅ System is operational and ready for intelligence queries")
+    elif enabled and total == 0:
+        lines.append("⚠️  System enabled but no intelligence sources indexed yet")
+        lines.append("   Run RAG setup to populate the intelligence database")
+    else:
+        lines.append("❌ System is disabled - enable RAG to access intelligence features")
+    
+    lines.append("")
+    lines.append("═" * 80)
+    lines.append("")
+    
+    return "\n".join(lines)
 
 def _format_general(data: Dict) -> str:
-    """Format general responses"""
+    """Format general responses with enhanced structure"""
+    import textwrap
+    import json
+    
+    lines = [
+        "",
+        "╔" + "═" * 78 + "╗",
+        "║" + " 📋 RESPONSE ".ljust(78) + "║",
+        "╚" + "═" * 78 + "╝",
+        ""
+    ]
+    
     if isinstance(data, dict):
-        output = []
-        for key, value in data.items():
-            if isinstance(value, (dict, list)):
-                output.append(f"{key}: {str(value)[:100]}...")
+        # Try to identify response type from keys
+        if 'success' in data or 'status' in data:
+            status = data.get('success', data.get('status', False))
+            if status or status == 'success' or status == True:
+                lines.append("✅ SUCCESS")
             else:
-                output.append(f"{key}: {value}")
-        return "\n".join(output)
+                lines.append("❌ FAILED")
+            lines.append("")
+            lines.append("─" * 80)
+            lines.append("")
+        
+        # Format each key-value pair
+        for key, value in data.items():
+            # Clean up key name
+            display_key = key.replace('_', ' ').title()
+            
+            if isinstance(value, dict):
+                lines.append(f"📦 {display_key}:")
+                lines.append("")
+                for sub_key, sub_value in value.items():
+                    sub_display = sub_key.replace('_', ' ').title()
+                    if isinstance(sub_value, (list, dict)):
+                        lines.append(f"   • {sub_display}: {len(sub_value)} items")
+                    else:
+                        lines.append(f"   • {sub_display}: {sub_value}")
+                lines.append("")
+            elif isinstance(value, list):
+                lines.append(f"📋 {display_key}: ({len(value)} items)")
+                lines.append("")
+                for i, item in enumerate(value[:10], 1):
+                    if isinstance(item, str):
+                        for item_line in textwrap.wrap(str(item), width=70):
+                            lines.append(f"   {i}. {item_line}")
+                    else:
+                        lines.append(f"   {i}. {str(item)[:70]}")
+                if len(value) > 10:
+                    lines.append(f"   ... and {len(value) - 10} more items")
+                lines.append("")
+            elif isinstance(value, bool):
+                emoji = "✅" if value else "❌"
+                lines.append(f"{emoji} {display_key}: {value}")
+                lines.append("")
+            elif isinstance(value, (int, float)):
+                lines.append(f"🔢 {display_key}: {value}")
+                lines.append("")
+            else:
+                lines.append(f"📝 {display_key}:")
+                value_str = str(value)
+                if len(value_str) > 500:
+                    value_str = value_str[:500] + "..."
+                for line in textwrap.wrap(value_str, width=76):
+                    lines.append(f"   {line}")
+                lines.append("")
     else:
-        return str(data)
+        # Non-dict data
+        data_str = str(data)
+        for line in textwrap.wrap(data_str, width=76):
+            lines.append(f"   {line}")
+        lines.append("")
+    
+    lines.append("═" * 80)
+    lines.append("")
+    
+    return "\n".join(lines)
 
 if __name__ == "__main__":
     import argparse
