@@ -340,8 +340,45 @@ def generate_code():
             }
         )
 
+        # Save generated code to files
+        import os
+        from datetime import datetime
+        
+        # Create output directory if it doesn't exist
+        # Get output directory from global config or default to 'output'
+        try:
+            from server.noctis_server import config
+            output_dir = config.get('paths.output', 'output')
+        except:
+            output_dir = 'output'
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Generate unique filenames with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        technique_names = "_".join([t.replace('NOCTIS-T', 'T') for t in technique_ids])
+        
+        source_filename = f"generated_{technique_names}_{timestamp}.c"
+        header_filename = f"generated_{technique_names}_{timestamp}.h"
+        
+        source_path = os.path.join(output_dir, source_filename)
+        header_path = os.path.join(output_dir, header_filename)
+        
+        # Save source code
+        with open(source_path, 'w', encoding='utf-8') as f:
+            f.write(generated.source_code)
+        
+        # Save header code
+        with open(header_path, 'w', encoding='utf-8') as f:
+            f.write(generated.header_code)
+        
         # Add RAG intelligence summary
         response = generated.to_dict()
+        response['files_saved'] = {
+            'source_file': source_path,
+            'header_file': header_path,
+            'output_directory': output_dir
+        }
+        
         if use_rag:
             response['rag_intelligence_used'] = {
                 "github_patterns": sum(1 for tech in rag_intelligence.values()
