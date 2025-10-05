@@ -19,18 +19,16 @@
     "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Structs.h",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Structs.h"
   ],
-  "mitre_attack": [
-    "T1027.003"
-  ],
+  "mitre_attack": [],
   "dependencies": [
-    "Windows.h",
-    "compressapi.h",
-    "math.h",
-    "stdio.h",
     "string.h",
-    "wincodec.h",
+    "math.h",
+    "compressapi.h",
+    "stdio.h",
     "Extract.h",
-    "Reed-Solomon.h"
+    "Windows.h",
+    "Reed-Solomon.h",
+    "wincodec.h"
   ],
   "compatible_with": [],
   "incompatible_with": [],
@@ -39,58 +37,30 @@
     "stability": "unknown",
     "tested_on": [],
     "bypasses": [],
-    "detected_by": [],
-    "code_quality": {
-      "total_lines": 1187,
-      "code_lines": 931,
-      "comment_lines": 17,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    },
-    "dependencies": {
-      "system_headers": [
-        "Windows.h",
-        "compressapi.h",
-        "math.h",
-        "stdio.h",
-        "string.h",
-        "wincodec.h"
-      ],
-      "project_headers": [
-        "Extract.h",
-        "Reed-Solomon.h"
-      ],
-      "external_libs": [],
-      "functions_called": [
-        "CreateDecoderFromStream",
-        "CreateDecompressor",
-        "CreateFormatConverter",
-        "CreateStream",
-        "GetFrame",
-        "GetLastError",
-        "GetSize",
-        "RtlCopyMemory",
-        "SetLastError"
-      ],
-      "structs_used": []
-    }
+    "detected_by": []
   },
   "code_blocks": {
     "file": "Extract.c",
-    "functions": [],
-    "total_functions": 0,
-    "quality_metrics": {
-      "total_lines": 1187,
-      "code_lines": 931,
-      "comment_lines": 17,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    }
+    "functions": [
+      "FindMarkerExact",
+      "QimDecodeCoeffs",
+      "BuildBitStreamFromLevelAcrossRgb",
+      "ConvertBitsToBytesMSB",
+      "ParseHeaderPython",
+      "DwtDb1Periodization2D",
+      "ReedSolomonDecodeChunked",
+      "TryDecodeHeader",
+      "XpressHuffmanDecompress",
+      "Crc32Compute",
+      "RepDecodeSoftScores",
+      "DecodePngToRgbaWic",
+      "ScoresToHardBits",
+      "ExtractPeFromPngAligned",
+      "StripRsParity"
+    ]
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T23:44:01.506763"
+  "last_updated": "2025-10-05T07:04:45.711063"
 }

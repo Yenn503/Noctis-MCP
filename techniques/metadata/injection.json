@@ -1,31 +1,23 @@
 {
-  "technique_id": "NOCTIS-T008",
+  "technique_id": "NOCTIS-T009",
   "name": "Injection",
   "category": "injection",
   "description": "Injects code into remote processes for execution",
   "source_files": [
-    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\UnhookingDlls.c",
-    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\HashCalculator\\HashCalculator.c",
-    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Common.c",
     "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Inject.c",
     "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\main.c",
-    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Unook.c",
-    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Hashes.h",
-    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Structures.h",
     "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Common.h",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Inject.c",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.h"
   ],
-  "mitre_attack": [
-    "T1055"
-  ],
+  "mitre_attack": [],
   "dependencies": [
-    "Windows.h",
-    "Configuration.h",
-    "DebugMacros.h",
-    "Structures.h",
-    "TrapSyscallsTampering.h",
-    "Utilities.h"
+    "CtAes.h",
+    "Structs.h",
+    "Debug.h",
+    "FunctionPntrs.h",
+    "Common.h",
+    "windows.h"
   ],
   "compatible_with": [],
   "incompatible_with": [],
@@ -34,54 +26,18 @@
     "stability": "unknown",
     "tested_on": [],
     "bypasses": [],
-    "detected_by": [],
-    "code_quality": {
-      "total_lines": 315,
-      "code_lines": 215,
-      "comment_lines": 28,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    },
-    "dependencies": {
-      "system_headers": [
-        "Windows.h"
-      ],
-      "project_headers": [
-        "Configuration.h",
-        "DebugMacros.h",
-        "Structures.h",
-        "TrapSyscallsTampering.h",
-        "Utilities.h"
-      ],
-      "external_libs": [],
-      "functions_called": [
-        "GetDllFromKnownDllsDir",
-        "GetModuleHandleH",
-        "NtGetCurrentProcess",
-        "RtlInitUnicodeString"
-      ],
-      "structs_used": [
-        "OBJECT_ATTRIBUTES",
-        "UNICODE_STRING"
-      ]
-    }
+    "detected_by": []
   },
   "code_blocks": {
-    "file": "UnhookingDlls.c",
-    "functions": [],
-    "total_functions": 0,
-    "quality_metrics": {
-      "total_lines": 315,
-      "code_lines": 215,
-      "comment_lines": 28,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    }
+    "file": "Inject.c",
+    "functions": [
+      "ExecutePayload",
+      "InjectEncryptedPayload",
+      "FetchAesConfAndDecrypt"
+    ]
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T23:44:01.635051"
+  "last_updated": "2025-10-05T07:04:45.806615"
 }

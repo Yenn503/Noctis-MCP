@@ -29,14 +29,12 @@
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Unook.c",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.h"
   ],
-  "mitre_attack": [
-    "T1106"
-  ],
+  "mitre_attack": [],
   "dependencies": [
-    "Windows.h",
-    "DebugMacros.h",
     "Structures.h",
+    "DebugMacros.h",
     "TrapSyscallsTampering.h",
+    "Windows.h",
     "Utilities.h"
   ],
   "compatible_with": [],
@@ -46,47 +44,17 @@
     "stability": "unknown",
     "tested_on": [],
     "bypasses": [],
-    "detected_by": [],
-    "code_quality": {
-      "total_lines": 143,
-      "code_lines": 96,
-      "comment_lines": 10,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    },
-    "dependencies": {
-      "system_headers": [
-        "Windows.h"
-      ],
-      "project_headers": [
-        "DebugMacros.h",
-        "Structures.h",
-        "TrapSyscallsTampering.h",
-        "Utilities.h"
-      ],
-      "external_libs": [],
-      "functions_called": [],
-      "structs_used": [
-        "_NTDLL_CONFIG"
-      ]
-    }
+    "detected_by": []
   },
   "code_blocks": {
     "file": "HellsHall.c",
-    "functions": [],
-    "total_functions": 0,
-    "quality_metrics": {
-      "total_lines": 143,
-      "code_lines": 96,
-      "comment_lines": 10,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    }
+    "functions": [
+      "InitNtdllConfigStructure",
+      "FetchNtSyscall"
+    ]
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T23:44:01.574009"
+  "last_updated": "2025-10-05T07:04:45.747461"
 }

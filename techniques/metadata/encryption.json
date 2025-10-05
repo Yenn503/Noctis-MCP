@@ -28,13 +28,11 @@
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\CtAes.h",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Resource.h"
   ],
-  "mitre_attack": [
-    "T1027"
-  ],
+  "mitre_attack": [],
   "dependencies": [
+    "Utilities.h",
     "Windows.h",
-    "wmmintrin.h",
-    "Utilities.h"
+    "wmmintrin.h"
   ],
   "compatible_with": [],
   "incompatible_with": [],
@@ -43,43 +41,17 @@
     "stability": "unknown",
     "tested_on": [],
     "bypasses": [],
-    "detected_by": [],
-    "code_quality": {
-      "total_lines": 150,
-      "code_lines": 104,
-      "comment_lines": 17,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    },
-    "dependencies": {
-      "system_headers": [
-        "Windows.h",
-        "wmmintrin.h"
-      ],
-      "project_headers": [
-        "Utilities.h"
-      ],
-      "external_libs": [],
-      "functions_called": [],
-      "structs_used": []
-    }
+    "detected_by": []
   },
   "code_blocks": {
     "file": "AES128CTR-NI.c",
-    "functions": [],
-    "total_functions": 0,
-    "quality_metrics": {
-      "total_lines": 150,
-      "code_lines": 104,
-      "comment_lines": 17,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    }
+    "functions": [
+      "Aes128CTRCrypt",
+      "Aes128KeyExpansion"
+    ]
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T23:44:01.541897"
+  "last_updated": "2025-10-05T07:04:45.729977"
 }
