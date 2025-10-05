@@ -606,13 +606,17 @@ def rag_stats() -> str:
 # MAIN ENTRY POINT
 # ============================================================================
 
-# Formatting functions for beautiful MCP tool responses
+# ============================================================================
+# FORMATTING FUNCTIONS - Enhanced for clean, spaced, pretty output
+# ============================================================================
+
 def format_response(data: Dict, format_type: str = "general") -> str:
     """
     Format MCP tool responses for beautiful display in IDE chat.
+    Enhanced with better spacing, visual hierarchy, and clean structure.
     """
     if isinstance(data, dict) and 'error' in data:
-        return f"\n[ERROR] {data['error']}\n"
+        return _format_error(data['error'])
 
     if format_type == "search":
         return _format_search_results(data)
@@ -627,18 +631,51 @@ def format_response(data: Dict, format_type: str = "general") -> str:
     else:
         return _format_general(data)
 
+
+def _format_error(error_msg: str) -> str:
+    """Format error messages with clear visual structure"""
+    lines = [
+        "",
+        "╔" + "═" * 78 + "╗",
+        "║" + " ❌ ERROR ".center(78) + "║",
+        "╠" + "═" * 78 + "╣",
+        "",
+    ]
+    
+    # Wrap error message for readability
+    import textwrap
+    wrapped = textwrap.wrap(str(error_msg), width=74)
+    for line in wrapped:
+        lines.append("║  " + line.ljust(76) + "║")
+    
+    lines.extend([
+        "",
+        "╚" + "═" * 78 + "╝",
+        ""
+    ])
+    
+    return "\n".join(lines)
+
 def _format_search_results(data: Dict) -> str:
-    """Format intelligence search results"""
-    output = []
-    output.append("\n🔍 === INTELLIGENCE SEARCH RESULTS ===\n")
+    """Format intelligence search results with enhanced spacing and structure"""
+    lines = [
+        "",
+        "╔" + "═" * 78 + "╗",
+        "║" + " 🔍 INTELLIGENCE SEARCH RESULTS ".ljust(78) + "║",
+        "╚" + "═" * 78 + "╝",
+        ""
+    ]
     
     results = data.get('results', [])
     total = data.get('total_results', 0)
     
     if total > 0:
-        output.append(f"✅ Found {total} intelligence sources:\n")
+        lines.append(f"✅ Found {total} intelligence source{'s' if total != 1 else ''}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
         
-        for i, result in enumerate(results[:10], 1):  # Show top 10
+        for i, result in enumerate(results[:10], 1):
             source = result.get('source', 'unknown')
             title = result.get('title', 'No title')
             url = result.get('url', '')
@@ -653,153 +690,394 @@ def _format_search_results(data: Dict) -> str:
                 'blog': '📝'
             }.get(source, '❓')
             
-            output.append(f"\n📋 [{i}] {source_emoji} {source.upper()}")
-            output.append(f" 📊 Relevance: {relevance:.2f} [{'█' * int(relevance * 10):<10}]")
-            output.append(f" 📝 Title: {title}")
+            # Result header
+            lines.append(f"🔹 Result {i}/{min(len(results), 10)}")
+            lines.append("")
             
+            # Source and relevance with visual bar
+            relevance_bar = '█' * int(relevance * 10) + '░' * (10 - int(relevance * 10))
+            lines.append(f"   {source_emoji}  Source:     {source.upper()}")
+            lines.append(f"   📊 Relevance:  {relevance:.2f}/1.0  [{relevance_bar}]")
+            lines.append("")
+            
+            # Title
+            lines.append(f"   📝 Title:")
+            import textwrap
+            for title_line in textwrap.wrap(title, width=70):
+                lines.append(f"      {title_line}")
+            lines.append("")
+            
+            # URL
             if url:
-                output.append(f" 🔗 URL: {url}")
+                lines.append(f"   🔗 URL:")
+                lines.append(f"      {url}")
+                lines.append("")
             
             # Content preview
             if content:
-                preview = content[:200] + "..." if len(content) > 200 else content
-                output.append(f" 📄 Content: {preview}")
+                lines.append(f"   📄 Preview:")
+                preview = content[:300] + "..." if len(content) > 300 else content
+                for content_line in textwrap.wrap(preview, width=70):
+                    lines.append(f"      {content_line}")
+                lines.append("")
+            
+            # Separator between results
+            if i < min(len(results), 10):
+                lines.append("─" * 80)
+                lines.append("")
+        
+        lines.append("═" * 80)
     else:
-        output.append("❌ No intelligence sources found")
+        lines.append("❌ No intelligence sources found")
+        lines.append("")
     
-    return "\n".join(output)
+    lines.append("")
+    return "\n".join(lines)
 
 def _format_technique_analysis(data: Dict) -> str:
-    """Format technique analysis results"""
-    output = []
-    output.append("\n🔬 === TECHNIQUE ANALYSIS ===\n")
+    """Format technique analysis results with enhanced spacing and structure"""
+    import textwrap
+    
+    lines = [
+        "",
+        "╔" + "═" * 78 + "╗",
+        "║" + " 🔬 TECHNIQUE ANALYSIS ".ljust(78) + "║",
+        "╚" + "═" * 78 + "╝",
+        ""
+    ]
     
     technique_id = data.get('technique_id', 'Unknown')
-    output.append(f"🎯 Technique: {technique_id}")
+    technique_name = data.get('name', technique_id)
+    
+    lines.append(f"🎯 Technique: {technique_name}")
+    lines.append(f"   ID: {technique_id}")
+    lines.append("")
+    lines.append("═" * 80)
+    lines.append("")
     
     # Conceptual knowledge
     knowledge = data.get('conceptual_knowledge', '')
     if knowledge:
-        output.append(f"\n📚 CONCEPTUAL KNOWLEDGE:")
-        output.append(f"    {knowledge}")
+        lines.append("📚 CONCEPTUAL KNOWLEDGE")
+        lines.append("")
+        for line in textwrap.wrap(knowledge, width=76):
+            lines.append(f"   {line}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
     # GitHub implementations
     github = data.get('github_implementations', [])
     if github:
-        output.append(f"\n🐙 GITHUB IMPLEMENTATIONS ({len(github)}):")
+        lines.append(f"🐙 GITHUB IMPLEMENTATIONS ({len(github)} found)")
+        lines.append("")
         for i, impl in enumerate(github[:5], 1):
             repo = impl.get('repo', 'Unknown')
             url = impl.get('url', '')
-            output.append(f"    [{i}] {repo}")
+            stars = impl.get('stars', 'N/A')
+            description = impl.get('description', '')
+            
+            lines.append(f"   [{i}] {repo}")
+            if stars != 'N/A':
+                lines.append(f"       ⭐ Stars: {stars}")
             if url:
-                output.append(f"        🔗 {url}")
+                lines.append(f"       🔗 {url}")
+            if description:
+                for desc_line in textwrap.wrap(description, width=70):
+                    lines.append(f"       📝 {desc_line}")
+            lines.append("")
+        
+        if len(github) > 5:
+            lines.append(f"   ... and {len(github) - 5} more implementations")
+            lines.append("")
+        
+        lines.append("─" * 80)
+        lines.append("")
     
     # Research papers
     papers = data.get('research_papers', [])
     if papers:
-        output.append(f"\n📄 RESEARCH PAPERS ({len(papers)}):")
-        for i, paper in enumerate(papers[:3], 1):
+        lines.append(f"📄 RESEARCH PAPERS ({len(papers)} found)")
+        lines.append("")
+        for i, paper in enumerate(papers[:5], 1):
             title = paper.get('title', 'Unknown')
             url = paper.get('url', '')
-            output.append(f"    [{i}] {title}")
+            summary = paper.get('summary', '')
+            year = paper.get('year', '')
+            
+            lines.append(f"   [{i}] {title}")
+            if year:
+                lines.append(f"       📅 Year: {year}")
             if url:
-                output.append(f"        🔗 {url}")
+                lines.append(f"       🔗 {url}")
+            if summary:
+                for sum_line in textwrap.wrap(summary, width=70):
+                    lines.append(f"       📋 {sum_line}")
+            lines.append("")
+        
+        if len(papers) > 5:
+            lines.append(f"   ... and {len(papers) - 5} more papers")
+            lines.append("")
+        
+        lines.append("─" * 80)
+        lines.append("")
+    
+    # Blog posts
+    blogs = data.get('blog_posts', [])
+    if blogs:
+        lines.append(f"📝 BLOG POSTS ({len(blogs)} found)")
+        lines.append("")
+        for i, blog in enumerate(blogs[:3], 1):
+            title = blog.get('title', 'Unknown')
+            url = blog.get('url', '')
+            author = blog.get('author', '')
+            
+            lines.append(f"   [{i}] {title}")
+            if author:
+                lines.append(f"       ✍️  Author: {author}")
+            if url:
+                lines.append(f"       🔗 {url}")
+            lines.append("")
+        
+        lines.append("─" * 80)
+        lines.append("")
     
     # Effectiveness scores
     effectiveness = data.get('effectiveness_vs_av', {})
     if effectiveness:
-        output.append(f"\n🛡️ EFFECTIVENESS SCORES:")
-        for av, score in effectiveness.items():
-            bar = '█' * int(score) + '░' * (10 - int(score))
-            output.append(f"    {av}: {score}/10 [{bar}]")
+        lines.append("🛡️ EFFECTIVENESS AGAINST AV/EDR")
+        lines.append("")
+        for av, score in sorted(effectiveness.items(), key=lambda x: x[1], reverse=True):
+            score_val = float(score)
+            bar = '█' * int(score_val) + '░' * (10 - int(score_val))
+            
+            # Color coding based on effectiveness
+            if score_val >= 8:
+                emoji = "🟢"
+            elif score_val >= 6:
+                emoji = "🟡"
+            else:
+                emoji = "🔴"
+            
+            lines.append(f"   {emoji} {av:<25} {score_val:.1f}/10  [{bar}]")
+        
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
     # Recommended combinations
     combinations = data.get('recommended_combinations', [])
     if combinations:
-        output.append(f"\n🔗 RECOMMENDED COMBINATIONS:")
-        for combo in combinations:
-            output.append(f"    • {combo}")
+        lines.append("🔗 RECOMMENDED TECHNIQUE COMBINATIONS")
+        lines.append("")
+        for i, combo in enumerate(combinations, 1):
+            lines.append(f"   {i}. {combo}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
-    return "\n".join(output)
+    # OPSEC considerations
+    opsec = data.get('opsec_considerations', '')
+    if opsec:
+        lines.append("⚠️  OPSEC CONSIDERATIONS")
+        lines.append("")
+        for line in textwrap.wrap(opsec, width=76):
+            lines.append(f"   {line}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
+    
+    lines.append("═" * 80)
+    lines.append("")
+    
+    return "\n".join(lines)
 
 def _format_code_generation(data: Dict) -> str:
-    """Format code generation results"""
-    output = []
-    output.append("\n💻 === CODE GENERATION COMPLETE ===\n")
+    """Format code generation results with enhanced spacing and structure"""
+    import textwrap
     
+    lines = [
+        "",
+        "╔" + "═" * 78 + "╗",
+        "║" + " 💻 CODE GENERATION COMPLETE ".ljust(78) + "║",
+        "╚" + "═" * 78 + "╝",
+        ""
+    ]
+    
+    # Summary header
+    target_av = data.get('target_av', 'Unknown')
+    target_os = data.get('target_os', 'Unknown')
+    architecture = data.get('architecture', 'Unknown')
+    
+    lines.append("📋 GENERATION SUMMARY")
+    lines.append("")
+    lines.append(f"   🎯 Target AV/EDR:  {target_av}")
+    lines.append(f"   💾 Target OS:      {target_os}")
+    lines.append(f"   🏗️  Architecture:   {architecture}")
+    lines.append("")
+    lines.append("═" * 80)
+    lines.append("")
+    
+    # Techniques implemented
     techniques = data.get('techniques_used', [])
     if techniques:
-        output.append("🎯 TECHNIQUES IMPLEMENTED:")
+        lines.append("🎯 TECHNIQUES IMPLEMENTED")
+        lines.append("")
         for i, tech in enumerate(techniques, 1):
-            output.append(f"    [{i}] {tech}")
-        output.append("")
+            lines.append(f"   {i}. {tech}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
+    
+    # OPSEC Score
+    opsec_score = data.get('opsec_score', None)
+    if opsec_score is not None:
+        score_val = float(opsec_score)
+        bar = '█' * int(score_val) + '░' * (10 - int(score_val))
+        
+        if score_val >= 8:
+            emoji = "🟢"
+            rating = "EXCELLENT"
+        elif score_val >= 6:
+            emoji = "🟡"
+            rating = "GOOD"
+        elif score_val >= 4:
+            emoji = "🟠"
+            rating = "MODERATE"
+        else:
+            emoji = "🔴"
+            rating = "LOW"
+        
+        lines.append("🛡️ OPSEC RATING")
+        lines.append("")
+        lines.append(f"   {emoji} Score: {score_val:.1f}/10  [{bar}]  {rating}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
     # Files saved
     files = data.get('files_saved', {})
     if files:
-        output.append("📁 GENERATED FILES:")
+        lines.append("📁 GENERATED FILES")
+        lines.append("")
         if 'source_file' in files:
-            output.append(f"    📄 Source Code: {files['source_file']}")
+            lines.append(f"   📄 Source Code:  {files['source_file']}")
         if 'header_file' in files:
-            output.append(f"    📋 Header File: {files['header_file']}")
+            lines.append(f"   📋 Header File:  {files['header_file']}")
         if 'output_directory' in files:
-            output.append(f"    📂 Directory: {files['output_directory']}")
-        output.append("")
+            lines.append(f"   📂 Directory:    {files['output_directory']}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
-    # MITRE TTPs
+    # MITRE ATT&CK TTPs
     mitre = data.get('mitre_ttps', [])
     if mitre:
-        output.append("🎯 MITRE ATT&CK TACTICS:")
+        lines.append("🎯 MITRE ATT&CK TACTICS & TECHNIQUES")
+        lines.append("")
         for ttp in mitre:
-            output.append(f"    • {ttp}")
-        output.append("")
+            lines.append(f"   • {ttp}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
     # Dependencies
     deps = data.get('dependencies', [])
     if deps:
-        output.append("📦 DEPENDENCIES:")
-        for dep in deps[:5]:  # Show first 5
-            output.append(f"    • {dep}")
-        if len(deps) > 5:
-            output.append(f"    ... and {len(deps) - 5} more")
-        output.append("")
+        lines.append(f"📦 DEPENDENCIES ({len(deps)} total)")
+        lines.append("")
+        for dep in deps[:8]:  # Show first 8
+            lines.append(f"   • {dep}")
+        if len(deps) > 8:
+            lines.append(f"   ... and {len(deps) - 8} more dependencies")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
     # RAG intelligence used
     rag = data.get('rag_intelligence_used', {})
     if rag:
-        output.append("🧠 RAG INTELLIGENCE USED:")
         github_patterns = rag.get('github_patterns', 0)
         research_insights = rag.get('research_insights', 0)
         blog_recommendations = rag.get('blog_recommendations', 0)
         
-        if github_patterns > 0:
-            output.append(f"    🐙 GitHub Patterns: {github_patterns}")
-        if research_insights > 0:
-            output.append(f"    📄 Research Insights: {research_insights}")
-        if blog_recommendations > 0:
-            output.append(f"    📝 Blog Recommendations: {blog_recommendations}")
-        output.append("")
+        if any([github_patterns, research_insights, blog_recommendations]):
+            lines.append("🧠 RAG INTELLIGENCE APPLIED")
+            lines.append("")
+            if github_patterns > 0:
+                lines.append(f"   🐙 GitHub Patterns:        {github_patterns} patterns analyzed")
+            if research_insights > 0:
+                lines.append(f"   📄 Research Insights:      {research_insights} papers referenced")
+            if blog_recommendations > 0:
+                lines.append(f"   📝 Blog Recommendations:   {blog_recommendations} posts reviewed")
+            lines.append("")
+            lines.append("─" * 80)
+            lines.append("")
+    
+    # Compilation info
+    compilation = data.get('compilation', {})
+    if compilation:
+        status = compilation.get('status', 'unknown')
+        if status == 'success' or status == 'passed':
+            lines.append("✅ COMPILATION STATUS: SUCCESS")
+            binary = compilation.get('output', '')
+            if binary:
+                lines.append("")
+                lines.append(f"   📦 Binary Output: {binary}")
+            size = compilation.get('size_bytes', 0)
+            if size > 0:
+                size_kb = size / 1024
+                lines.append(f"   📊 Binary Size:   {size_kb:.1f} KB")
+        elif status == 'failed':
+            lines.append("❌ COMPILATION STATUS: FAILED")
+            errors = compilation.get('errors', [])
+            if errors:
+                lines.append("")
+                lines.append("   Errors:")
+                for err in errors[:3]:
+                    for err_line in textwrap.wrap(err, width=70):
+                        lines.append(f"      • {err_line}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
     # Warnings
     warnings = data.get('warnings', [])
     if warnings:
-        output.append(f"\n[!] WARNINGS:")
+        lines.append("⚠️  WARNINGS & RECOMMENDATIONS")
+        lines.append("")
         for warning in warnings:
-            output.append(f"  - {warning}")
-        output.append("")
+            for warn_line in textwrap.wrap(warning, width=74):
+                lines.append(f"   ⚠ {warn_line}")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
     # Code Preview
     source_code_preview = data.get('source_code', '')
     if source_code_preview:
         preview_lines = source_code_preview.split('\n')
-        output.append("\nCode Preview (first 20 lines):")
-        output.append("```c")
-        output.extend(preview_lines[:20])
-        if len(preview_lines) > 20:
-            output.append("... (truncated)")
-        output.append("```")
+        total_lines = len(preview_lines)
+        preview_count = min(25, total_lines)
+        
+        lines.append(f"📝 CODE PREVIEW (showing {preview_count} of {total_lines} lines)")
+        lines.append("")
+        lines.append("```c")
+        for i, line in enumerate(preview_lines[:preview_count], 1):
+            lines.append(f"{i:4d} | {line}")
+        if total_lines > preview_count:
+            lines.append(f"     | ... {total_lines - preview_count} more lines ...")
+        lines.append("```")
+        lines.append("")
+        lines.append("─" * 80)
+        lines.append("")
     
-    return "\n".join(output)
+    lines.append("═" * 80)
+    lines.append("")
+    lines.append("✅ Code generation complete! Review the generated files above.")
+    lines.append("")
+    
+    return "\n".join(lines)
 
 def _format_technique_comparison(data: Dict) -> str:
     """Format technique comparison results"""
