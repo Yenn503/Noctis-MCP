@@ -53,26 +53,26 @@ Instead of writing malware from scratch or copying outdated techniques, you simp
 
 ## Key Features
 
-### 🧠 **Intelligence Engine**
+### **Intelligence Engine**
 - **RAG-Powered Search**: 55+ knowledge chunks, 24+ GitHub repos, 30+ research papers
 - **Live Intelligence**: Real-time data from GitHub API, security blog RSS feeds, arXiv
 - **Detection Intelligence**: EDR/AV bypass patterns and effectiveness scores
 - **Learning System**: Records detection results to improve future recommendations
 
-### 🛠️ **11 Agentic MCP Tools**
+### **11 Agentic MCP Tools**
 - **Intelligence**: `search_intelligence()`, `analyze_technique()`, `fetch_latest()`
 - **Code Generation**: `generate_code()`, `optimize_opsec()`, `validate_code()`
 - **Technique Selection**: `select_techniques()`, `compare_techniques()`
 - **Compilation**: `compile_code()`, `record_feedback()`, `rag_stats()`
 
-### 🎯 **Advanced Capabilities**
+### **Advanced Capabilities**
 - **Dynamic Code Generation**: RAG-informed assembly using real GitHub patterns
 - **10 MITRE ATT&CK Techniques**: Syscalls, injection, encryption, steganography, etc.
 - **C2 Framework Integration**: Sliver, Havoc, Mythic support
 - **Cross-Platform Compilation**: Windows binaries from Linux/macOS
 - **OPSEC Optimisation**: String encryption, API hashing, control flow obfuscation
 
-## 🚀 Quick Start
+## Quick Start
 
 ### ⚠️ **Critical Requirements**
 
@@ -161,7 +161,7 @@ python server/noctis_server.py --port 8888
 
 ## 💡 Usage Examples
 
-### 🎯 **Basic Workflow**
+### **Basic Workflow**
 
 ```
 User: "Generate a CrowdStrike bypass using the latest syscall techniques"
@@ -187,7 +187,7 @@ Result: 3,000+ lines of production-ready malware code in seconds
 | | `record_feedback()` | Report detection results |
 | **Utilities** | `rag_stats()` | RAG system statistics |
 
-### 🚀 **Real-World Examples**
+### **Real-World Examples**
 
 **Example 1: EDR Bypass**
 ```
