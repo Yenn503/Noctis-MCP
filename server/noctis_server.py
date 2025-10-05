@@ -79,8 +79,14 @@ class Config:
         try:
             with open(self.config_file, 'r') as f:
                 return yaml.safe_load(f)
+        except FileNotFoundError:
+            logger.warning(f"Config file not found at {self.config_file}. Using defaults.")
+            return self._default_config()
+        except yaml.YAMLError as e:
+            logger.error(f"Error parsing YAML config file: {e}. Using defaults.")
+            return self._default_config()
         except Exception as e:
-            logger.warning(f"Could not load config: {e}. Using defaults.")
+            logger.warning(f"An unexpected error occurred while loading config: {e}. Using defaults.")
             return self._default_config()
     
     def _default_config(self) -> Dict:
@@ -152,8 +158,12 @@ class TechniqueManager:
                     technique_data = json.load(f)
                     technique_id = technique_data.get('technique_id', json_file.stem)
                     self.techniques[technique_id] = technique_data
+            except FileNotFoundError:
+                logger.error(f"Technique file not found: {json_file}")
+            except json.JSONDecodeError as e:
+                logger.error(f"Error decoding JSON from {json_file}: {e}")
             except Exception as e:
-                logger.error(f"Error loading {json_file}: {e}")
+                logger.error(f"An unexpected error occurred loading {json_file}: {e}")
         
         logger.info(f"Loaded {len(self.techniques)} techniques")
     
@@ -438,6 +448,15 @@ def generate_code():
             'message': f'Generated code for {len(techniques)} techniques'
         })
         
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"Code generation dependency error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f"A required module is missing: {e}. Please check server dependencies."
+        }), 500
+    except KeyError as e:
+        logger.error(f"Missing key in code generation request: {e}")
+        return jsonify({'success': False, 'error': f'Missing required parameter: {e}'}), 400
     except Exception as e:
         logger.error(f"Code generation error: {e}")
         import traceback
@@ -580,6 +599,18 @@ def compile_code():
                 'suggestion': 'Try enabling auto_fix=true to automatically fix errors'
             }), 400
             
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"Compiler dependency error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f"A required module is missing: {e}. Please check compiler setup."
+        }), 500
+    except FileNotFoundError as e:
+        logger.error(f"Compiler or related file not found: {e}")
+        return jsonify({
+            'success': False,
+            'error': f"Compiler not found. Ensure it is installed and in the system's PATH. Details: {e}"
+        }), 500
     except Exception as e:
         logger.error(f"Compilation error: {e}")
         import traceback
@@ -630,6 +661,12 @@ def analyze_opsec():
             'message': f'OPSEC analysis complete - Score: {report.overall_score}/10'
         })
         
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"OPSEC analyzer dependency error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f"A required module is missing: {e}. Please check server dependencies."
+        }), 500
     except Exception as e:
         logger.error(f"OPSEC analysis error: {e}")
         import traceback
@@ -695,6 +732,12 @@ def report_detection():
             'stats': stats
         })
         
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"Learning engine dependency error: {e}")
+        return jsonify({'success': False, 'error': f"A required module is missing: {e}."}), 500
+    except KeyError as e:
+        logger.error(f"Missing key in detection report: {e}")
+        return jsonify({'success': False, 'error': f'Missing required parameter in detection report: {e}'}), 400
     except Exception as e:
         logger.error(f"Error recording detection feedback: {e}")
         return jsonify({
@@ -750,6 +793,12 @@ def get_recommendations():
             }
         })
         
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"Learning engine dependency error: {e}")
+        return jsonify({'success': False, 'error': f"A required module is missing: {e}."}), 500
+    except ValueError as e:
+        logger.error(f"Invalid parameter type for recommendations: {e}")
+        return jsonify({'success': False, 'error': f"Invalid parameter type provided: {e}"}), 400
     except Exception as e:
         logger.error(f"Error getting recommendations: {e}")
         return jsonify({
@@ -839,104 +888,14 @@ def generate_sliver_beacon():
                 'error': result.error_message
             }), 500
             
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"Sliver adapter dependency error: {e}")
+        return jsonify({'success': False, 'error': f"A required module is missing: {e}. Please check C2 adapter setup."}), 500
+    except KeyError as e:
+        logger.error(f"Missing key in Sliver beacon request: {e}")
+        return jsonify({'success': False, 'error': f'Missing required parameter: {e}'}), 400
     except Exception as e:
         logger.error(f"Error generating Sliver beacon: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@app.route('/api/c2/havoc/generate', methods=['POST'])
-def generate_havoc_demon_endpoint():
-    """
-    Generate Havoc C2 demon with Noctis obfuscation
-    
-    Requirements:
-        - Havoc C2 must be installed and running
-        - Havoc teamserver must be accessible
-    
-    Request JSON:
-    {
-        "listener_host": "c2.example.com",
-        "listener_port": 443,
-        "protocol": "https",  # https, http, smb
-        "architecture": "x64",  # x64, x86
-        "sleep_technique": "Ekko",  # Foliage, Ekko, WaitForSingleObjectEx
-        "techniques": ["NOCTIS-T124"],  # Optional
-        "obfuscate": true,
-        "indirect_syscalls": true,
-        "stack_duplication": true
-    }
-    
-    Returns:
-        JSON with generation results
-    """
-    try:
-        data = request.get_json()
-        
-        # Required parameters
-        listener_host = data.get('listener_host')
-        listener_port = data.get('listener_port')
-        
-        if not listener_host or not listener_port:
-            return jsonify({
-                'success': False,
-                'error': 'listener_host and listener_port are required'
-            }), 400
-        
-        # Optional parameters
-        protocol = data.get('protocol', 'https')
-        architecture = data.get('architecture', 'x64')
-        sleep_technique = data.get('sleep_technique', 'Ekko')
-        techniques = data.get('techniques', [])
-        obfuscate = data.get('obfuscate', True)
-        indirect_syscalls = data.get('indirect_syscalls', True)
-        stack_duplication = data.get('stack_duplication', True)
-        
-        # Import Havoc adapter
-        from c2_adapters.havoc_adapter import generate_havoc_demon
-        
-        # Generate demon
-        logger.info(f"Generating Havoc demon: {protocol}://{listener_host}:{listener_port}")
-        logger.info(f"Sleep technique: {sleep_technique}")
-        
-        result = generate_havoc_demon(
-            listener_host=listener_host,
-            listener_port=listener_port,
-            protocol=protocol,
-            architecture=architecture,
-            sleep_technique=sleep_technique,
-            techniques=techniques,
-            obfuscate=obfuscate,
-            indirect_syscalls=indirect_syscalls,
-            stack_duplication=stack_duplication
-        )
-        
-        # Return result
-        if result.success:
-            logger.info(f"Havoc demon generated successfully")
-            return jsonify({
-                'success': True,
-                'beacon_path': result.beacon_path,
-                'shellcode_path': result.shellcode_path,
-                'beacon_size': result.beacon_size,
-                'techniques_applied': result.techniques_applied,
-                'obfuscation_summary': result.obfuscation_summary,
-                'opsec_score': result.opsec_score,
-                'compilation_time': result.compilation_time,
-                'metadata': result.metadata,
-                'timestamp': result.timestamp.isoformat()
-            })
-        else:
-            logger.error(f"Havoc demon generation failed: {result.error_message}")
-            return jsonify({
-                'success': False,
-                'error': result.error_message
-            }), 500
-            
-    except Exception as e:
-        logger.error(f"Error generating Havoc demon: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
@@ -1033,6 +992,12 @@ def generate_mythic_agent_endpoint():
                 'error': result.error_message
             }), 500
             
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"Mythic adapter dependency error: {e}")
+        return jsonify({'success': False, 'error': f"A required module is missing: {e}. Please check C2 adapter setup."}), 500
+    except KeyError as e:
+        logger.error(f"Missing key in Mythic agent request: {e}")
+        return jsonify({'success': False, 'error': f'Missing required parameter: {e}'}), 400
     except Exception as e:
         logger.error(f"Error generating Mythic agent: {e}")
         return jsonify({
@@ -1342,6 +1307,12 @@ def api_v2_technique_selection():
         # Return result
         return jsonify(result.to_dict())
 
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"Agent dependency error: {e}")
+        return jsonify({'success': False, 'error': f"An agent-related module is missing: {e}."}), 500
+    except KeyError as e:
+        logger.error(f"Agent not found or misconfigured: {e}")
+        return jsonify({'success': False, 'error': f"Agent access error: {e}"}), 500
     except Exception as e:
         logger.error(f"Error in technique selection agent: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1376,6 +1347,12 @@ def api_v2_malware_development():
         # Return result
         return jsonify(result.to_dict())
 
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"Agent dependency error: {e}")
+        return jsonify({'success': False, 'error': f"An agent-related module is missing: {e}."}), 500
+    except KeyError as e:
+        logger.error(f"Agent not found or misconfigured: {e}")
+        return jsonify({'success': False, 'error': f"Agent access error: {e}"}), 500
     except Exception as e:
         logger.error(f"Error in malware development agent: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1406,6 +1383,12 @@ def api_v2_opsec_optimization():
         # Return result
         return jsonify(result.to_dict())
 
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"Agent dependency error: {e}")
+        return jsonify({'success': False, 'error': f"An agent-related module is missing: {e}."}), 500
+    except KeyError as e:
+        logger.error(f"Agent not found or misconfigured: {e}")
+        return jsonify({'success': False, 'error': f"Agent access error: {e}"}), 500
     except Exception as e:
         logger.error(f"Error in OPSEC optimization agent: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1438,6 +1421,12 @@ def api_v2_learning():
         # Return result
         return jsonify(result.to_dict())
 
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"Agent dependency error: {e}")
+        return jsonify({'success': False, 'error': f"An agent-related module is missing: {e}."}), 500
+    except KeyError as e:
+        logger.error(f"Agent not found or misconfigured: {e}")
+        return jsonify({'success': False, 'error': f"Agent access error: {e}"}), 500
     except Exception as e:
         logger.error(f"Error in learning agent: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1458,6 +1447,9 @@ def api_v2_agents_status():
             'total_agents': len(status)
         })
 
+    except (ImportError, ModuleNotFoundError) as e:
+        logger.error(f"Agent dependency error: {e}")
+        return jsonify({'success': False, 'error': f"An agent-related module is missing: {e}."}), 500
     except Exception as e:
         logger.error(f"Error getting agent status: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
