@@ -1,10 +1,14 @@
-# Noctis-MCP
+<div align="center">
+
+![Noctis-MCP Logo](NoctisAI.png)
 
 **RAG-Powered Malware Development Platform**
 
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey)](https://github.com/Yenn503/Noctis-MCP)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+</div>
 
 **Legal Disclaimer**: For authorized security research, penetration testing, and red team operations only. Unauthorized use is illegal.
 
@@ -14,11 +18,12 @@ Noctis-MCP is a malware development platform that uses RAG (Retrieval Augmented 
 
 ## Features
 
-- **RAG Intelligence**: 55+ knowledge chunks, 24 GitHub repos, security blogs
-- **Live Intelligence**: Real-time data from GitHub API, arXiv, RSS feeds  
+- **RAG Intelligence**: 55+ knowledge chunks, 24+ GitHub repos, security blogs
+- **Live Intelligence**: Real-time data from GitHub API, security blog RSS feeds  
 - **11 MCP Tools**: Intelligence search, code generation, technique analysis
-- **Dynamic Code Generation**: No static templates - RAG-informed assembly
-- **Validation Pipeline**: Code quality checks with error feedback
+- **Dynamic Code Generation**: RAG-informed code assembly with real GitHub patterns
+- **Technique Library**: 10 active techniques with MITRE ATT&CK mappings
+- **C2 Integration**: Sliver, Havoc, Mythic framework support
 - **Learning System**: Records detection results to improve recommendations
 
 ## Quick Start
@@ -85,7 +90,7 @@ Ask your AI: "What MCP tools do you have access to?" - you should see 11 Noctis 
 ```
 User: "Generate a CrowdStrike bypass using syscalls"
 
-AI: [Searches intelligence] → [Analyzes techniques] → [Generates code] → [Validates] → [Delivers result]
+AI: [Searches RAG intelligence] → [Selects techniques] → [Generates code with headers] → [Optimizes OPSEC] → [Validates] → [Delivers result]
 ```
 
 ### Available Tools
@@ -154,9 +159,17 @@ curl http://localhost:8888/api/v2/rag/stats
 - Check MCP config path is absolute
 - Verify server is running on port 8888
 
-**Compilation fails:**
+**Code validation fails:**
+- Compilation module error: Check compiler installation
 - Linux: `sudo apt-get install mingw-w64`
 - Windows: Install Visual Studio Build Tools
+
+**Server won't start:**
+```bash
+# Check port 8888 is free
+netstat -ano | findstr :8888   # Windows
+lsof -i :8888                  # Linux/macOS
+```
 
 ## OPSEC
 
