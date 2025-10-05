@@ -1,36 +1,53 @@
 #!/usr/bin/env python3
 """
-Noctis-MCP Client - Simplified Workflow for AI-Driven Malware Development
-===========================================================================
+Noctis-MCP - Agentic Malware Development Platform
+===================================================
 
-A clean, intuitive interface designed for AI assistants in Cursor IDE.
+MCP tools designed for AGENTIC AI usage across any IDE (Cursor, VSCode, etc.)
 
-6 Core Tools:
-  1. develop()  - One-stop malware creation (⭐ primary tool)
-  2. browse()   - Explore available techniques
-  3. compile()  - Build executables
-  4. learn()    - Provide feedback for ML
-  5. files()    - Manage workspace files
-  6. help()     - Get workflow guidance
+The AI in your IDE (Claude, GPT-4, etc.) acts as the AGENT.
+These tools provide INTELLIGENCE - the AI provides REASONING.
 
-C2 Tools (for future Kali/WSL integration):
-  7. c2_generate() - Generate C2 beacons
-  8. c2_list()     - List C2 frameworks
+Core Philosophy:
+- AI decides which tools to call
+- AI synthesizes information from multiple sources
+- AI iterates until satisfied
+- AI makes intelligent, research-driven decisions
+
+11 Agentic Tools:
+  Intelligence Gathering:
+    1. search_intelligence() - Search RAG for techniques & research
+    2. analyze_technique() - Deep dive into specific techniques
+    3. fetch_latest() - Get cutting-edge intelligence from GitHub/arXiv/blogs
+
+  Code Generation:
+    4. generate_code() - RAG-informed dynamic code generation
+    5. optimize_opsec() - Improve code stealth using intelligence
+    6. validate_code() - Compile & quality check code with error feedback
+
+  Technique Selection:
+    7. select_techniques() - AI-powered technique recommendations
+    8. compare_techniques() - Side-by-side analysis
+
+  Compilation & Feedback:
+    9. compile_code() - Build binaries
+    10. record_feedback() - Learning from testing results
+
+  Utilities:
+    11. rag_stats() - RAG system status
 
 Author: Noctis-MCP Community
 License: MIT
-Version: 2.0.0-alpha
+Version: 3.0.0-agentic
 
 WARNING: For authorized security research and red team operations only.
 """
 
 import sys
 import os
-import argparse
 import logging
 from typing import Dict, Any, Optional, List
 import requests
-from datetime import datetime
 import json
 
 # Add parent directory to path
@@ -43,48 +60,15 @@ except ImportError:
     sys.exit(1)
 
 # Initialize FastMCP server
-mcp = FastMCP("Noctis-MCP")
+mcp = FastMCP("Noctis-MCP-Agentic")
 
 # Global configuration
 SERVER_URL = "http://localhost:8888"
 session = requests.Session()
 
-
-# ============================================================================
-# LOGGING SETUP
-# ============================================================================
-
-class NoctisFormatter(logging.Formatter):
-    """Custom formatter with timestamps"""
-
-    FORMATS = {
-        logging.DEBUG: "[%(asctime)s] [DEBUG] %(message)s",
-        logging.INFO: "[%(asctime)s] [*] %(message)s",
-        logging.WARNING: "[%(asctime)s] [!] %(message)s",
-        logging.ERROR: "[%(asctime)s] [ERROR] %(message)s",
-        logging.CRITICAL: "[%(asctime)s] [CRITICAL] %(message)s",
-    }
-
-    def format(self, record):
-        log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt, datefmt='%H:%M:%S')
-        return formatter.format(record)
-
-
-def setup_logging(level: str = "INFO") -> logging.Logger:
-    """Setup logging"""
-    logger = logging.getLogger("noctis-mcp")
-    logger.setLevel(getattr(logging, level.upper()))
-
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(NoctisFormatter())
-
-    logger.addHandler(ch)
-    return logger
-
-
-logger = setup_logging()
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+logger = logging.getLogger("noctis-mcp")
 
 
 # ============================================================================
@@ -97,994 +81,563 @@ def check_server() -> bool:
         response = session.get(f"{SERVER_URL}/health", timeout=5)
         return response.status_code == 200
     except Exception as e:
-        logger.error(f"Cannot connect to server: {e}")
         return False
 
 
-def api_get(endpoint: str, params: Optional[Dict] = None) -> Dict:
-    """Make GET request to API server"""
-    try:
-        url = f"{SERVER_URL}{endpoint}"
-        response = session.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        logger.error(f"API GET error: {e}")
-        return {'success': False, 'error': str(e)}
-
-
-def api_post(endpoint: str, data: Dict) -> Dict:
+def api_post(endpoint: str, data: Dict, timeout: int = 60) -> Dict:
     """Make POST request to API server"""
     try:
         url = f"{SERVER_URL}{endpoint}"
-        response = session.post(url, json=data, timeout=60)
+        response = session.post(url, json=data, timeout=timeout)
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        logger.error(f"API POST error: {e}")
-        return {'success': False, 'error': str(e)}
+        return {'error': str(e)}
+
+
+def api_get(endpoint: str, timeout: int = 30) -> Dict:
+    """Make GET request to API server"""
+    try:
+        url = f"{SERVER_URL}{endpoint}"
+        response = session.get(url, timeout=timeout)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {'error': str(e)}
 
 
 # ============================================================================
-# CORE TOOLS - Simplified Workflow (6 Tools)
+# INTELLIGENCE GATHERING TOOLS
 # ============================================================================
 
 @mcp.tool()
-def develop(
-    goal: str,
-    target: str = "Windows Defender",
-    os_type: str = "Windows",
-    architecture: str = "x64",
-    complexity: str = "medium",
-    auto_compile: bool = False
-) -> str:
+def search_intelligence(
+    query: str,
+    target_av: str = None,
+    sources: str = "all",
+    max_results: int = 10
+) -> Dict:
     """
-    🚀 PRIMARY TOOL: One-stop autonomous malware development.
+    🔍 Search RAG system for malware techniques, research, and intelligence.
 
-    This is the MAIN tool AI should use for malware creation. It handles everything:
-    - AI selects optimal techniques
-    - Assembles working code
-    - Optimizes OPSEC automatically
-    - Saves to workspace with reports
-    - Optionally compiles binary
-    - Records learning feedback
+    This is the PRIMARY intelligence gathering tool. Use this to:
+    - Research evasion techniques
+    - Find real-world implementations
+    - Discover latest research
+    - Gather context before code generation
+
+    The AI should use this FIRST before making decisions about techniques.
 
     Args:
-        goal: What the malware should do (e.g., "Create a stealthy loader")
-        target: Target AV/EDR to evade (default: "Windows Defender")
-        os_type: Target OS (Windows, Linux)
-        architecture: Target arch (x86, x64, arm64)
-        complexity: Difficulty level (low, medium, high)
-        auto_compile: Compile to .exe automatically (default: False)
+        query: What to search for (e.g., "process injection evasion techniques")
+        target_av: Target AV/EDR to focus on (e.g., "Windows Defender", "CrowdStrike")
+        sources: Which sources to search ("all", "knowledge", "github", "arxiv", "blogs")
+        max_results: Maximum results to return
 
     Returns:
-        Beautiful formatted output with clickable file links
+        {
+            "results": [
+                {
+                    "content": "Relevant text content...",
+                    "source": "knowledge_base|github|arxiv|blog",
+                    "metadata": {...},
+                    "relevance_score": 0.85
+                }
+            ],
+            "total_results": 10
+        }
 
-    Example:
-        develop(
-            goal="Create a process injection loader",
-            target="Windows Defender",
-            auto_compile=True
-        )
+    Example AI Workflow:
+        1. search_intelligence("CrowdStrike evasion", "CrowdStrike")
+        2. Review results from RAG
+        3. search_intelligence("NTDLL unhooking techniques", "CrowdStrike")
+        4. Synthesize both searches
+        5. Make informed decision about techniques to use
     """
-    logger.info(f"🚀 Starting autonomous development: {goal}")
+    sources_list = sources.split(',') if isinstance(sources, str) else [sources]
 
-    # Call malware development agent
-    result = api_post('/api/v2/agents/malware-development', {
-        'goal': goal,
-        'target_av': target,
-        'target_os': os_type,
-        'target_arch': architecture,
-        'complexity': complexity,
-        'compile': auto_compile
+    return api_post('/api/v2/intelligence/search', {
+        'query': query,
+        'target_av': target_av,
+        'sources': sources_list,
+        'max_results': max_results
     })
 
-    if not result.get('success'):
-        return f"❌ Development failed: {result.get('error', 'Unknown error')}"
-
-    # Extract data
-    data = result.get('data', {})
-    source_code = data.get('source_code', '')
-    techniques = data.get('techniques_used', [])
-    opsec_score = data.get('opsec_score', 0)
-    binary_path = data.get('binary_path')
-    compilation_success = data.get('compilation_success', False)
-
-    # Auto-save to workspace
-    output_dir = os.path.join(os.getcwd(), 'output')
-    os.makedirs(output_dir, exist_ok=True)
-
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f"malware_{timestamp}"
-
-    # Save files
-    code_path = os.path.abspath(os.path.join(output_dir, f"{filename}.c"))
-    with open(code_path, 'w', encoding='utf-8') as f:
-        f.write(source_code)
-
-    metadata_path = os.path.abspath(os.path.join(output_dir, f"{filename}_metadata.json"))
-    with open(metadata_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2)
-
-    # Create beautiful markdown report
-    report_path = os.path.abspath(os.path.join(output_dir, f"{filename}_report.md"))
-    report = f"""# 🤖 AI Malware Development Report
-**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
----
-
-## 📋 Project Summary
-- **Goal:** {goal}
-- **Target:** {target} on {os_type}/{architecture}
-- **Complexity:** {complexity}
-
----
-
-## 🎯 Selected Techniques ({len(techniques)})
-"""
-    for i, tech_id in enumerate(techniques, 1):
-        tech_details = next((t for t in data.get('technique_details', []) if t.get('technique_id') == tech_id), {})
-        tech_name = tech_details.get('name', tech_id)
-        tech_score = tech_details.get('effectiveness_score', 'N/A')
-        report += f"{i}. **{tech_name}** (`{tech_id}`) - Effectiveness: {tech_score}\n"
-
-    report += f"""
----
-
-## 🛡️ OPSEC Analysis
-- **Score:** {opsec_score:.1f}/10
-- **Risk Level:** {'🟢 Low' if opsec_score >= 8 else '🟡 Medium' if opsec_score >= 6 else '🔴 High'}
-
----
-
-## 📁 Output Files
-- [Source Code]({filename}.c)
-- [Metadata]({filename}_metadata.json)
-- [This Report]({filename}_report.md)
-"""
-
-    if binary_path:
-        report += f"- [Compiled Binary]({os.path.basename(binary_path)})\n"
-
-    report += f"""
----
-
-## 📝 Next Steps
-1. Review source code in editor
-2. {'✅ Binary ready for testing' if compilation_success else '⚡ Run compile() to build executable'}
-3. Test in isolated VM/sandbox
-4. Report results with learn()
-
----
-
-⚠️ **SECURITY NOTICE**
-This code is for **AUTHORIZED SECURITY RESEARCH ONLY**.
-"""
-
-    with open(report_path, 'w', encoding='utf-8') as f:
-        f.write(report)
-
-    # Build beautiful response
-    response = f"""
-=================================================================
-|        🤖 AUTONOMOUS MALWARE DEVELOPMENT COMPLETE             |
-=================================================================
-
-📋 WORKFLOW SUMMARY
-+------------------------------------------------------------+
-| ✅ Technique Selection   | {len(techniques)} techniques selected           |
-| ✅ Code Assembly         | {len(source_code.split(chr(10)))} lines generated               |
-| ✅ OPSEC Optimization    | Score: {opsec_score:.1f}/10                      |
-| {'✅ Compilation' if compilation_success else '⏭️  Compilation'}           | {'Success' if compilation_success else 'Skipped'}                         |
-| ✅ Learning Feedback     | Recorded                          |
-+------------------------------------------------------------+
-
-🎯 SELECTED TECHNIQUES
-"""
-    for tech_id in techniques:
-        tech_details = next((t for t in data.get('technique_details', []) if t.get('technique_id') == tech_id), {})
-        tech_name = tech_details.get('name', tech_id)
-        tech_score = tech_details.get('effectiveness_score', 'N/A')
-        response += f"• {tech_name} ({tech_id}) - Score: {tech_score}\n"
-
-    response += f"""
-📁 OUTPUT FILES (Click to open in editor)
-• Source Code: {code_path}
-• Analysis Report: {report_path}
-• Metadata: {metadata_path}
-"""
-    if binary_path:
-        response += f"• Binary: {binary_path}\n"
-
-    response += f"""
-🛡️ OPSEC ANALYSIS
-Risk Level: {'🟢 Excellent (Low Detection Risk)' if opsec_score >= 8 else '🟡 Good (Moderate Risk)' if opsec_score >= 6 else '🔴 Fair (High Risk)'}
-Score: {opsec_score:.1f}/10
-
-📝 NEXT STEPS
-1. Click source code file above to open in editor
-2. Review the generated code
-"""
-    if not compilation_success:
-        response += f"3. Run compile(\"{code_path}\") to build executable\n"
-    else:
-        response += f"3. Binary ready: {binary_path}\n"
-
-    response += f"""4. Test in isolated environment
-5. Report results with learn()
-
-⚠️  For AUTHORIZED security research only.
-"""
-
-    return response
-
 
 @mcp.tool()
-def browse(
-    search: str = None,
-    category: str = None,
-    show_details: bool = False
-) -> str:
+def analyze_technique(
+    technique_id: str,
+    target_av: str = None,
+    include_code_examples: bool = True
+) -> Dict:
     """
-    🔍 Browse and explore available malware techniques.
+    🔬 Deep analysis of a specific technique using ALL intelligence sources.
 
-    Use this to discover what techniques exist in the database.
-    For actual malware creation, use develop() instead.
+    Use this AFTER search_intelligence() to dive deep into a specific technique.
+    Combines knowledge base, GitHub implementations, research papers, and blogs.
 
     Args:
-        search: Keyword search (e.g., "syscalls", "API hashing")
-        category: Filter by category (evasion, injection, persistence, etc.)
-        show_details: Show detailed info for each technique
+        technique_id: Technique to analyze (e.g., "syscalls", "injection", "encryption")
+        target_av: Target AV/EDR for focused analysis
+        include_code_examples: Include code snippets from GitHub repos
 
     Returns:
-        Formatted list of matching techniques
+        {
+            "technique_id": "syscalls",
+            "conceptual_knowledge": "How it works, why effective...",
+            "github_implementations": [{
+                "repo": "repo-name",
+                "url": "...",
+                "code_snippet": "..."
+            }],
+            "research_papers": [{
+                "title": "...",
+                "summary": "...",
+                "url": "..."
+            }],
+            "blog_posts": [...],
+            "effectiveness_vs_av": {"CrowdStrike": 8.5},
+            "recommended_combinations": ["unhooking", "encryption"]
+        }
 
-    Example:
-        browse(search="evasion")
-        browse(category="injection", show_details=True)
+    Example AI Workflow:
+        1. Search finds "syscalls" mentioned often
+        2. analyze_technique("syscalls", "CrowdStrike", True)
+        3. Review comprehensive analysis with code examples
+        4. Decide if this technique meets requirements
     """
-    logger.info(f"📚 Browsing techniques - search={search}, category={category}")
-
-    # Build query
-    params = {}
-    if search:
-        params['search'] = search
-    if category:
-        params['category'] = category
-
-    # Query API
-    result = api_get('/api/techniques', params=params)
-
-    if not result.get('success', False):
-        return f"❌ Error: {result.get('error', 'Failed to fetch techniques')}"
-
-    techniques = result.get('techniques', [])
-
-    if not techniques:
-        return f"No techniques found matching your criteria.\n\nTry: browse() to see all techniques"
-
-    # Format output
-    response = f"""
-=================================================================
-|                    TECHNIQUE BROWSER                          |
-=================================================================
-
-Found {len(techniques)} technique(s)
-
-"""
-
-    for tech in techniques[:20]:  # Limit to 20 for readability
-        tech_id = tech.get('technique_id', 'N/A')
-        name = tech.get('name', 'N/A')
-        category = tech.get('category', 'N/A')
-        desc = tech.get('description', 'No description')
-
-        response += f"📌 {name} ({tech_id})\n"
-        response += f"   Category: {category}\n"
-
-        if show_details:
-            response += f"   Description: {desc}\n"
-            mitre = tech.get('mitre_ttps', [])
-            if mitre:
-                response += f"   MITRE: {', '.join(mitre)}\n"
-
-        response += "\n"
-
-    if len(techniques) > 20:
-        response += f"\n... and {len(techniques) - 20} more techniques.\n"
-
-    response += """
-💡 TIP: To create malware with these techniques, use:
-   develop(goal="your objective")
-"""
-
-    return response
+    return api_post('/api/v2/intelligence/analyze', {
+        'technique_id': technique_id,
+        'target_av': target_av,
+        'include_code_examples': include_code_examples
+    })
 
 
 @mcp.tool()
-def compile(
-    source_file: str,
+def fetch_latest(
+    topic: str,
+    sources: str = "github,arxiv,blogs",
+    days_back: int = 30
+) -> Dict:
+    """
+    📡 Fetch and index LATEST intelligence on a topic.
+
+    Use when you need cutting-edge, recent information not yet in RAG.
+    Performs LIVE searches and auto-indexes results into RAG for future queries.
+
+    Args:
+        topic: Topic to research (e.g., "CrowdStrike bypass 2025")
+        sources: Which sources to check (comma-separated: "github,arxiv,blogs")
+        days_back: Only get content from last N days
+
+    Returns:
+        {
+            "topic": "CrowdStrike bypass 2025",
+            "new_results": 15,
+            "indexed": 15,
+            "sources": {"github": 8, "arxiv": 3, "blogs": 4}
+        }
+
+    Example AI Workflow:
+        1. User asks for "latest CrowdStrike bypass"
+        2. fetch_latest("CrowdStrike bypass", "github,blogs", 7)
+        3. System fetches and indexes NEW data
+        4. search_intelligence() to query the fresh intelligence
+    """
+    sources_list = sources.split(',') if isinstance(sources, str) else [sources]
+
+    return api_post('/api/v2/intelligence/fetch-latest', {
+        'topic': topic,
+        'sources': sources_list,
+        'days_back': days_back
+    }, timeout=120)
+
+
+# ============================================================================
+# CODE GENERATION TOOLS
+# ============================================================================
+
+@mcp.tool()
+def generate_code(
+    technique_ids: List[str],
+    target_av: str,
+    target_os: str = "Windows",
     architecture: str = "x64",
-    optimization: str = "O2",
-    output_name: str = None
-) -> str:
+    use_rag: bool = True,
+    opsec_level: str = "high"
+) -> Dict:
     """
-    🔨 Compile generated C/C++ code into executable.
+    💻 Generate code using RAG-informed intelligence.
 
-    Use this AFTER develop() if you didn't use auto_compile=True.
-    Automatically uses files from the workspace.
+    This is DYNAMIC code generation - uses RAG to find best implementation
+    patterns from real GitHub repos, research papers, and blogs.
+    NOT static templates!
 
     Args:
-        source_file: Path to .c file (use files() to see available files)
-        architecture: Target architecture (x86, x64)
-        optimization: Compiler optimization (O0, O1, O2, O3)
-        output_name: Output filename (auto-generated if not provided)
+        technique_ids: List of techniques to combine (e.g., ["syscalls", "injection"])
+        target_av: Target AV/EDR (e.g., "CrowdStrike")
+        target_os: Target OS (default: "Windows")
+        architecture: x86 or x64 (default: "x64")
+        use_rag: Use RAG intelligence for code generation (default: True)
+        opsec_level: "low", "medium", "high", "maximum"
 
     Returns:
-        Compilation results with binary path
+        {
+            "source_code": "Complete C/C++ code",
+            "header_code": "Header file",
+            "techniques_used": [...],
+            "rag_intelligence_used": {
+                "github_patterns": 5,
+                "research_insights": 3
+            },
+            "opsec_score": 8.5,
+            "warnings": [...]
+        }
 
-    Example:
-        compile("output/malware_20241004_123456.c")
+    Example AI Workflow:
+        1. Research with search_intelligence()
+        2. Analyze techniques with analyze_technique()
+        3. generate_code(["syscalls", "injection"], "CrowdStrike", opsec_level="high")
+        4. Review generated code
+        5. optimize_opsec() if needed
     """
-    logger.info(f"🔨 Compiling: {source_file}")
+    return api_post('/api/v2/code/generate', {
+        'technique_ids': technique_ids,
+        'target_av': target_av,
+        'target_os': target_os,
+        'architecture': architecture,
+        'use_rag_context': use_rag,
+        'opsec_level': opsec_level
+    })
 
-    # Read source code
-    if not os.path.exists(source_file):
-        return f"❌ Error: File not found: {source_file}\n\nUse files() to see available source files."
 
-    with open(source_file, 'r', encoding='utf-8') as f:
-        source_code = f.read()
+@mcp.tool()
+def optimize_opsec(
+    source_code: str,
+    target_av: str,
+    target_score: float = 8.0,
+    max_iterations: int = 3
+) -> Dict:
+    """
+    🛡️ Optimize code for OPSEC using RAG intelligence about detection patterns.
 
-    # Generate output name if not provided
-    if not output_name:
-        base_name = os.path.splitext(os.path.basename(source_file))[0]
-        output_name = f"{base_name}_compiled"
+    Args:
+        source_code: Code to optimize
+        target_av: Target AV/EDR
+        target_score: Target OPSEC score 0-10 (default: 8.0)
+        max_iterations: Max optimization iterations (default: 3)
 
-    # Call compilation API
-    result = api_post('/api/compile', {
+    Returns:
+        {
+            "optimized_code": "Improved code",
+            "original_score": 6.5,
+            "final_score": 8.7,
+            "improvements_made": [
+                "Added string encryption",
+                "Implemented API hashing"
+            ],
+            "rag_insights_used": [...]
+        }
+
+    Example AI Workflow:
+        1. generate_code() creates initial code
+        2. Check OPSEC score
+        3. If score < target, optimize_opsec(code, "CrowdStrike", 8.5)
+        4. Review improvements
+    """
+    return api_post('/api/v2/code/optimize-opsec', {
         'source_code': source_code,
-        'architecture': architecture,
-        'optimization': optimization,
+        'target_av': target_av,
+        'target_score': target_score,
+        'max_iterations': max_iterations
+    })
+
+
+# ============================================================================
+# TECHNIQUE SELECTION TOOLS
+# ============================================================================
+
+@mcp.tool()
+def validate_code(
+    source_code: str,
+    output_name: str = "payload",
+    validate_functionality: bool = False
+) -> Dict:
+    """
+    ✅ Validate code - compilation check + quality analysis + error feedback.
+
+    This tool allows AI to verify code BEFORE final delivery and get detailed
+    error feedback for fixing and retrying.
+
+    Args:
+        source_code: The C/C++ source code to validate
+        output_name: Name for compiled binary (if compilation succeeds)
+        validate_functionality: Whether to run basic functionality tests
+
+    Returns:
+        {
+            "compilation": {
+                "status": "passed|failed|error",
+                "output": "path/to/binary.exe",  # if passed
+                "errors": [...],  # if failed
+                "suggestions": [  # AI-friendly fix suggestions
+                    "Add missing variable declarations",
+                    "Fix type mismatches"
+                ]
+            },
+            "quality": {
+                "score": 8.5,  # 0-10 scale
+                "issues": ["Contains suspicious strings", ...],
+                "strengths": ["Uses direct syscalls", ...],
+                "status": "good|needs_improvement"
+            },
+            "overall_verdict": "ready_for_use|needs_improvement"
+        }
+
+    Example AI Workflow:
+        1. generate_code() creates malware code
+        2. validate_code(code) checks compilation + quality
+        3. If verdict is "needs_improvement":
+           - Review compilation.suggestions
+           - Fix the code
+           - validate_code(fixed_code) again
+        4. If verdict is "ready_for_use", deliver to user
+    """
+    return api_post('/api/v2/code/validate', {
+        'source_code': source_code,
         'output_name': output_name,
-        'subsystem': 'Console'
+        'validate_functionality': validate_functionality
     })
-
-    if not result.get('success'):
-        errors = result.get('errors', [])
-        return f"""
-❌ COMPILATION FAILED
-
-Errors:
-{chr(10).join(f'  • {e}' for e in errors)}
-
-💡 TIP: Check the source code for syntax errors or missing dependencies.
-"""
-
-    binary_path = result.get('binary_path', '')
-    warnings = result.get('warnings', [])
-    compilation_time = result.get('compilation_time', 0)
-
-    # Get file size
-    file_size_kb = 0
-    if os.path.exists(binary_path):
-        file_size_kb = round(os.path.getsize(binary_path) / 1024, 2)
-
-    response = f"""
-=================================================================
-|              ✅ COMPILATION SUCCESSFUL                        |
-=================================================================
-
-📦 Binary Details
-|- Path: {binary_path}
-|- Size: {file_size_kb} KB
-|- Architecture: {architecture}
-|- Optimization: {optimization}
-+- Compilation Time: {compilation_time:.2f}s
-
-"""
-
-    if warnings:
-        response += f"⚠️  Warnings ({len(warnings)}):\n"
-        for w in warnings[:5]:
-            response += f"  • {w}\n"
-        if len(warnings) > 5:
-            response += f"  ... and {len(warnings) - 5} more warnings\n"
-        response += "\n"
-
-    response += f"""📝 Next Steps
-1. Test in isolated VM/sandbox
-2. Monitor with Process Monitor
-3. Report results with learn()
-
-⚠️  For AUTHORIZED testing only.
-"""
-
-    return response
-
-
-@mcp.tool()
-def learn(
-    source_file: str,
-    av_name: str,
-    detected: bool,
-    notes: str = None
-) -> str:
-    """
-    🧠 Provide feedback to improve the AI learning system.
-
-    After testing generated malware, report the results so the system
-    learns which techniques work against specific AV/EDR solutions.
-
-    Args:
-        source_file: Which malware file was tested (from workspace)
-        av_name: AV/EDR name (e.g., "Windows Defender", "CrowdStrike")
-        detected: Was the malware detected? (True/False)
-        notes: Optional notes about the test
-
-    Returns:
-        Confirmation of recorded feedback
-
-    Example:
-        learn(
-            source_file="output/malware_20241004_123456.c",
-            av_name="Windows Defender",
-            detected=False,
-            notes="Successfully bypassed with API hashing + syscalls"
-        )
-    """
-    logger.info(f"🧠 Recording feedback: {av_name} - Detected: {detected}")
-
-    # Load metadata to get techniques used
-    metadata_file = source_file.replace('.c', '_metadata.json')
-    techniques = []
-
-    if os.path.exists(metadata_file):
-        with open(metadata_file, 'r') as f:
-            metadata = json.load(f)
-            techniques = metadata.get('techniques_used', [])
-
-    # Record feedback
-    result = api_post('/api/v2/agents/learning', {
-        'action': 'record_detection',
-        'techniques': techniques,
-        'av_edr': av_name,
-        'detected': detected,
-        'notes': notes
-    })
-
-    if not result.get('success'):
-        return f"❌ Error recording feedback: {result.get('error')}"
-
-    data = result.get('data', {})
-
-    response = f"""
-=================================================================
-|              🧠 LEARNING FEEDBACK RECORDED                    |
-=================================================================
-
-📊 Test Results
-|- AV/EDR: {av_name}
-|- Detected: {'❌ Yes' if detected else '✅ No (Bypassed)'}
-|- Techniques Tested: {len(techniques)}
-+- Status: Feedback recorded successfully
-
-"""
-
-    if techniques:
-        response += "🎯 Techniques Tested:\n"
-        for tech in techniques:
-            response += f"  • {tech}\n"
-        response += "\n"
-
-    if notes:
-        response += f"📝 Notes: {notes}\n\n"
-
-    response += """💡 Your feedback helps improve future malware generation!
-
-Next: Generate more samples with develop()
-"""
-
-    return response
-
-
-@mcp.tool()
-def files(
-    pattern: str = "*.c",
-    open_latest: bool = False
-) -> str:
-    """
-    📁 Browse and manage workspace files.
-
-    Lists all generated files in the output directory.
-
-    Args:
-        pattern: File pattern to match (default: "*.c" for source code)
-        open_latest: Show path to latest file for easy opening
-
-    Returns:
-        List of workspace files with metadata
-
-    Example:
-        files()  # List all .c files
-        files("*.exe")  # List compiled binaries
-        files(open_latest=True)  # Get latest file path
-    """
-    import glob
-
-    logger.info(f"📁 Listing workspace files: {pattern}")
-
-    output_dir = os.path.join(os.getcwd(), 'output')
-
-    if not os.path.exists(output_dir):
-        return """
-📁 No output directory found.
-
-Generate malware first using:
-  develop(goal="your objective")
-"""
-
-    search_path = os.path.join(output_dir, pattern)
-    file_list = glob.glob(search_path)
-
-    if not file_list:
-        return f"""
-📁 No files found matching: {pattern}
-
-Try:
-  files("*.c")     # Source code
-  files("*.exe")   # Binaries
-  files("*.md")    # Reports
-"""
-
-    # Sort by modification time (newest first)
-    file_list.sort(key=os.path.getmtime, reverse=True)
-
-    response = f"""
-=================================================================
-|                    WORKSPACE BROWSER                          |
-=================================================================
-
-Found {len(file_list)} file(s) in: {output_dir}
-
-"""
-
-    for i, filepath in enumerate(file_list[:20], 1):
-        stat = os.stat(filepath)
-        size_kb = round(stat.st_size / 1024, 2)
-        modified = datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
-        name = os.path.basename(filepath)
-
-        response += f"{i}. {name}\n"
-        response += f"   Size: {size_kb} KB | Modified: {modified}\n"
-        response += f"   Path: {os.path.abspath(filepath)}\n\n"
-
-    if len(file_list) > 20:
-        response += f"... and {len(file_list) - 20} more files.\n\n"
-
-    if open_latest and file_list:
-        latest = os.path.abspath(file_list[0])
-        response += f"📌 Latest file: {latest}\n\n"
-
-    response += """💡 TIP: Click any path above to open in editor
-"""
-
-    return response
-
-
-@mcp.tool()
-def help(topic: str = None) -> str:
-    """
-    ❓ Get workflow guidance and usage examples.
-
-    Shows how to use the Noctis-MCP system effectively.
-
-    Args:
-        topic: Specific topic (workflow, develop, browse, compile, learn, files)
-
-    Returns:
-        Help documentation
-
-    Example:
-        help()  # General help
-        help("develop")  # Help for develop() tool
-    """
-    if topic == "develop":
-        return """
-=================================================================
-|                    DEVELOP() - PRIMARY TOOL                   |
-=================================================================
-
-🚀 One-stop malware development tool.
-
-USAGE:
-  develop(
-      goal="Create a stealthy process injection loader",
-      target="Windows Defender",
-      auto_compile=True
-  )
-
-PARAMETERS:
-  • goal: What the malware should do (required)
-  • target: AV/EDR to evade (default: "Windows Defender")
-  • os_type: Target OS (default: "Windows")
-  • architecture: Target arch (default: "x64")
-  • complexity: low, medium, high (default: "medium")
-  • auto_compile: Build binary automatically (default: False)
-
-WHAT IT DOES:
-  1. AI selects optimal techniques automatically
-  2. Assembles working C code
-  3. Optimizes OPSEC (detection evasion)
-  4. Saves to workspace (output/ directory)
-  5. Generates analysis reports
-  6. Optionally compiles to .exe
-
-OUTPUT FILES:
-  • malware_TIMESTAMP.c - Source code
-  • malware_TIMESTAMP_report.md - Analysis
-  • malware_TIMESTAMP_metadata.json - Full metadata
-  • malware_TIMESTAMP.exe - Binary (if auto_compile=True)
-
-EXAMPLES:
-  # Basic usage
-  develop(goal="Create a loader")
-
-  # Advanced usage
-  develop(
-      goal="Create reflective DLL injection",
-      target="CrowdStrike Falcon",
-      complexity="high",
-      auto_compile=True
-  )
-"""
-
-    elif topic == "workflow":
-        return """
-=================================================================
-|                      WORKFLOW GUIDE                           |
-=================================================================
-
-RECOMMENDED WORKFLOW:
-
-1️⃣  CREATE MALWARE
-    develop(goal="your objective")
-
-    This is 95% of what you need. It handles everything automatically.
-
-2️⃣  COMPILE (if not done automatically)
-    files()  # Find your source file
-    compile("output/malware_TIMESTAMP.c")
-
-3️⃣  TEST IN ISOLATED ENVIRONMENT
-    - Use VM or sandbox
-    - Test against target AV/EDR
-    - Monitor with Process Monitor
-
-4️⃣  PROVIDE FEEDBACK
-    learn(
-        source_file="output/malware_TIMESTAMP.c",
-        av_name="Windows Defender",
-        detected=False
-    )
-
-OPTIONAL:
-  • browse() - Explore available techniques
-  • files() - Manage workspace files
-  • help("topic") - Get specific help
-
-SIMPLE EXAMPLE:
-  1. develop(goal="Create a stealthy loader", auto_compile=True)
-  2. Test the generated .exe
-  3. learn(source_file="output/malware_*.c", av_name="Windows Defender", detected=False)
-"""
-
-    # General help
-    return """
-=================================================================
-|              NOCTIS-MCP - AI MALWARE DEVELOPMENT              |
-=================================================================
-
-🚀 6 CORE TOOLS (Simplified Workflow)
-
-1. develop()  - ⭐ PRIMARY TOOL - Create malware automatically
-2. browse()   - Explore available techniques
-3. compile()  - Build executables from source
-4. learn()    - Provide feedback for ML system
-5. files()    - Browse workspace files
-6. help()     - Get guidance (you are here!)
-
-QUICK START:
-  develop(goal="Create a stealthy loader")
-
-That's it! Everything is automated.
-
-For detailed help on any topic:
-  help("workflow")  - Full workflow guide
-  help("develop")   - develop() tool guide
-
-For browsing techniques:
-  browse()  - See all available techniques
-  browse(search="evasion")  - Search by keyword
-
-⚠️  For AUTHORIZED security research only.
-"""
 
 
 # ============================================================================
-# C2 INTEGRATION TOOLS (Future Kali/WSL Work)
+# TECHNIQUE SELECTION TOOLS
 # ============================================================================
 
 @mcp.tool()
-def c2_generate(
-    framework: str,
-    listener_host: str,
-    listener_port: int,
-    protocol: str = "https",
+def select_techniques(
+    goal: str,
+    target_av: str,
+    max_techniques: int = 5,
+    complexity: str = "medium"
+) -> Dict:
+    """
+    🎯 Intelligent technique selection using RAG + historical effectiveness.
+
+    The AI can use this for recommendations, then make final decisions.
+    Combines RAG intelligence with learning engine effectiveness scores.
+
+    Args:
+        goal: High-level goal (e.g., "evade CrowdStrike for process injection")
+        target_av: Target AV/EDR
+        max_techniques: Maximum techniques to recommend
+        complexity: "low", "medium", "high"
+
+    Returns:
+        {
+            "recommended_techniques": [
+                {
+                    "technique_id": "syscalls",
+                    "name": "Direct System Calls",
+                    "effectiveness_score": 8.5,
+                    "rag_evidence": "Found in 15 GitHub repos, 3 research papers",
+                    "rationale": "High effectiveness against CrowdStrike hooks"
+                }
+            ],
+            "alternatives": [...]
+        }
+
+    Example AI Workflow:
+        1. select_techniques("evade CrowdStrike", "CrowdStrike")
+        2. Review recommendations
+        3. analyze_technique() on top recommendations
+        4. Make informed decision
+    """
+    return api_post('/api/v2/techniques/select', {
+        'goal': goal,
+        'target_av': target_av,
+        'constraints': {
+            'max_techniques': max_techniques,
+            'complexity': complexity
+        }
+    })
+
+
+@mcp.tool()
+def compare_techniques(
+    technique_ids: List[str],
+    target_av: str,
+    criteria: str = "effectiveness,stealth,complexity"
+) -> Dict:
+    """
+    ⚖️ Compare multiple techniques using RAG intelligence.
+
+    Args:
+        technique_ids: Techniques to compare (e.g., ["syscalls", "injection"])
+        target_av: Target AV/EDR
+        criteria: Comparison criteria (comma-separated)
+
+    Returns:
+        {
+            "comparison_table": {
+                "syscalls": {"effectiveness": 8.5, "stealth": 9.0},
+                "injection": {"effectiveness": 7.2, "stealth": 6.5}
+            },
+            "winner_by_criteria": {"effectiveness": "syscalls"},
+            "recommendation": "Use syscalls for maximum effectiveness"
+        }
+    """
+    criteria_list = criteria.split(',') if isinstance(criteria, str) else criteria
+
+    return api_post('/api/v2/techniques/compare', {
+        'technique_ids': technique_ids,
+        'target_av': target_av,
+        'comparison_criteria': criteria_list
+    })
+
+
+# ============================================================================
+# COMPILATION & FEEDBACK TOOLS
+# ============================================================================
+
+@mcp.tool()
+def compile_code(
+    source_code: str,
+    output_name: str = "payload",
     architecture: str = "x64",
-    obfuscate: bool = True
-) -> str:
+    optimization: str = "O2"
+) -> Dict:
     """
-    🔗 Generate C2 beacon/agent (Future: Kali/WSL integration).
-
-    Creates production-ready C2 beacons with Noctis obfuscation.
-
-    NOTE: This requires C2 framework installation (Sliver, Havoc, Mythic).
-    Currently designed for future Kali/WSL development.
+    🔨 Compile code to binary.
 
     Args:
-        framework: C2 framework (sliver, havoc, mythic)
-        listener_host: C2 listener IP/hostname
-        listener_port: C2 listener port
-        protocol: Protocol (https, http, dns, tcp, mtls)
-        architecture: Target arch (x64, x86)
-        obfuscate: Apply Noctis obfuscation techniques
+        source_code: C/C++ code to compile
+        output_name: Output filename (default: "payload")
+        architecture: x86 or x64 (default: "x64")
+        optimization: O0, O1, O2, O3 (default: "O2")
 
     Returns:
-        C2 beacon generation results
-
-    Example:
-        c2_generate(
-            framework="sliver",
-            listener_host="192.168.1.100",
-            listener_port=443,
-            protocol="https"
-        )
+        {
+            "success": True,
+            "binary_path": "path/to/payload.exe",
+            "size_bytes": 45056,
+            "warnings": [...]
+        }
     """
-    logger.info(f"🔗 Generating {framework} beacon: {protocol}://{listener_host}:{listener_port}")
-
-    framework = framework.lower()
-
-    # Map framework to endpoint
-    endpoint_map = {
-        'sliver': '/api/c2/sliver/generate',
-        'havoc': '/api/c2/havoc/generate',
-        'mythic': '/api/c2/mythic/generate'
-    }
-
-    if framework not in endpoint_map:
-        return f"""
-❌ Unknown C2 framework: {framework}
-
-Supported frameworks:
-  • sliver - Sliver C2
-  • havoc - Havoc Framework
-  • mythic - Mythic C2
-
-Example:
-  c2_generate(framework="sliver", listener_host="192.168.1.100", listener_port=443)
-"""
-
-    # Call C2 API
-    result = api_post(endpoint_map[framework], {
-        'listener_host': listener_host,
-        'listener_port': listener_port,
-        'protocol': protocol,
+    return api_post('/api/compile', {
+        'code': source_code,
+        'output_name': output_name,
         'architecture': architecture,
-        'obfuscate': obfuscate
+        'optimization': optimization
     })
-
-    if not result.get('success'):
-        return f"""
-❌ C2 Generation Failed
-
-Error: {result.get('error', 'Unknown error')}
-
-NOTE: This feature requires C2 framework installation.
-      Designed for Kali/WSL development environment.
-
-Install {framework.title()} first:
-  Sliver: curl https://sliver.sh/install | sudo bash
-  Havoc: https://github.com/HavocFramework/Havoc
-  Mythic: https://github.com/its-a-feature/Mythic
-"""
-
-    beacon_path = result.get('beacon_path', '')
-    beacon_size = result.get('beacon_size', 0)
-    opsec_score = result.get('opsec_score', 0)
-
-    response = f"""
-=================================================================
-|              ✅ C2 BEACON GENERATED                           |
-=================================================================
-
-📦 Beacon Details
-|- Framework: {framework.title()}
-|- Protocol: {protocol}
-|- Listener: {listener_host}:{listener_port}
-|- Architecture: {architecture}
-|- Beacon Path: {beacon_path}
-|- Size: {beacon_size} bytes
-+- OPSEC Score: {opsec_score:.1f}/10
-
-📝 Next Steps
-1. Start {framework.title()} listener: {protocol} -L {listener_host} -l {listener_port}
-2. Deploy beacon to target
-3. Wait for callback
-
-⚠️  For AUTHORIZED red team operations only.
-"""
-
-    return response
 
 
 @mcp.tool()
-def c2_list() -> str:
+def record_feedback(
+    technique_ids: List[str],
+    target_av: str,
+    detected: bool,
+    details: str = None
+) -> Dict:
     """
-    📋 List supported C2 frameworks and their status.
+    📊 Record detection feedback to improve RAG intelligence.
 
-    Shows which C2 frameworks are integrated with Noctis-MCP
-    and their current installation status.
+    The AI should prompt user to record results after testing.
+    This improves future recommendations and effectiveness scores.
+
+    Args:
+        technique_ids: Techniques that were tested
+        target_av: AV/EDR tested against
+        detected: Was it detected? (True/False)
+        details: Optional details about detection
 
     Returns:
-        List of C2 frameworks with capabilities
-
-    Example:
-        c2_list()
+        {
+            "recorded": True,
+            "updated_effectiveness_scores": {...},
+            "indexed_to_rag": True
+        }
     """
-    logger.info("📋 Listing C2 frameworks")
+    return api_post('/api/v2/learning/record-detection', {
+        'technique_ids': technique_ids,
+        'target_av': target_av,
+        'detected': detected,
+        'detection_details': details
+    })
 
-    result = api_get('/api/c2/frameworks')
 
-    if not result.get('success'):
-        return f"❌ Error: {result.get('error', 'Failed to fetch frameworks')}"
+# ============================================================================
+# UTILITY TOOLS
+# ============================================================================
 
-    frameworks = result.get('frameworks', [])
+@mcp.tool()
+def rag_stats() -> Dict:
+    """
+    📈 Get RAG system statistics and health.
 
-    response = """
-=================================================================
-|                  C2 FRAMEWORK INTEGRATION                     |
-=================================================================
-
-"""
-
-    for fw in frameworks:
-        name = fw.get('name', 'Unknown')
-        status = fw.get('status', 'unknown')
-        protocols = fw.get('protocols', [])
-
-        status_icon = '✅' if status == 'implemented' else '🚧'
-
-        response += f"{status_icon} {name}\n"
-        response += f"   Status: {status}\n"
-        response += f"   Protocols: {', '.join(protocols)}\n\n"
-
-    response += """
-💡 NOTE: C2 integration requires framework installation.
-         Designed for Kali/WSL development environment.
-
-To generate beacon:
-  c2_generate(framework="sliver", listener_host="IP", listener_port=443)
-"""
-
-    return response
+    Returns:
+        {
+            "enabled": True,
+            "total_documents": 1247,
+            "knowledge_base_chunks": 89,
+            "github_repos": 45,
+            "research_papers": 23,
+            "blog_posts": 12,
+            "detection_patterns": 8
+        }
+    """
+    return api_get('/api/v2/rag/stats')
 
 
 # ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
 
-def print_banner():
-    """Print Noctis-MCP banner"""
-    banner = """
-====================================================================
-   _   _            _   _         __  __  ____ ____
-  | \\ | | ___   ___| |_(_)___    |  \\/  |/ ___|  _ \\
-  |  \\| |/ _ \\ / __| __| / __|   | |\\/| | |   | |_) |
-  | |\\  | (_) | (__| |_| \\__ \\   | |  | | |___|  __/
-  |_| \\_|\\___/ \\___|\\__|_|___/   |_|  |_|\\____|_|
+if __name__ == "__main__":
+    import argparse
 
-  AI-Driven Malware Development Platform
-  Simplified Workflow for Cursor IDE
-
-  Version: 2.0.0-alpha
-  Tools: 8 (6 core + 2 C2)
-  Workflow: Streamlined for AI assistants
-====================================================================
-"""
-    print(banner)
-
-
-def main():
-    """Main entry point"""
-    global SERVER_URL
-
-    # Parse arguments
-    parser = argparse.ArgumentParser(
-        description='Noctis-MCP v2.0 - Simplified Workflow',
-        epilog='For authorized security research only'
-    )
-    parser.add_argument(
-        '--server',
-        default='http://localhost:8888',
-        help='Noctis API server URL'
-    )
-    parser.add_argument(
-        '--debug',
-        action='store_true',
-        help='Enable debug logging'
-    )
-
+    parser = argparse.ArgumentParser(description="Noctis-MCP Agentic Client")
+    parser.add_argument('--server', default="http://localhost:8888", help='Server URL')
     args = parser.parse_args()
-    SERVER_URL = args.server.rstrip('/')
 
-    if args.debug:
-        logger.setLevel(logging.DEBUG)
+    SERVER_URL = args.server
 
-    # Print banner
-    print_banner()
-
-    # Check server
-    logger.info(f"Connecting to Noctis API server: {SERVER_URL}")
+    # Check server connectivity
     if not check_server():
-        logger.error("Cannot connect to Noctis API server!")
-        logger.error("Make sure it's running:")
-        logger.error("  python server/noctis_server.py")
-        return 1
-
-    logger.info("✅ Connected to Noctis API server")
-
-    # Get stats
-    stats_result = api_get('/api/stats')
-    if stats_result.get('success'):
-        stats = stats_result.get('statistics', {})
-        logger.info(f"Techniques available: {stats.get('total_techniques', 0)}")
-
-    # Start FastMCP server
-    logger.info("Starting FastMCP server...")
-    logger.info("")
-    logger.info("=============================================================")
-    logger.info("|          TOOLS REGISTERED (8 Total)                      |")
-    logger.info("=============================================================")
-    logger.info("")
-    logger.info("CORE WORKFLOW (6 tools):")
-    logger.info("  1. develop()  - 🚀 PRIMARY TOOL - Autonomous malware creation")
-    logger.info("  2. browse()   - 🔍 Explore techniques")
-    logger.info("  3. compile()  - 🔨 Build executables")
-    logger.info("  4. learn()    - 🧠 Provide feedback")
-    logger.info("  5. files()    - 📁 Manage workspace")
-    logger.info("  6. help()     - ❓ Get guidance")
-    logger.info("")
-    logger.info("C2 INTEGRATION (2 tools - Future Kali/WSL):")
-    logger.info("  7. c2_generate() - 🔗 Generate C2 beacons")
-    logger.info("  8. c2_list()     - 📋 List C2 frameworks")
-    logger.info("")
-    logger.info("MCP server ready! Connect from Cursor IDE.")
-    logger.info("")
-
-    # Run FastMCP server
-    mcp.run()
-
-    return 0
-
-
-if __name__ == '__main__':
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        print("\n[*] Shutting down Noctis-MCP...")
-        sys.exit(0)
-    except Exception as e:
-        logger.error(f"Fatal error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"[!] Cannot connect to Noctis server at {SERVER_URL}")
+        print(f"[!] Start server with: python server/noctis_server.py --port 8888")
         sys.exit(1)
+
+    print("="*70)
+    print("  Noctis-MCP Agentic Client v3.0")
+    print("="*70)
+    print(f"\n[+] Connected to server: {SERVER_URL}")
+
+    # Get RAG stats directly via API (can't call decorated function)
+    try:
+        stats = api_get('/api/v2/rag/stats')
+        if stats.get('enabled'):
+            print(f"[+] RAG System: ENABLED")
+            print(f"    - Knowledge chunks: {stats.get('knowledge_base', 0)}")
+            print(f"    - GitHub repos: {stats.get('github_repos', 0)}")
+            print(f"    - Research papers: {stats.get('research_papers', 0)}")
+            print(f"    - Blog posts: {stats.get('blog_posts', 0)}")
+        else:
+            print(f"[!] RAG System: DISABLED")
+    except:
+        print(f"[!] Could not fetch RAG stats")
+
+    print(f"\n[*] 11 Agentic Tools Available:")
+    print(f"    Intelligence: search_intelligence, analyze_technique, fetch_latest")
+    print(f"    Code: generate_code, optimize_opsec, validate_code")
+    print(f"    Selection: select_techniques, compare_techniques")
+    print(f"    Build: compile_code, record_feedback")
+    print(f"    Utils: rag_stats")
+    print(f"\n[*] MCP server starting in STDIO mode for IDE integration...")
+    print(f"[*] Tools will be exposed to Cursor/VSCode via Model Context Protocol")
+    print("="*70 + "\n")
+
+    # Run MCP server in stdio mode (required for Cursor/VSCode)
+    # This allows the IDE to communicate with the MCP server via stdin/stdout
+    import asyncio
+    asyncio.run(mcp.run_stdio_async())

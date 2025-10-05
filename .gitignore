@@ -46,6 +46,15 @@ build/*
 data/*.db
 data/*.db-journal
 
+# RAG System
+data/rag_db/
+*.chroma
+.chroma/
+
+# Sentence Transformers Cache
+.cache/
+models/
+
 # Testing
 .pytest_cache/
 

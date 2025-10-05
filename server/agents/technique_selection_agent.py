@@ -60,6 +60,16 @@ class TechniqueSelectionAgent(BaseAgent):
         metadata_path = self.config.get('metadata_path', 'techniques/metadata')
         self.technique_manager = TechniqueManager(metadata_path)
 
+        # Initialize RAG engine for knowledge retrieval
+        try:
+            from server.rag import RAGEngine
+            rag_path = self.config.get('rag_db_path', 'data/rag_db')
+            self.rag_engine = RAGEngine(persist_dir=rag_path)
+            self.logger.info("RAG engine initialized successfully")
+        except Exception as e:
+            self.logger.warning(f"RAG engine not available: {e}")
+            self.rag_engine = None
+
         self.logger.info(f"Loaded {len(self.technique_manager.techniques)} techniques")
 
     def validate_inputs(self, **kwargs) -> Tuple[bool, List[str]]:
@@ -101,6 +111,9 @@ class TechniqueSelectionAgent(BaseAgent):
         self.logger.info(f"Selecting techniques: target_av={target_av}, objective={objective}, complexity={complexity}")
 
         try:
+            # 0. Query RAG for relevant knowledge and intelligence
+            rag_context = self._query_rag_for_context(target_av, objective)
+
             # 1. Get all techniques
             all_techniques = self.technique_manager.get_all()
             self.logger.debug(f"Found {len(all_techniques)} total techniques")
@@ -116,12 +129,19 @@ class TechniqueSelectionAgent(BaseAgent):
                 all_techniques = filtered
                 self.logger.debug(f"After objective filter: {len(all_techniques)} techniques")
 
-            # 3. Get effectiveness scores from learning engine
+            # 3. Get effectiveness scores from learning engine + RAG boost
             scored_techniques = []
             for tech in all_techniques:
                 tech_id = tech.get('technique_id')
-                score = self.learning_engine.get_effectiveness_score(tech_id, target_av)
-                scored_techniques.append((tech_id, score, tech))
+
+                # Base score from learning engine
+                base_score = self.learning_engine.get_effectiveness_score(tech_id, target_av)
+
+                # Boost score based on RAG intelligence
+                rag_boost = self._calculate_rag_boost(tech_id, rag_context)
+                final_score = base_score + rag_boost
+
+                scored_techniques.append((tech_id, final_score, tech))
 
             # 4. Sort by effectiveness score (descending)
             scored_techniques.sort(key=lambda x: x[1], reverse=True)
@@ -147,8 +167,8 @@ class TechniqueSelectionAgent(BaseAgent):
                 if len(selected) >= max_techniques:
                     break
 
-            # 6. Generate rationale
-            rationale = self._generate_rationale(selected, target_av, objective, complexity)
+            # 6. Generate rationale (now includes RAG intelligence)
+            rationale = self._generate_rationale(selected, target_av, objective, complexity, rag_context)
 
             # 7. Build compatibility matrix
             compatibility = self._build_compatibility_matrix([tid for tid, _, _ in selected])
@@ -172,7 +192,8 @@ class TechniqueSelectionAgent(BaseAgent):
                 ],
                 'rationale': rationale,
                 'compatibility_matrix': compatibility,
-                'mitre_coverage': mitre_coverage
+                'mitre_coverage': mitre_coverage,
+                'rag_intelligence': rag_context.get('summary', 'No RAG data available') if rag_context else None
             }
 
             warnings = []
@@ -202,7 +223,83 @@ class TechniqueSelectionAgent(BaseAgent):
                 metadata={}
             )
 
-    def _generate_rationale(self, selected: List[Tuple[str, float, Dict]], target_av: str, objective: str, complexity: str) -> str:
+    def _query_rag_for_context(self, target_av: str, objective: str) -> Optional[Dict]:
+        """Query RAG system for relevant intelligence and knowledge"""
+        if not self.rag_engine:
+            return None
+
+        try:
+            # Build search query
+            query = f"{objective} techniques for {target_av} evasion bypass detection"
+
+            # Search RAG for relevant knowledge
+            results = self.rag_engine.search_knowledge(query, target_av=target_av, n_results=5)
+
+            if not results:
+                return None
+
+            # Extract key insights
+            sources = []
+            key_points = []
+
+            for result in results:
+                source_type = result.get('source', 'unknown')
+                content = result.get('content', '')
+                metadata = result.get('metadata', {})
+
+                sources.append({
+                    'type': source_type,
+                    'content_preview': content[:200],
+                    'metadata': metadata
+                })
+
+                # Extract first sentence as key point
+                if content:
+                    first_sentence = content.split('.')[0] + '.'
+                    key_points.append(first_sentence)
+
+            # Create summary
+            summary = f"Intelligence from {len(results)} sources: " + " ".join(key_points[:3])
+
+            return {
+                'query': query,
+                'results_count': len(results),
+                'sources': sources,
+                'key_points': key_points,
+                'summary': summary
+            }
+
+        except Exception as e:
+            self.logger.warning(f"RAG query failed: {e}")
+            return None
+
+    def _calculate_rag_boost(self, tech_id: str, rag_context: Optional[Dict]) -> float:
+        """Calculate score boost based on RAG intelligence"""
+        if not rag_context or not rag_context.get('sources'):
+            return 0.0
+
+        # Check if technique is mentioned in RAG sources
+        boost = 0.0
+        for source in rag_context.get('sources', []):
+            content = source.get('content_preview', '').lower()
+
+            # Check if tech_id or technique name appears in source
+            if tech_id.lower() in content:
+                boost += 0.2  # Boost for direct mention
+
+            # Additional boost based on source type
+            source_type = source.get('type', '')
+            if source_type == 'github_repo':
+                boost += 0.1  # Recent GitHub activity
+            elif source_type == 'research_paper':
+                boost += 0.15  # Academic validation
+            elif source_type == 'blog_post':
+                boost += 0.1  # Industry recognition
+
+        # Cap boost at 0.5
+        return min(boost, 0.5)
+
+    def _generate_rationale(self, selected: List[Tuple[str, float, Dict]], target_av: str, objective: str, complexity: str, rag_context: Optional[Dict] = None) -> str:
         """Generate human-readable rationale for technique selection"""
         if not selected:
             return "No techniques were selected based on the given criteria."
@@ -213,6 +310,10 @@ class TechniqueSelectionAgent(BaseAgent):
         rationale_parts.append(f"Selected {len(selected)} techniques optimized for {target_av} with {objective} objective.")
         rationale_parts.append(f"Complexity level: {complexity}.")
 
+        # RAG intelligence context
+        if rag_context and rag_context.get('results_count', 0) > 0:
+            rationale_parts.append(f"\nIntelligence Sources: {rag_context['results_count']} recent sources analyzed (GitHub, arXiv, security blogs)")
+
         # Top techniques
         rationale_parts.append("\nTop techniques selected:")
         for i, (tech_id, score, tech) in enumerate(selected[:3], 1):
@@ -221,8 +322,16 @@ class TechniqueSelectionAgent(BaseAgent):
             rationale_parts.append(f"  {i}. {name} ({tech_id}) - Score: {score:.2f} - Category: {category}")
 
         # Reasoning
-        rationale_parts.append(f"\nThese techniques were chosen based on historical effectiveness data against {target_av}.")
-        rationale_parts.append("The selection balances detection evasion with operational stability.")
+        rationale_parts.append(f"\nThese techniques were chosen based on:")
+        rationale_parts.append(f"  - Historical effectiveness data against {target_av}")
+        rationale_parts.append("  - Real-time intelligence from GitHub, research papers, and security blogs")
+        rationale_parts.append("  - Compatibility and operational stability")
+
+        # Add key insights from RAG if available
+        if rag_context and rag_context.get('key_points'):
+            rationale_parts.append("\nKey Intelligence Insights:")
+            for point in rag_context['key_points'][:3]:
+                rationale_parts.append(f"  - {point}")
 
         return "\n".join(rationale_parts)
 

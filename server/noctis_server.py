@@ -1208,11 +1208,42 @@ def main():
     agent_config = {
         'db_path': config.get('paths.database', 'data/knowledge_base.db'),
         'metadata_path': metadata_path,
-        'output_dir': config.get('paths.output', 'output')
+        'output_dir': config.get('paths.output', 'output'),
+        'rag_db_path': config.get('paths.rag_db', 'data/rag_db')
     }
     AgentRegistry.initialize(agent_config)
     agent_registry = AgentRegistry
     logger.info("Agent registry initialized successfully")
+
+    # Initialize RAG engine for agentic intelligence
+    logger.info("Initializing RAG engine...")
+    try:
+        from server.rag import RAGEngine
+        rag_engine = RAGEngine(persist_dir=agent_config['rag_db_path'])
+        logger.info(f"RAG engine initialized: {rag_engine.get_stats()}")
+    except Exception as e:
+        logger.warning(f"RAG engine initialization failed: {e}")
+        logger.warning("Agentic features will be disabled")
+        rag_engine = None
+
+    # Initialize code assembler with RAG
+    from server.code_assembler import CodeAssembler
+    code_assembler = CodeAssembler(rag_engine=rag_engine)
+    logger.info("Code assembler initialized with RAG support")
+
+    # Initialize learning engine
+    from server.learning_engine import AgenticLearningEngine
+    learning_engine = AgenticLearningEngine(agent_config['db_path'])
+    logger.info("Learning engine initialized")
+
+    # Register agentic API endpoints
+    if rag_engine and rag_engine.enabled:
+        logger.info("Registering agentic API endpoints...")
+        from server.agentic_api import init_agentic_api
+        init_agentic_api(app, rag_engine, technique_manager, code_assembler, learning_engine)
+        logger.info("Agentic API endpoints registered")
+    else:
+        logger.warning("Agentic API endpoints NOT registered (RAG disabled)")
 
     # Determine host and port
     host = args.host or config.get('server.host', '127.0.0.1')
@@ -1246,6 +1277,20 @@ def main():
     print(f"   - POST /api/v2/agents/opsec-optimization    - OPSEC optimization")
     print(f"   - POST /api/v2/agents/learning              - Learning feedback")
     print(f"   - GET  /api/v2/agents/status                - Agent status")
+
+    if rag_engine and rag_engine.enabled:
+        print(f"\n[*] Agentic Intelligence API (RAG-Powered):")
+        print(f"   - POST /api/v2/intelligence/search          - Search RAG for intelligence")
+        print(f"   - POST /api/v2/intelligence/analyze         - Deep technique analysis")
+        print(f"   - POST /api/v2/intelligence/fetch-latest    - Fetch live intelligence")
+        print(f"   - POST /api/v2/code/generate                - RAG-informed code generation")
+        print(f"   - POST /api/v2/code/validate                - Validate code quality")
+        print(f"   - POST /api/v2/techniques/select            - Intelligent technique selection")
+        print(f"   - GET  /api/v2/rag/stats                    - RAG system statistics")
+        print(f"\n[+] RAG System: ENABLED ({rag_engine.get_stats().get('knowledge_base', 0)} knowledge chunks indexed)")
+    else:
+        print(f"\n[!] RAG System: DISABLED (install dependencies: pip install chromadb sentence-transformers)")
+
     print(f"\n[!] Press Ctrl+C to stop the server\n")
     
     # Run server

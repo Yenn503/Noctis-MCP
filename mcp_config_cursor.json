@@ -3,11 +3,11 @@
     "noctis-mcp": {
       "command": "python",
       "args": [
-        "C:/path/to/Noctis-MCP/noctis_mcp_client/noctis_mcp.py",
-        "--server",
-        "http://localhost:8888"
+        "-m",
+        "noctis_mcp_client.noctis_mcp"
       ],
-      "description": "Noctis-MCP v2.0 - AI Malware Development (8 tools: develop, browse, compile, learn, files, help, c2_generate, c2_list)",
+      "cwd": "c:/Users/lewis/Desktop/Noctis-MCP",
+      "description": "Noctis-MCP v3.0-agentic - RAG-Powered Malware Development (11 agentic tools)",
       "timeout": 300,
       "env": {}
     }
