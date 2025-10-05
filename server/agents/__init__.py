@@ -21,11 +21,6 @@ import logging
 # Import base classes
 from .base_agent import BaseAgent, AgentResult
 
-# Import specialized agents (will be created)
-# from .technique_selection_agent import TechniqueSelectionAgent
-# from .malware_development_agent import MalwareDevelopmentAgent
-# from .opsec_optimization_agent import OpsecOptimizationAgent
-# from .learning_agent import LearningAgent
 
 
 logger = logging.getLogger(__name__)
