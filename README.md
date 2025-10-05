@@ -15,9 +15,11 @@
 
 **⚠️ Legal Disclaimer**: For authorised security research, penetration testing, and red team operations only. Unauthorised use is illegal and prohibited.
 
-## 🎯 What is Noctis-MCP?
+## 🎯 What is Noctis-AI?
 
 **Noctis-MCP** malware development platform that transforms your AI assistant into a sophisticated red team operator. Think of it as having a malware development expert with access to the latest evasion techniques, real-world implementations, and cutting-edge research - all integrated directly into your IDE.
+
+Next Update is educational classes and modules coming for the techniques used
 
 ### 🧠 How It Works
 
@@ -29,7 +31,7 @@
 - **Live Intelligence** from security blogs and threat feeds
 - **Detection Patterns** from EDR/AV testing results
 
-### 🚀 The Magic
+### The Prompt:
 
 Instead of writing malware from scratch or copying outdated techniques, you simply ask:
 
@@ -37,9 +39,9 @@ Instead of writing malware from scratch or copying outdated techniques, you simp
 
 **Noctis-MCP responds by:**
 1. 🔍 **Searching** its intelligence database for current evasion methods
-2. 🧠 **Analyzing** which techniques work best against your target
+2. 🧠 **Analysing** which techniques work best against your target
 3. 💻 **Generating** production-ready code using real GitHub implementations
-4. 🛡️ **Optimizing** for OPSEC with string encryption and API hashing
+4. 🛡️ **Optimising** for OPSEC with string encryption and API hashing
 5. ✅ **Validating** the code compiles and passes quality checks
 6. 📁 **Saving** complete source files with headers and documentation
 
@@ -64,7 +66,7 @@ Instead of writing malware from scratch or copying outdated techniques, you simp
 - **10 MITRE ATT&CK Techniques**: Syscalls, injection, encryption, steganography, etc.
 - **C2 Framework Integration**: Sliver, Havoc, Mythic support
 - **Cross-Platform Compilation**: Windows binaries from Linux/macOS
-- **OPSEC Optimization**: String encryption, API hashing, control flow obfuscation
+- **OPSEC Optimisation**: String encryption, API hashing, control flow obfuscation
 
 ## 🚀 Quick Start
 
@@ -74,7 +76,7 @@ Instead of writing malware from scratch or copying outdated techniques, you simp
 1. **Noctis Server** (Flask API on port 8888)
 2. **MCP Client** (via Cursor/VSCode)
 
-**Both must be running for MCP tools to work!**
+**Both must be running for the MCP tools to work!**
 
 ### 📋 Prerequisites
 
@@ -100,7 +102,7 @@ chmod +x scripts/setup/setup.sh
 # Windows
 .\scripts\setup\setup.ps1
 
-# 3. Initialize RAG intelligence system
+# 3. Initialise RAG intelligence system
 source venv/bin/activate  # Linux/macOS
 # venv\Scripts\activate   # Windows
 python scripts/rag_setup.py
@@ -188,10 +190,10 @@ Result: 3,000+ lines of production-ready malware code in seconds
 User: "Create a Crowdstrike bypass using process injection"
 
 AI Response:
-- Searches for latest Windows Defender evasion techniques
+- Searches for the latest Windows Defender evasion techniques
 - Finds 15+ GitHub repos with injection methods
 - Generates code using Hell's Gate + API unhooking
-- Optimizes with string encryption and API hashing
+- Optimises with string encryption and API hashing
 - Validates compilation and OPSEC score
 - Saves: generated_T008_T005_20251005_174523.c (2,847 lines)
 ```
@@ -201,10 +203,10 @@ AI Response:
 User: "Generate a Sliver beacon with syscall evasion"
 
 AI Response:
-- Analyzes Sliver C2 framework requirements
+- Analyses Sliver C2 framework requirements
 - Selects syscall technique (NOCTIS-T004)
 - Generates beacon code with direct NTDLL calls
-- Optimizes for stealth and stability
+- Optimises for stealth and stability
 - Compiles to Windows PE binary
 - Saves: sliver_beacon_syscalls.exe
 ```
@@ -254,7 +256,7 @@ response = requests.post("http://localhost:8888/api/c2/sliver/generate", json={
 - **Complete malware payloads** with evasion techniques
 - **MITRE ATT&CK mapped** techniques (T1055, T1106, etc.)
 - **RAG-informed code** using patterns from 24+ GitHub repositories
-- **OPSEC optimized** code with string encryption and API hashing
+- **OPSEC optimised** code with string encryption and API hashing
 
 ### File Naming Convention
 - `generated_{technique_ids}_{timestamp}.{extension}`
@@ -282,7 +284,7 @@ python scripts/update_intelligence.py
 
 **Debug Steps:**
 ```bash
-# 1. Check if server is running
+# 1. Check if the server is running
 curl http://localhost:8888/health
 
 # 2. Test MCP client directly
@@ -301,7 +303,7 @@ cat ~/.cursor/mcp.json | python -m json.tool
 lsof -i :8888  # macOS/Linux
 netstat -ano | findstr :8888  # Windows
 
-# Kill the process or use different port
+# Kill the process or use a different port
 python server/noctis_server.py --port 8889
 ```
 
@@ -319,7 +321,7 @@ pip list | grep -E "(flask|fastmcp|requests)"
 
 **RAG not working:**
 ```bash
-# Reinitialize RAG system
+# Reinitialise RAG system
 source venv/bin/activate
 python scripts/rag_setup.py
 
@@ -415,13 +417,14 @@ MIT License - See [LICENSE](LICENSE) for details
 3. **Integrate C2** - Connect with your preferred C2 framework
 4. **Contribute** - Help improve the platform and intelligence
 
-**Happy Hacking with Noctis-MCP! 🔥**
+**Happy Hacking with Noctis-AI! 🔥**
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by the Noctis-MCP Community**
+**Author: Yenn503**
+**Community project 🧠**
 
 *Transforming AI assistants into sophisticated red team operators*
 
