@@ -274,11 +274,14 @@ class TechniqueIndexer:
     
     def _extract_function_names(self, content: str) -> List[str]:
         """Extract function names from C code"""
-        # Simple regex for function definitions
-        # Matches: RETURN_TYPE FunctionName(PARAMS)
-        pattern = r'\b(?:BOOL|DWORD|VOID|FARPROC|HMODULE|NTSTATUS|LPVOID|HANDLE|int|void|char\*)\s+(\w+)\s*\([^)]*\)'
+        # Enhanced regex for function definitions
+        # Matches: [static] [inline] RETURN_TYPE [*] FunctionName(PARAMS)
+        # Supports Windows types, pointers, and complex parameter lists
+        pattern = r'(?:static\s+)?(?:inline\s+)?(?:BOOL|DWORD|VOID|NTSTATUS|LPVOID|HANDLE|PVOID|PBYTE|PCHAR|BYTE|SIZE_T|ULONG_PTR|ULONG|USHORT|FARPROC|HMODULE|PWORD|PDWORD|int|void|char|unsigned\s+\w+)\s*\**\s+(\w+)\s*\(((?:[^()]|\([^()]*\))*)\)\s*\{'
         matches = re.findall(pattern, content)
-        return list(set(matches))
+        # matches returns list of tuples (function_name, params) - we only want function names
+        function_names = [match[0] for match in matches] if matches else []
+        return list(set(function_names))
     
     def _determine_category(self, technique_name: str) -> str:
         """Determine technique category based on name"""

@@ -1,5 +1,5 @@
 {
-  "technique_id": "NOCTIS-T009",
+  "technique_id": "NOCTIS-T008",
   "name": "Gpu Evasion",
   "category": "evasion/advanced",
   "description": "Moves malicious code to GPU memory to evade memory scanners",
@@ -9,21 +9,19 @@
     "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Configuration.h",
     "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\GpuManipulation.h"
   ],
-  "mitre_attack": [
-    "T1564"
-  ],
+  "mitre_attack": [],
   "dependencies": [
-    "Windows.h",
-    "intrin.h",
-    "stdio.h",
-    "Configuration.h",
-    "DebugMacros.h",
-    "DllsQueue.h",
-    "GpuManipulation.h",
     "StackSpoofing.h",
     "Structures.h",
+    "DebugMacros.h",
+    "stdio.h",
     "TrapSyscallsTampering.h",
+    "GpuManipulation.h",
+    "Windows.h",
     "UnpackAndHide.h",
+    "DllsQueue.h",
+    "Configuration.h",
+    "intrin.h",
     "Utilities.h"
   ],
   "compatible_with": [],
@@ -33,100 +31,24 @@
     "stability": "unknown",
     "tested_on": [],
     "bypasses": [],
-    "detected_by": [],
-    "code_quality": {
-      "total_lines": 1047,
-      "code_lines": 733,
-      "comment_lines": 72,
-      "function_count": 2,
-      "average_function_complexity": 1.5,
-      "max_function_complexity": 2
-    },
-    "dependencies": {
-      "system_headers": [
-        "Windows.h",
-        "intrin.h",
-        "stdio.h"
-      ],
-      "project_headers": [
-        "Configuration.h",
-        "DebugMacros.h",
-        "DllsQueue.h",
-        "GpuManipulation.h",
-        "StackSpoofing.h",
-        "Structures.h",
-        "TrapSyscallsTampering.h",
-        "UnpackAndHide.h",
-        "Utilities.h"
-      ],
-      "external_libs": [],
-      "functions_called": [
-        "CreateThread",
-        "CreateTimerQueue",
-        "CreateTimerQueueTimer",
-        "CreateVramBlob",
-        "GetExitCodeThread",
-        "GetLastError",
-        "GetModuleHandleH",
-        "GetNtProcAddress",
-        "GetNtdllBaseAddress",
-        "GetProcAddressH",
-        "GetThreadContext",
-        "NtGetCurrentProcess",
-        "NtGetCurrentThread",
-        "RtlAnsiStringToUnicodeString",
-        "RtlCopyMemory",
-        "RtlFreeUnicodeString",
-        "RtlInitAnsiString",
-        "RtlSecureZeroMemory",
-        "SetPeSectionsMemProtection",
-        "SetStackProtection",
-        "SetThreadContext"
-      ],
-      "structs_used": [
-        "UNICODE_STRING",
-        "_GPU_SECTION",
-        "_PE_FLUCTUATION_CONFIG",
-        "_PE_PAYLOAD_CONFIG"
-      ]
-    }
+    "detected_by": []
   },
   "code_blocks": {
     "file": "UnpackAndHide.c",
     "functions": [
-      {
-        "name": "AlignDown",
-        "signature": "static __forceinline SIZE_T AlignDown(SIZE_T val, SIZE_T align)",
-        "line_start": 795,
-        "line_end": 797,
-        "complexity": 1,
-        "calls": [
-          "AlignDown"
-        ]
-      },
-      {
-        "name": "IsWithinStackBounds",
-        "signature": "static __forceinline BOOL IsWithinStackBounds(PBYTE p, PBYTE pLimit, PBYTE pBase)",
-        "line_start": 799,
-        "line_end": 801,
-        "complexity": 2,
-        "calls": [
-          "IsWithinStackBounds"
-        ]
-      }
-    ],
-    "total_functions": 2,
-    "quality_metrics": {
-      "total_lines": 1047,
-      "code_lines": 733,
-      "comment_lines": 72,
-      "function_count": 2,
-      "average_function_complexity": 1.5,
-      "max_function_complexity": 2
-    }
+      "InitializePayloadConfig",
+      "SetPeSectionsMemProtection",
+      "SecureCleanupPayloadConfig",
+      "SetStackProtection",
+      "ResolvePeRelocation",
+      "LoadDllViaLdr",
+      "ResolveImportAddressTable",
+      "IsWithinStackBounds",
+      "AlignDown"
+    ]
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T23:44:01.650502"
+  "last_updated": "2025-10-05T07:04:45.790454"
 }

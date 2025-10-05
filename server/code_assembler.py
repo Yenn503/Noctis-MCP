@@ -115,18 +115,31 @@ class SourceFileReader:
         return re.findall(pattern, content)
     
     def _extract_defines(self, content: str) -> List[str]:
-        """Extract #define statements"""
-        pattern = r'#define\s+([^\n]+)'
-        return re.findall(pattern, content)
+        """Extract #define statements (complete, including multi-line)"""
+        defines = []
+        lines = content.split('\n')
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            if line.startswith('#define'):
+                # Capture multi-line defines (ending with \)
+                full_define = line
+                while full_define.endswith('\\') and i + 1 < len(lines):
+                    i += 1
+                    full_define = full_define[:-1] + ' ' + lines[i].strip()
+                defines.append(full_define)
+            i += 1
+        return defines
     
     def _extract_functions(self, content: str, file_path: Path) -> List[FunctionDefinition]:
         """Extract function definitions"""
         functions = []
-        
-        # Simple pattern for function definitions
-        # Matches: RETURN_TYPE FunctionName(PARAMS) {
-        pattern = r'((?:BOOL|DWORD|VOID|FARPROC|HMODULE|NTSTATUS|LPVOID|HANDLE|PVOID|int|void|char\*?)\s+)(\w+)\s*\(([^)]*)\)\s*\{'
-        
+
+        # Enhanced pattern for function definitions
+        # Matches: [static] [inline] RETURN_TYPE [*] FunctionName(PARAMS) {
+        # Supports Windows types, pointers, and complex parameter lists
+        pattern = r'((?:static\s+)?(?:inline\s+)?(?:BOOL|DWORD|VOID|NTSTATUS|LPVOID|HANDLE|PVOID|PBYTE|PCHAR|BYTE|SIZE_T|ULONG_PTR|ULONG|USHORT|FARPROC|HMODULE|PWORD|PDWORD|int|void|char|unsigned\s+\w+)\s*\**\s+)(\w+)\s*\(((?:[^()]|\([^()]*\))*)\)\s*\{'
+
         matches = re.finditer(pattern, content, re.MULTILINE)
         
         for match in matches:
@@ -168,17 +181,35 @@ class SourceFileReader:
         return content[start_pos:pos-1] if brace_count == 0 else ""
     
     def _extract_structs(self, content: str) -> List[str]:
-        """Extract struct definitions"""
-        # Match typedef struct { ... } NAME;
-        pattern = r'typedef\s+struct\s*\{[^}]+\}\s*(\w+);'
-        return re.findall(pattern, content, re.DOTALL)
+        """Extract complete struct definitions including typedef struct"""
+        structs = []
+        # Match typedef struct { ... } NAME; with proper brace matching
+        pattern = r'typedef\s+struct\s+\w*\s*\{[^}]*\}\s*\w+\s*;'
+        matches = re.finditer(pattern, content, re.DOTALL)
+        for match in matches:
+            structs.append(match.group(0))
+
+        # Also match regular struct definitions
+        pattern2 = r'struct\s+\w+\s*\{[^}]*\}\s*;'
+        matches2 = re.finditer(pattern2, content, re.DOTALL)
+        for match in matches2:
+            structs.append(match.group(0))
+
+        return structs
     
     def _extract_global_vars(self, content: str) -> List[str]:
-        """Extract global variable declarations"""
-        # Simple pattern for global vars (outside functions)
-        # This is a simplified version
-        pattern = r'^(?:extern\s+)?(?:static\s+)?(?:DWORD|PVOID|HANDLE)\s+(\w+)\s*[;=]'
-        return re.findall(pattern, content, re.MULTILINE)
+        """Extract global variable declarations (complete lines)"""
+        global_vars = []
+        # Pattern for global variable declarations (outside functions)
+        # Match: [extern] [static] [volatile] TYPE varname [= value];
+        pattern = r'^(?:extern\s+)?(?:static\s+)?(?:volatile\s+)?(?:const\s+)?(?:DWORD|PVOID|HANDLE|BOOL|NTSTATUS|SIZE_T|ULONG_PTR|PBYTE|int|void\*|char\*|struct\s+\w+|\w+)\s+\**\s*\w+(?:\[[^\]]*\])?\s*(?:=\s*[^;]+)?;'
+        matches = re.finditer(pattern, content, re.MULTILINE)
+        for match in matches:
+            # Exclude lines that look like they're inside functions (heuristic)
+            line = match.group(0)
+            if not any(kw in line for kw in ['return', 'if (', 'for (']):
+                global_vars.append(line)
+        return global_vars
 
 
 class DependencyResolver:
@@ -333,23 +364,37 @@ class CodeAssembler:
         
         # Parse source files for selected techniques
         for technique in selected_techniques:
+            logger.info(f"Processing technique: {technique['technique_id']} with {len(technique.get('source_files', []))} source files")
             for source_file_path in technique.get('source_files', []):
-                full_path = self.examples_root / source_file_path
+                # Normalize path separators for cross-platform compatibility
+                normalized_path = source_file_path.replace('\\', '/')
+                full_path = self.examples_root / normalized_path
+                logger.info(f"  Checking: {full_path} (exists: {full_path.exists()})")
                 if full_path.exists() and str(full_path) not in self.parsed_files:
                     parsed = self.file_reader.read_file(full_path)
                     if parsed:
                         self.parsed_files[str(full_path)] = parsed
-                        
+                        logger.info(f"  Parsed {len(parsed.functions)} functions from {full_path.name}")
+
                         # Index functions
                         for func in parsed.functions:
                             func.technique_id = technique['technique_id']
                             self.all_functions[func.name] = func
+                            logger.info(f"    Indexed: {func.name}")
         
         # Resolve dependencies
         includes, required_funcs = self.dependency_resolver.resolve(
-            selected_techniques, 
+            selected_techniques,
             self.all_functions
         )
+
+        # IMPORTANT: Also include ALL functions that were parsed for selected techniques
+        # (not just those listed in metadata's function list)
+        selected_tech_ids = [t['technique_id'] for t in selected_techniques]
+        for func_name, func_def in self.all_functions.items():
+            if func_def.technique_id in selected_tech_ids and func_name not in required_funcs:
+                required_funcs.append(func_name)
+                logger.info(f"Adding parsed function: {func_name} from {func_def.technique_id}")
         
         # Generate code
         source_code = self._generate_source_code(
@@ -388,21 +433,39 @@ class CodeAssembler:
         )
     
     def _generate_source_code(
-        self, 
-        techniques: List[Dict], 
+        self,
+        techniques: List[Dict],
         required_funcs: List[str],
         includes: Set[str],
         include_main: bool
     ) -> str:
-        """Generate the main source code file"""
-        
+        """Generate the main source code file with complete infrastructure"""
+
         code_parts = []
-        
+
+        # PHASE 1: Collect all infrastructure from parsed files
+        all_defines = set()
+        all_structs = set()
+        all_globals = set()
+
+        for file_path, parsed_file in self.parsed_files.items():
+            # Collect defines/macros
+            for define in parsed_file.defines:
+                all_defines.add(define)
+            # Collect struct definitions
+            for struct in parsed_file.structs:
+                all_structs.add(struct)
+            # Collect global variables
+            for global_var in parsed_file.global_vars:
+                all_globals.add(global_var)
+
+        logger.info(f"Collected: {len(all_defines)} defines, {len(all_structs)} structs, {len(all_globals)} globals")
+
         # Header comment
         code_parts.append(f"""/*
  * Auto-Generated Malware Code
  * Generated by Noctis-MCP v2.0
- * 
+ *
  * Techniques Used:
 {chr(10).join(f' *   - {t["name"]} ({t["technique_id"]})' for t in techniques)}
  * 
@@ -420,8 +483,35 @@ class CodeAssembler:
                 code_parts.append(f'#include <{inc}>')
         
         code_parts.append("")
-        
-        # Add function implementations
+
+        # PHASE 2: Add #defines (macros) - MUST come before functions
+        if all_defines:
+            code_parts.append("// ============================================================================")
+            code_parts.append("// MACROS & DEFINES")
+            code_parts.append("// ============================================================================\n")
+            for define in sorted(all_defines):
+                code_parts.append(define)
+            code_parts.append("")
+
+        # PHASE 3: Add struct definitions - MUST come before globals
+        if all_structs:
+            code_parts.append("// ============================================================================")
+            code_parts.append("// STRUCTURE DEFINITIONS")
+            code_parts.append("// ============================================================================\n")
+            for struct in all_structs:
+                code_parts.append(struct)
+            code_parts.append("")
+
+        # PHASE 4: Add global variables - MUST come before functions
+        if all_globals:
+            code_parts.append("// ============================================================================")
+            code_parts.append("// GLOBAL VARIABLES")
+            code_parts.append("// ============================================================================\n")
+            for global_var in sorted(all_globals):
+                code_parts.append(global_var)
+            code_parts.append("")
+
+        # PHASE 5: Add function implementations
         code_parts.append("// ============================================================================")
         code_parts.append("// TECHNIQUE IMPLEMENTATIONS")
         code_parts.append("// ============================================================================\n")
@@ -445,41 +535,75 @@ class CodeAssembler:
     
     def _generate_header_code(self, techniques: List[Dict], includes: Set[str]) -> str:
         """Generate header file"""
-        
+
         header_parts = []
-        
+
         header_parts.append("/*")
         header_parts.append(" * Auto-Generated Header File")
         header_parts.append(" * Generated by Noctis-MCP")
         header_parts.append(" */\n")
-        
+
         header_parts.append("#ifndef NOCTIS_GENERATED_H")
         header_parts.append("#define NOCTIS_GENERATED_H\n")
-        
-        # Add function declarations
+
+        # Add function declarations - ONLY for selected techniques
         header_parts.append("// Function declarations")
+        selected_technique_ids = [t.get('technique_id') for t in techniques]
         for func_name, func_def in self.all_functions.items():
-            header_parts.append(f"{func_def.signature()};")
-        
+            # Only include functions from selected techniques
+            if func_def.technique_id in selected_technique_ids:
+                header_parts.append(f"{func_def.signature()};")
+
         header_parts.append("\n#endif // NOCTIS_GENERATED_H")
-        
+
         return '\n'.join(header_parts)
     
     def _generate_main_function(self, techniques: List[Dict]) -> str:
-        """Generate a main() function"""
-        main_code = """
+        """Generate a main() function with actual initialization calls"""
+
+        # Build initialization calls based on technique types
+        init_calls = []
+        for tech in techniques:
+            tech_name = tech.get('name', '').lower()
+            tech_id = tech.get('technique_id', '')
+
+            if 'syscall' in tech_name:
+                init_calls.append("    // Initialize syscalls")
+                init_calls.append("    if (!InitNtdllConfigStructure(GetModuleHandleA(\"ntdll.dll\"))) {")
+                init_calls.append("        printf(\"[!] Failed to initialize syscalls\\n\");")
+                init_calls.append("        return 1;")
+                init_calls.append("    }")
+            elif 'injection' in tech_name:
+                init_calls.append("    // Initialize injection")
+                init_calls.append("    PBYTE pPayload = NULL;")
+                init_calls.append("    SIZE_T sPayloadSize = 0;")
+                init_calls.append("    // TODO: Load payload data")
+            elif 'unhook' in tech_name:
+                init_calls.append("    // Unhook DLLs")
+                init_calls.append("    if (!UnhookLoadedDlls()) {")
+                init_calls.append("        printf(\"[!] Failed to unhook DLLs\\n\");")
+                init_calls.append("    }")
+
+        init_section = '\n'.join(init_calls) if init_calls else "    // TODO: Initialize technique-specific resources"
+
+        main_code = f"""
 // ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
 
-int main(int argc, char* argv[]) {
-    
-    // TODO: Initialize techniques
-    // TODO: Execute payload
-    // TODO: Cleanup
-    
+int main(int argc, char* argv[]) {{
+    printf("[*] Noctis-MCP Generated Payload\\n");
+    printf("[*] Techniques: {', '.join([t.get('name', '') for t in techniques])}\\n\\n");
+
+{init_section}
+
+    printf("[+] Initialization complete\\n");
+
+    // TODO: Execute payload logic
+    // TODO: Cleanup resources
+
     return 0;
-}
+}}
 """
         return main_code
     

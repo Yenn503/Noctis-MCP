@@ -19,25 +19,27 @@
     "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Inject.c",
     "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\main.c",
     "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Unook.c",
+    "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Structures.h",
     "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\TrapSyscallsTampering.h",
     "MaldevAcademy\\Loader2\\MaldevAcademyLdr.2-main\\RunPeFile\\Utilities.h",
     "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Common.h",
+    "MaldevAcademy\\Loader1\\MaldevAcademyLdr.1-main\\Loader\\Structs.h",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\ApiHashing.c",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.c",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\HellsHall.c",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Inject.c",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\main.c",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Persistence.c",
-    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.h"
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Unook.c",
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Common.h",
+    "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Structs.h"
   ],
-  "mitre_attack": [
-    "T1027.007"
-  ],
+  "mitre_attack": [],
   "dependencies": [
-    "Windows.h",
-    "DebugMacros.h",
     "Structures.h",
+    "DebugMacros.h",
     "TrapSyscallsTampering.h",
+    "Windows.h",
     "Utilities.h"
   ],
   "compatible_with": [],
@@ -47,47 +49,17 @@
     "stability": "unknown",
     "tested_on": [],
     "bypasses": [],
-    "detected_by": [],
-    "code_quality": {
-      "total_lines": 143,
-      "code_lines": 96,
-      "comment_lines": 10,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    },
-    "dependencies": {
-      "system_headers": [
-        "Windows.h"
-      ],
-      "project_headers": [
-        "DebugMacros.h",
-        "Structures.h",
-        "TrapSyscallsTampering.h",
-        "Utilities.h"
-      ],
-      "external_libs": [],
-      "functions_called": [],
-      "structs_used": [
-        "_NTDLL_CONFIG"
-      ]
-    }
+    "detected_by": []
   },
   "code_blocks": {
     "file": "HellsHall.c",
-    "functions": [],
-    "total_functions": 0,
-    "quality_metrics": {
-      "total_lines": 143,
-      "code_lines": 96,
-      "comment_lines": 10,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    }
+    "functions": [
+      "InitNtdllConfigStructure",
+      "FetchNtSyscall"
+    ]
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T23:44:01.571857"
+  "last_updated": "2025-10-05T07:04:45.745436"
 }

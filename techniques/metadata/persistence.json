@@ -9,10 +9,7 @@
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\FunctionPntrs.h",
     "MyOwn\\TheSilencer\\TheSilencer-main\\Loader\\Structs.h"
   ],
-  "mitre_attack": [
-    "T1053",
-    "T1547"
-  ],
+  "mitre_attack": [],
   "dependencies": [
     "Windows.h"
   ],
@@ -23,78 +20,14 @@
     "stability": "unknown",
     "tested_on": [],
     "bypasses": [],
-    "detected_by": [],
-    "code_quality": {
-      "total_lines": 1330,
-      "code_lines": 1155,
-      "comment_lines": 34,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    },
-    "dependencies": {
-      "system_headers": [
-        "Windows.h"
-      ],
-      "project_headers": [],
-      "external_libs": [],
-      "functions_called": [
-        "NtGetCurrentProcess",
-        "NtGetCurrentThread"
-      ],
-      "structs_used": [
-        "CLIENT_ID",
-        "LIST_ENTRY",
-        "OBJECT_ATTRIBUTES",
-        "PEB",
-        "TEB",
-        "UNICODE_STRING",
-        "_ACTIVATION_CONTEXT",
-        "_ACTIVATION_CONTEXT_DATA",
-        "_ACTIVATION_CONTEXT_STACK",
-        "_ASSEMBLY_STORAGE_MAP",
-        "_ASSEMBLY_STORAGE_MAP_ENTRY",
-        "_BASE_RELOCATION_ENTRY",
-        "_CLIENT_ID",
-        "_CURDIR",
-        "_GDI_TEB_BATCH",
-        "_LDR_DATA_TABLE_ENTRY",
-        "_NT_TIB",
-        "_OBJECT_ATTRIBUTES",
-        "_PEB",
-        "_PEB_LDR_DATA",
-        "_RTL_ACTIVATION_CONTEXT_STACK_FRAME",
-        "_RTL_DRIVE_LETTER_CURDIR",
-        "_RTL_USER_PROCESS_PARAMETERS",
-        "_STRING",
-        "_SYSTEM_PROCESS_INFORMATION",
-        "_SYSTEM_THREAD_INFORMATION",
-        "_TEB",
-        "_TEB_ACTIVE_FRAME",
-        "_TEB_ACTIVE_FRAME_CONTEXT",
-        "_TEB_ACTIVE_FRAME_EX",
-        "_UNICODE_STRING",
-        "_UNWIND_INFO",
-        "_VM_COUNTERS",
-        "tagSOleTlsData"
-      ]
-    }
+    "detected_by": []
   },
   "code_blocks": {
     "file": "Structures.h",
-    "functions": [],
-    "total_functions": 0,
-    "quality_metrics": {
-      "total_lines": 1330,
-      "code_lines": 1155,
-      "comment_lines": 34,
-      "function_count": 0,
-      "average_function_complexity": 0.0,
-      "max_function_complexity": 0
-    }
+    "functions": []
   },
   "variants": [],
   "author": "MalDev Academy",
   "source_project": "MaldevAcademy",
-  "last_updated": "2025-10-03T23:44:01.736697"
+  "last_updated": "2025-10-05T07:04:45.841422"
 }

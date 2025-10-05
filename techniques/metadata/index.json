@@ -9,7 +9,7 @@
     "injection": 1,
     "persistence": 1
   },
-  "last_updated": "2025-10-03T23:44:01.811126",
+  "last_updated": "2025-10-05T07:04:45.881583",
   "techniques": [
     {
       "id": "NOCTIS-T001",
@@ -62,15 +62,15 @@
     },
     {
       "id": "NOCTIS-T008",
-      "name": "Injection",
-      "category": "injection",
+      "name": "Gpu Evasion",
+      "category": "evasion/advanced",
       "author": "MalDev Academy",
       "source_project": "MaldevAcademy"
     },
     {
       "id": "NOCTIS-T009",
-      "name": "Gpu Evasion",
-      "category": "evasion/advanced",
+      "name": "Injection",
+      "category": "injection",
       "author": "MalDev Academy",
       "source_project": "MaldevAcademy"
     },
