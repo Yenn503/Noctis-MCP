@@ -14,11 +14,11 @@ Core Philosophy:
 - AI iterates until satisfied
 - AI makes intelligent, research-driven decisions
 
-11 Agentic Tools:
+11 Agentic Tools (with SMART AUTO-UPDATE):
   Intelligence Gathering:
-    1. search_intelligence() - Search RAG for techniques & research
+    1. search_intelligence() - Search RAG (AUTO-UPDATES if >7 days old)
     2. analyze_technique() - Deep dive into specific techniques
-    3. fetch_latest() - Get cutting-edge intelligence from GitHub/arXiv/blogs
+    3. fetch_latest() - Get cutting-edge intelligence (24hr smart cache)
 
   Code Generation:
     4. generate_code() - RAG-informed dynamic code generation
@@ -600,6 +600,8 @@ def rag_stats() -> str:
     return format_response(response, 'stats')
 
 
+
+
 # ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
@@ -907,8 +909,9 @@ if __name__ == "__main__":
             print(f"    - Blog posts: {stats.get('blog_posts', 0)}")
         else:
             print(f"[!] RAG System: DISABLED")
-    except:
-        print(f"[!] Could not fetch RAG stats")
+    except Exception as e:
+        # Expected on first run before server starts
+        print(f"[!] Could not fetch RAG stats (server not running or RAG disabled)")
 
     print(f"\n[*] 11 Agentic Tools Available:")
     print(f"    Intelligence: search_intelligence, analyze_technique, fetch_latest")
