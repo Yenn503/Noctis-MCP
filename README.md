@@ -21,14 +21,14 @@
 
 ---
 
-## 📚 What is Noctis-MCP?
+##  What is Noctis-MCP?
 
 **Noctis-MCP** is an AI-powered malware development and learning platform that transforms your IDE into a sophisticated red team education and operations center. It combines:
 
-- 🧠 **RAG-Powered Intelligence** - Access research and real-world implementations
-- 💻 **Dynamic Code Generation** - Generate ready malware with AI assistance
-- 🎓 **Interactive Learning System** - Learn 10 malware techniques from beginner to advanced
-- 📊 **Progress Tracking** - Track your learning journey with quizzes and achievements
+-  **RAG-Powered Intelligence** - Access research and real-world implementations
+-  **Dynamic Code Generation** - Generate ready malware with AI assistance
+-  **Interactive Learning System** - Learn 10 malware techniques from beginner to advanced
+-  **Progress Tracking** - Track your learning journey with quizzes and achievements
 
 Think of it as having both a **malware development expert** and a **personal tutor** integrated directly into your IDE.
 
