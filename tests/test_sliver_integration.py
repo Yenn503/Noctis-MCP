@@ -32,7 +32,7 @@ def check_sliver_installed() -> bool:
     try:
         result = subprocess.run(['which', 'sliver-client'], capture_output=True, timeout=2)
         return result.returncode == 0
-    except:
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         return False
 
 

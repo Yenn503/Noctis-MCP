@@ -429,7 +429,7 @@ try:
                 total_techniques += 1
                 if data.get('mitre_attack') and len(data['mitre_attack']) > 0:
                     mitre_populated_count += 1
-        except:
+        except (FileNotFoundError, json.JSONDecodeError, KeyError):
             pass
     
     test_result(
@@ -456,7 +456,7 @@ try:
                         valid_ttps += 1
                     else:
                         invalid_ttps.append(f"{data['technique_id']}: {ttp}")
-        except:
+        except (FileNotFoundError, json.JSONDecodeError, KeyError):
             pass
     
     test_result(
@@ -475,7 +475,7 @@ try:
             with open(json_file, 'r') as f:
                 data = json.load(f)
                 all_ttps.update(data.get('mitre_attack', []))
-        except:
+        except (FileNotFoundError, json.JSONDecodeError, KeyError):
             pass
     
     test_result(
@@ -496,7 +496,7 @@ try:
             )
         else:
             test_skip("MITRE API endpoint", "Server not responding")
-    except:
+    except (ConnectionError, requests.exceptions.RequestException):
         test_skip("MITRE API endpoint", "Server not running - start with: python server/noctis_server.py")
     
     # Test 5: Verify populate script exists

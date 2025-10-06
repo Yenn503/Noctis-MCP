@@ -241,7 +241,7 @@ class BOFCompiler:
                 magic = f.read(2)
                 # COFF magic: 0x8664 (x64) or 0x014c (x86)
                 return magic in [b'\x64\x86', b'\x4c\x01']
-        except:
+        except (FileNotFoundError, IOError, OSError):
             return False
 
     def _generate_sliver_extension(
