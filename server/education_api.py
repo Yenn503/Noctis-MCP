@@ -531,10 +531,10 @@ def get_stats():
 
         # User progress stats
         all_progress = education_bp.progress_tracker.get_all_progress()
-        completed_count = sum(1 for p in all_progress if p['completed'])
-        in_progress_count = sum(1 for p in all_progress if not p['completed'])
+        completed_count = sum(1 for p in all_progress if p.status == 'completed')
+        in_progress_count = sum(1 for p in all_progress if p.status == 'in_progress')
 
-        total_time = sum(p['time_spent_minutes'] for p in all_progress)
+        total_time = sum(p.time_spent_minutes for p in all_progress)
         total_quiz_attempts = len(education_bp.progress_tracker.get_quiz_history())
 
         achievements = education_bp.progress_tracker.get_all_achievements()
