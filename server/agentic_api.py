@@ -728,33 +728,33 @@ def validate_code():
 
     # Step 1: Compilation validation
     try:
-        compile_endpoint = agentic_bp.technique_manager  # Has access to compilation
-        # Save temp file
-        import tempfile
-        import os
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.c', delete=False, encoding='utf-8') as f:
-            f.write(source_code)
-            temp_path = f.name
-
         # Attempt compilation using existing compilation logic
         try:
-            # Import compilation module (FIX: use correct import path)
+            # Import compilation module
             from compilation import get_compiler
             compiler = get_compiler(output_dir="output")
-            compile_result = compiler.compile_file(temp_path, output_name)
+            
+            # Compile the source code directly (not from file)
+            compile_result = compiler.compile(
+                source_code=source_code,
+                architecture='x64',
+                optimization='O2',
+                output_name=output_name,
+                subsystem='Console'
+            )
 
-            if compile_result.get('success'):
+            if compile_result.success:
                 validation_results['compilation'] = {
                     'status': 'passed',
-                    'output': compile_result.get('output_path'),
-                    'size_bytes': compile_result.get('size'),
-                    'warnings': compile_result.get('warnings', [])
+                    'output': compile_result.binary_path,
+                    'size_bytes': os.path.getsize(compile_result.binary_path) if compile_result.binary_path and os.path.exists(compile_result.binary_path) else 0,
+                    'warnings': compile_result.warnings
                 }
             else:
                 validation_results['compilation'] = {
                     'status': 'failed',
-                    'errors': compile_result.get('errors', []),
-                    'suggestions': _analyze_compilation_errors(compile_result.get('errors', []))
+                    'errors': compile_result.errors,
+                    'suggestions': _analyze_compilation_errors(compile_result.errors)
                 }
         except Exception as compile_error:
             validation_results['compilation'] = {
@@ -762,10 +762,6 @@ def validate_code():
                 'message': str(compile_error),
                 'suggestions': ['Ensure compiler is installed', 'Check code syntax']
             }
-        finally:
-            # Cleanup temp file
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
 
     except Exception as e:
         validation_results['compilation'] = {
@@ -1070,7 +1066,20 @@ def record_detection():
         import time
 
         # Generate embedding for the feedback text (CRITICAL: ChromaDB requires embeddings)
-        embedding = agentic_bp.rag_engine.embedder.encode(feedback_text).tolist()
+        # Check if embedder exists, otherwise use RAG engine's built-in method
+        if hasattr(agentic_bp.rag_engine, 'embedder') and agentic_bp.rag_engine.embedder:
+            embedding = agentic_bp.rag_engine.embedder.encode(feedback_text).tolist()
+        elif hasattr(agentic_bp.rag_engine, 'embed_text'):
+            embedding = agentic_bp.rag_engine.embed_text(feedback_text)
+        else:
+            # Skip indexing if no embedding method available
+            logger.warning("No embedding method available in RAG engine, skipping feedback indexing")
+            return jsonify({
+                'recorded': True,
+                'updated_effectiveness_scores': updated_scores,
+                'indexed_to_rag': False,
+                'techniques_updated': len(updated_scores)
+            }), 200
 
         agentic_bp.rag_engine.detection_intel.upsert(
             ids=[f"feedback_{int(time.time())}"],
