@@ -291,7 +291,7 @@ class RAGEngine:
 
         doc_id = f"{av_name}_{technique}_{int(time.time())}"
 
-        self.detection_intel.add(
+        self.detection_intel.upsert(
             ids=[doc_id],
             embeddings=[embedding],
             documents=[text],
@@ -361,14 +361,18 @@ class RAGEngine:
             return formatted
 
         # Handle case where documents is a list of lists
+        # Check if documents is empty before accessing [0]
+        if not results['documents'] or len(results['documents']) == 0:
+            return formatted
+            
         documents = results['documents'][0] if isinstance(results['documents'][0], list) else results['documents']
 
         for i, doc in enumerate(documents):
             formatted.append({
                 'content': doc,  # Use 'content' as primary key for consistency
                 'text': doc,     # Keep 'text' for backward compatibility
-                'metadata': results['metadatas'][0][i] if results.get('metadatas') and len(results['metadatas']) > 0 else {},
-                'distance': results['distances'][0][i] if results.get('distances') and len(results['distances']) > 0 else 1.0,
+                'metadata': results['metadatas'][0][i] if results.get('metadatas') and len(results['metadatas']) > 0 and len(results['metadatas'][0]) > i else {},
+                'distance': results['distances'][0][i] if results.get('distances') and len(results['distances']) > 0 and len(results['distances'][0]) > i else 1.0,
                 'source': source_type  # Use 'source' for consistency with other parts of codebase
             })
 

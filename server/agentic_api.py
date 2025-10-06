@@ -423,7 +423,7 @@ def generate_code():
         try:
             from server.noctis_server import config
             output_dir = config.get('paths.output', 'output')
-        except:
+        except Exception:
             output_dir = 'output'
         os.makedirs(output_dir, exist_ok=True)
         
