@@ -1210,8 +1210,7 @@ def main():
     # Initialize learning engine after registry
     from server.learning_engine import AgenticLearningEngine
     learning_engine = AgenticLearningEngine(
-        db_path=agent_config['db_path'],
-        agent_registry=AgentRegistry
+        db_path=agent_config['db_path']
     )
     logger.info("Learning engine initialized")
 
