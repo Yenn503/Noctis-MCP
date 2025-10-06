@@ -911,7 +911,8 @@ class AgenticLearningEngine(LearningEngine):
         if not techniques:
             return "high"
         
-        avg_score = sum(scores.get(tech, 0.0) for tech in techniques) / len(techniques)
+        # Safe division - although we check above, double-check for safety
+        avg_score = sum(scores.get(tech, 0.0) for tech in techniques) / len(techniques) if len(techniques) > 0 else 0.0
         
         if avg_score >= 0.9:
             return "low"

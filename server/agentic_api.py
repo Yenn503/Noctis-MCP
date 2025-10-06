@@ -526,7 +526,7 @@ def select_techniques():
                 "technique_id": tech_id,
                 "name": tech.get('name'),
                 "effectiveness_score": final_score,
-                "rag_evidence": f"Mentioned in {int(rag_boost / 0.2)} intelligence sources",
+                "rag_evidence": f"Mentioned in {int(rag_boost / 0.2) if rag_boost > 0 else 0} intelligence sources",
                 "rationale": _generate_rationale(tech, target_av, rag_results)
             })
 
