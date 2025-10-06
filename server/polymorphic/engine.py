@@ -57,7 +57,7 @@ class PolymorphicEngine:
             'original_size': len(code),
             'variant_size': len(variant_code),
             'size_change': len(variant_code) - len(code),
-            'size_change_percent': ((len(variant_code) - len(code)) / len(code)) * 100,
+            'size_change_percent': ((len(variant_code) - len(code)) / len(code)) * 100 if len(code) > 0 else 0,
             'similarity_percent': similarity * 100,
             'uniqueness_percent': (1 - similarity) * 100,
             'mutation_level': mutation_level,
@@ -121,8 +121,9 @@ class PolymorphicEngine:
             logger.info(f"Variant {i+1}/{count}: {variant_info['uniqueness_percent']:.1f}% unique")
         
         # Calculate average uniqueness
-        avg_uniqueness = sum(v[1]['uniqueness_percent'] for v in variants) / len(variants)
-        logger.info(f"Average uniqueness: {avg_uniqueness:.1f}%")
+        if variants:  # Check if variants list is not empty
+            avg_uniqueness = sum(v[1]['uniqueness_percent'] for v in variants) / len(variants)
+            logger.info(f"Average uniqueness: {avg_uniqueness:.1f}%")
         
         return variants
     
@@ -159,10 +160,10 @@ class PolymorphicEngine:
         
         return {
             'total_variants': len(self.generated_variants),
-            'avg_uniqueness': sum(uniqueness_values) / len(uniqueness_values),
-            'min_uniqueness': min(uniqueness_values),
-            'max_uniqueness': max(uniqueness_values),
-            'avg_size_change': sum(size_changes) / len(size_changes),
+            'avg_uniqueness': sum(uniqueness_values) / len(uniqueness_values) if uniqueness_values else 0,
+            'min_uniqueness': min(uniqueness_values) if uniqueness_values else 0,
+            'max_uniqueness': max(uniqueness_values) if uniqueness_values else 0,
+            'avg_size_change': sum(size_changes) / len(size_changes) if size_changes else 0,
             'unique_hashes': len(set(v['variant_hash'] for v in self.generated_variants))
         }
 

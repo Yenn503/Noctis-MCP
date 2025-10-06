@@ -501,8 +501,9 @@ class AdvancedTechniqueIndexer(TechniqueIndexer):
         # Function complexity stats
         if functions:
             complexities = [f.complexity for f in functions]
-            metrics.average_function_complexity = sum(complexities) / len(complexities)
-            metrics.max_function_complexity = max(complexities)
+            if complexities:  # Check if complexities list is not empty
+                metrics.average_function_complexity = sum(complexities) / len(complexities)
+                metrics.max_function_complexity = max(complexities)
 
         return metrics
 
