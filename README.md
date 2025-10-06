@@ -2,209 +2,155 @@
 
 ![Noctis-MCP Logo](NoctisAI.png)
 
-**AI-Powered Malware Development & Learning Platform**
+**AI-Powered Malware Development Platform**
 
-*Intelligence-Driven Red Team Operations with Interactive Education*
+*Intelligence-Driven Red Team Operations with MCP Integration*
 
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)](https://github.com/Yenn503/Noctis-MCP)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-20-brightgreen)](https://github.com/Yenn503/Noctis-MCP)
-
-</div>
-
-## Join the community
 
 [![Join Noctis AI on Discord](https://img.shields.io/badge/Join_Noctis_AI-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bBtyAWSkW)
 
-**Legal Disclaimer**: For authorised security research, penetration testing, and red team operations only. Unauthorised use is illegal and prohibited.
+</div>
 
 ---
 
-##  What is Noctis-MCP?
-
-**Noctis-MCP** is an AI-powered malware development and learning platform that transforms your IDE into a sophisticated red team education and operations center. It combines:
-
--  **RAG-Powered Intelligence** - Access research and real-world implementations
--  **Dynamic Code Generation** - Generate ready malware with AI assistance
--  **Interactive Learning System** - Learn 10 malware techniques from beginner to advanced
--  **Progress Tracking** - Track your learning journey with quizzes and achievements
-
-Think of it as having both a **malware development expert** and a **personal tutor** integrated directly into your IDE.
+**Legal Notice**: For authorized security research, penetration testing, and red team operations only. Unauthorized use is illegal and prohibited.
 
 ---
 
-##  Key Features
+## Overview
 
-### **Interactive Education System** 
+Noctis-MCP is a malware development platform that integrates directly into your IDE through the Model Context Protocol (MCP). It provides RAG-powered intelligence, dynamic code generation, and interactive learning for offensive security operations.
 
-**Learn malware development interactively with AI as your tutor:**
+**Core Capabilities:**
+- RAG-powered intelligence aggregation from 25+ security sources
+- Dynamic malware generation with OPSEC optimization
+- C2 framework integration (Sliver, Adaptix, Mythic)
+- BOF compilation for beacon operations
+- Interactive learning system with 10 curated techniques
+- Linux cross-compilation for Windows targets
 
-- **10 Curated Techniques** - From Process Injection to Advanced Syscalls
-- **13 Learning Modules** - Theory, code examples, and hands-on labs
-- **70+ Quiz Questions** - Test your understanding with detailed explanations
-- **Progress Tracking** - SQLite database tracks completed modules and quiz scores
-- **Achievements System** - Earn badges as you progress through the curriculum
-- **AI Tutor** - Interactive Q&A with Claude/GPT-4 using your IDE chat
+## How It Works
 
-**Just ask: "I want to learn malware development"** and start your journey!
+Noctis-MCP operates as a client-server architecture:
 
-### **Intelligence Engine**
+**Server Component** (Flask API on port 8888)
+- RAG engine with ChromaDB for intelligence retrieval
+- Code generation API with template system
+- Education system with progress tracking
+- Live intelligence feeds from security blogs and GitHub
 
-- **RAG-Powered Search** - 55+ knowledge chunks, GitHub repos, research papers
-- **Auto-Update System** - Fetches latest intelligence from 25+ security blogs
-- **Smart Caching** - 24hr cache prevents redundant fetches
-- **Detection Intelligence** - EDR/AV bypass patterns and effectiveness scores
-- **Learning System** - Records detection results to improve recommendations
+**MCP Client** (IDE Integration)
+- 20 agentic tools exposed to Claude/GPT-4
+- Direct access to RAG database and code generation
+- Real-time intelligence updates with smart caching
+- Interactive learning modules and quizzes
 
-### **20 Agentic MCP Tools**
+**Workflow:**
+1. AI assistant calls MCP tools from your IDE
+2. MCP client communicates with Noctis server
+3. Server processes requests using RAG and generation engines
+4. Results returned to AI for contextualized responses
+5. Generated code can be compiled and deployed immediately
 
-**Intelligence Gathering (3 tools):**
-- `search_intelligence()` - Search RAG with auto-update if data >7 days old
-- `analyze_technique()` - Deep dive into specific techniques
-- `fetch_latest()` - Get cutting-edge intelligence (24hr smart cache)
+## Key Features
 
-**Code Generation (3 tools):**
-- `generate_code()` - RAG-informed dynamic code generation
-- `optimize_opsec()` - Improve code stealth using intelligence
-- `validate_code()` - Compile & quality check with error feedback
+### Intelligence Engine
+- **RAG Database**: 55+ knowledge chunks from research papers, GitHub repos, and security blogs
+- **VX-API Integration**: 251 production malware functions from VX-Underground indexed for code generation
+- **Auto-Update**: Fetches latest intelligence when data exceeds 7 days
+- **Smart Caching**: 24-hour cache prevents redundant API calls
+- **Detection Learning**: Records detection results to improve future recommendations
 
-**Technique Selection (2 tools):**
-- `select_techniques()` - AI-powered technique recommendations
-- `compare_techniques()` - Side-by-side analysis
+### Code Generation
+- **RAG-Informed**: Uses real-world patterns from knowledge base
+- **OPSEC Optimization**: String encryption, API hashing, control flow obfuscation
+- **Multi-File Support**: C/C++ + Assembly + Resources
+- **Validation**: Automated compilation and error feedback
 
-**Compilation & Feedback (2 tools):**
-- `compile_code()` - Build binaries
-- `record_feedback()` - Learning from testing results
+### C2 Integration
+- **Sliver**: Extension-based BOF system with extension.json manifests
+- **Adaptix**: AxScript BOF execution with crash-safe operations
+- **Mythic Forge**: Command augmentation for Apollo/Athena agents
+- **BOF Compilation**: COFF object files with position-independent code
 
-**Interactive Learning (9 tools):**
-- `list_learning_topics()` - Browse curriculum
-- `start_lesson()` - Begin learning a technique
-- `get_lesson_module()` - Get module content
-- `complete_module()` - Mark module as done
-- `check_understanding()` - Take quiz
-- `submit_quiz()` - Submit quiz answers
-- `get_learning_progress()` - View progress
-- `get_recommended_lesson()` - Get next suggestion
-- `search_lessons()` - Search for topics
+### Linux Cross-Compilation
+- **MinGW-w64**: x64 and x86 Windows binary generation
+- **NASM**: Assembly compilation to COFF objects
+- **windres**: Resource compilation for PE files
+- **Multi-Architecture**: Supports x64, x86, ARM64
 
-**Utilities (1 tool):**
-- `rag_stats()` - RAG system status
-
-### 💻 **Advanced Capabilities**
-
-- **Dynamic Code Generation** - RAG-informed assembly using real GitHub patterns
-- **10 MITRE ATT&CK Techniques** - Syscalls, injection, encryption, steganography, etc.
-- **C2 Framework Integration** - Sliver, Adaptix, Mythic with BOF support
-- **BOF Compilation** - Beacon Object Files for Sliver/Adaptix/Mythic Forge
-- **Linux Cross-Compilation** - MinGW + NASM + windres for Windows payloads
-- **Multi-File Projects** - C/C++ + Assembly + Resources compilation
-- **OPSEC Optimisation** - String encryption, API hashing, control flow obfuscation
-
----
-
-##  Quick Start
-
-### ⚠️ **System Requirements**
-
-**Noctis-MCP requires TWO components running simultaneously:**
-
-1. **Noctis Server** (Flask API on port 8888)
-2. **MCP Client** (via Cursor/VSCode)
-
-**Both must be running for the MCP tools to work!**
-
-### Prerequisites
-
-- **Python 3.11+** (3.13.2 recommended)
-- **Compiler**: MinGW-w64 (Linux/macOS) or Visual Studio Build Tools (Windows)
-- **MCP-Compatible IDE**: Cursor, VSCode with Claude/Copilot
-- **4GB RAM minimum** (8GB+ recommended for RAG)
-
----
+### Learning System
+- **10 Techniques**: Process injection, syscalls, obfuscation, C2 protocols, etc.
+- **13 Modules**: Theory, code examples, and hands-on labs
+- **70+ Quizzes**: Interactive questions with detailed explanations
+- **Progress Tracking**: SQLite database records completion and scores
 
 ## Installation
 
-### **Step 1: Clone Repository**
+### Prerequisites
+- Python 3.11+ (3.13.2 recommended)
+- MinGW-w64 (Linux/macOS) or Visual Studio Build Tools (Windows)
+- MCP-compatible IDE (Cursor or VSCode)
+- 4GB RAM minimum (8GB+ for RAG operations)
+
+### Linux/macOS Setup
 
 ```bash
+# Clone repository
 git clone https://github.com/Yenn503/Noctis-MCP.git
 cd Noctis-MCP
-```
 
-### **Step 2: Install Dependencies**
-
-<details>
-<summary><b>🐧 Linux (Ubuntu/Debian)</b></summary>
-
-```bash
-# Install system dependencies
+# Install system dependencies (Ubuntu/Debian)
 sudo apt update
-sudo apt install -y python3 python3-pip python3-venv mingw-w64 git
+sudo apt install -y python3 python3-pip python3-venv mingw-w64 nasm git
+
+# macOS: brew install python@3.13 mingw-w64 nasm
 
 # Create virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
-# Install Python packages
+# Install Python dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
+
+# Index VX-API source code into RAG (251 production malware functions)
+python scripts/index_vx_sources.py
 ```
 
-</details>
-
-<details>
-<summary><b>🍎 macOS</b></summary>
-
-```bash
-# Install Homebrew if not already installed
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Install dependencies
-brew install python@3.13 mingw-w64
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install Python packages
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-</details>
-
-<details>
-<summary><b>🪟 Windows</b></summary>
+### Windows Setup
 
 ```powershell
 # Install Python 3.11+ from python.org
-# Install Visual Studio Build Tools from Microsoft
+# Install Visual Studio Build Tools
 
 # Create virtual environment
 python -m venv venv
 .\venv\Scripts\activate
 
-# Install Python packages
+# Install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
+
+# Index VX-API source code into RAG
+python scripts/index_vx_sources.py
 ```
 
-</details>
-
-### **Step 3: Start Noctis Server**
+### Start Server
 
 ```bash
-# Activate virtual environment first
+# Activate virtual environment
 source venv/bin/activate  # Linux/macOS
-# OR
 .\venv\Scripts\activate   # Windows
 
-# Start server
+# Start Noctis server
 python server/noctis_server.py --port 8888
 ```
 
-**Expected output:**
+Expected output:
 ```
 [+] Connected to server: http://127.0.0.1:8888
 [+] RAG System: ENABLED (55 knowledge chunks indexed)
@@ -212,43 +158,27 @@ python server/noctis_server.py --port 8888
 [*] 20 Agentic Tools Available
 ```
 
-### **Step 4: Configure IDE (Cursor/VSCode)**
+### Configure IDE
 
-<details>
-<summary><b>Cursor IDE Setup</b></summary>
+**Cursor IDE:**
 
-1. Open Cursor Settings (Cmd/Ctrl + ,)
-2. Navigate to "Features" → "Model Context Protocol"
-3. Add MCP server configuration:
+Add to MCP settings (Cursor Settings → Features → Model Context Protocol):
 
-**Add to Cursor's MCP settings:**
 ```json
 {
   "mcpServers": {
     "noctis": {
       "command": "/path/to/Noctis-MCP/venv/bin/python",
-      "args": [
-        "-m",
-        "noctis_mcp_client.noctis_mcp"
-      ],
+      "args": ["-m", "noctis_mcp_client.noctis_mcp"],
       "cwd": "/path/to/Noctis-MCP"
     }
   }
 }
 ```
 
-4. Replace `/path/to/Noctis-MCP` with your actual venv installation path
-5. Restart Cursor
+**VSCode:**
 
-</details>
-
-<details>
-<summary><b>VSCode Setup</b></summary>
-
-1. Install MCP extension for VSCode
-2. Open VSCode settings (Cmd/Ctrl + ,)
-3. Search for "MCP" settings
-4. Add server configuration:
+Install MCP extension and add to settings:
 
 ```json
 {
@@ -262,231 +192,91 @@ python server/noctis_server.py --port 8888
 }
 ```
 
-5. Reload VSCode window
+Replace `/path/to/Noctis-MCP` with your actual installation path. Restart IDE after configuration.
 
-</details>
+## Usage
 
-### **Step 5: Verify Installation**
+### Intelligence Research
 
-In your IDE, ask the AI:
+Ask your AI assistant:
+- "Find the latest process injection techniques"
+- "Analyze direct syscalls for EDR bypass"
+- "Search for AES encryption implementations"
 
-```
-"List learning topics"
-```
+The AI will use MCP tools to search the RAG database and return intelligence from security blogs, GitHub repos, and research papers.
 
-**Expected response:**
-```
-📚 MALWARE DEVELOPMENT CURRICULUM
-✅ 10 techniques available:
+### Code Generation
 
-🟢 BEGINNER LEVEL:
-  • Process Injection Fundamentals (45 min)
-  • Persistence Mechanisms (50 min)
+Request malware generation:
+- "Generate process injection code using syscalls"
+- "Create a BOF for remote process enumeration"
+- "Build a Sliver beacon with Hell's Gate syscalls"
 
-🟡 INTERMEDIATE LEVEL:
-  • Shellcode Injection (60 min)
-  • PE File Manipulation (70 min)
-  ...
-```
+The AI will generate complete, compilable code with OPSEC optimizations and build instructions.
 
----
+### Learning Mode
 
-##  Usage Examples
+Start interactive learning:
+- "List learning topics" - Browse 10 curated techniques
+- "Teach me process injection" - Get 4 interactive modules
+- "Give me a quiz" - Test understanding with graded questions
+- "Show my progress" - View completed modules and scores
 
-### 🎓 **Learning Mode**
+### C2 Operations
 
-**Start Learning:**
-```
-You: "I want to learn malware development"
-AI: Shows 10 techniques organized by difficulty
+Generate C2 payloads:
+- "Generate a Sliver beacon for 192.168.1.100:443"
+- "Create an Adaptix BOF with Hell's Gate syscalls"
+- "Build a Mythic Forge command for process injection"
 
-You: "Teach me process injection"
-AI: Delivers 4 interactive modules with theory, code, and labs
+The system will compile BOF files, generate extension manifests, and provide deployment instructions.
 
-You: "Give me a quiz"
-AI: Presents 10 questions, grades answers, and shows explanations
-```
+## MCP Tools (20 Available)
 
-### **Intelligence Research**
+**Intelligence (3)**
+- `search_intelligence` - RAG search with auto-update
+- `analyze_technique` - Deep technique analysis
+- `fetch_latest` - Get cutting-edge intelligence
 
-**Search for Techniques:**
-```
-You: "Find the latest process injection techniques"
-AI: Searches RAG, returns 10 intelligence sources from:
-    - Knowledge base
-    - GitHub repos
-    - Research papers
-    - Security blogs
-```
+**Code Generation (3)**
+- `generate_code` - RAG-informed code generation
+- `optimize_opsec` - Stealth enhancement
+- `validate_code` - Compilation and quality checks
 
-**Analyse Specific Technique:**
-```
-You: "Analyse direct syscalls for EDR bypass"
-AI: Returns detailed analysis with:
-    - How it works
-    - Evasion effectiveness
-    - Code examples
-    - Detection methods
-```
+**Technique Selection (2)**
+- `select_techniques` - AI-powered recommendations
+- `compare_techniques` - Side-by-side analysis
 
-### 💻 **Code Generation**
+**Compilation (2)**
+- `compile_code` - Binary generation
+- `record_feedback` - Detection result learning
 
-**Generate Malware:**
-```
-You: "Generate process injection code using syscalls"
-AI: Generates complete, compilable C code with:
-    - Direct syscall implementation
-    - String obfuscation
-    - Error handling
-    - Build instructions
-```
+**Learning (9)**
+- `list_learning_topics` - Browse curriculum
+- `start_lesson` - Begin technique learning
+- `get_lesson_module` - Retrieve module content
+- `complete_module` - Mark module done
+- `check_understanding` - Take quiz
+- `submit_quiz` - Submit answers with grading
+- `get_learning_progress` - View progress
+- `get_recommended_lesson` - Get next suggestion
+- `search_lessons` - Search topics
 
-**Optimise for OPSEC:**
-```
-You: "Optimise this code for stealth"
-AI: Enhances with:
-    - API hashing
-    - String encryption
-    - Control flow obfuscation
-    - Anti-debugging checks
-```
+**Utilities (1)**
+- `rag_stats` - RAG system status
 
-### **Progress Tracking**
+## Configuration
 
-**Check Progress:**
-```
-You: "Show my learning progress"
-AI: Displays:
-    - Completed techniques: 3
-    - In progress: 2
-    - Quiz scores: 90%, 85%, 100%
-    - Achievements earned: 5
-```
-
----
-
-## 📂 Project Structure
-
-```
-Noctis-MCP/
-│
-├── noctis_mcp_client/          # MCP client (20 tools)
-│   └── noctis_mcp.py           # Tool definitions + formatters
-│
-├── server/                      # Flask API server
-│   ├── noctis_server.py        # Main server entry point
-│   ├── agentic_api.py          # RAG-powered intelligence API
-│   ├── education_api.py        # Learning system API (15 endpoints)
-│   │
-│   ├── rag/                    # RAG engine
-│   │   ├── rag_engine.py       # ChromaDB wrapper
-│   │   └── embedder.py         # Sentence transformers
-│   │
-│   ├── education/              # Education system
-│   │   ├── lesson_manager.py  # Curated lesson delivery
-│   │   └── learning_engine.py # Progress tracking, quizzes
-│   │
-│   ├── agents/                 # Specialized AI agents
-│   └── intelligence/           # Live intelligence feeds
-│
-├── data/                       # Data files
-│   ├── lessons.json            # 10 curated techniques (28K lines)
-│   ├── quizzes.json            # 70+ quiz questions
-│   ├── rag_db/                 # ChromaDB (auto-created)
-│   └── education_progress.db   # SQLite (auto-created)
-│
-├── techniques/                 # Knowledge base
-│   ├── knowledge/              # Markdown files
-│   └── metadata/               # Technique metadata
-│
-├── docs/                       # Documentation
-│   ├── ARCHITECTURE.md         # System architecture
-│   ├── EDUCATION_SYSTEM.md     # Learning system docs
-│   └── SETUP.md                # Detailed setup guide
-│
-├── scripts/                    # Utility scripts
-│   ├── intelligence_updater.py # Background intelligence gathering
-│   └── setup_auto_update.sh    # Cron automation
-│
-├── config.yaml                 # System configuration
-├── requirements.txt            # Python dependencies
-└── README.md                   # This file
-```
-
----
-
-## 🎓 Learning Curriculum
-
-### **Beginner Level**
-1. **Process Injection Fundamentals** (45 min)
-   - Classic DLL injection
-   - Remote thread creation
-   - Memory manipulation basics
-
-2. **Persistence Mechanisms** (50 min)
-   - Registry Run keys
-   - Scheduled tasks
-   - Service installation
-
-### **Intermediate Level**
-3. **Shellcode Injection** (60 min)
-   - Position-independent code
-   - RWX memory allocation
-   - Staged payloads
-
-4. **PE File Manipulation** (70 min)
-   - PE structure understanding
-   - Section manipulation
-   - Code cave injection
-
-5. **Code Obfuscation** (55 min)
-   - String encryption
-   - Control flow flattening
-   - API obfuscation
-
-6. **C2 Protocols** (65 min)
-   - HTTP/HTTPS C2
-   - DNS tunnelling
-   - Beaconing strategies
-
-### **Advanced Level**
-7. **Process Hollowing** (75 min)
-   - Process creation in suspended state
-   - Memory unmapping
-   - Entry point modification
-
-8. **API Hooking** (90 min)
-   - IAT hooking
-   - Inline hooking
-   - Trampoline functions
-
-9. **Direct Syscalls** (80 min)
-   - Bypassing userland hooks
-   - Hell's Gate / Halo's Gate
-   - SysWhispers implementation
-
-10. **Crypters & Packers** (85 min)
-    - Encryption techniques
-    - Polymorphic code
-    - Reflective PE loading
-
----
-
-## 🔧 Configuration
-
-### config.yaml
+Edit `config.yaml`:
 
 ```yaml
 server:
   host: 127.0.0.1
   port: 8888
-  debug: false
 
 paths:
   techniques: techniques
-  knowledge: techniques/knowledge
   lessons: data/lessons.json
-  quizzes: data/quizzes.json
   rag_db: data/rag_db
   education_db: data/education_progress.db
 
@@ -496,75 +286,70 @@ rag:
   cache_hours: 24
 ```
 
----
+## Project Structure
 
-## 📊 Intelligence Sources
+```
+Noctis-MCP/
+├── noctis_mcp_client/          # MCP client with 20 tools
+├── server/                      # Flask API server
+│   ├── noctis_server.py        # Server entry point
+│   ├── rag/                    # RAG engine (ChromaDB)
+│   ├── education/              # Learning system
+│   └── agents/                 # Specialized AI agents
+├── c2_adapters/                # C2 framework integrations
+│   ├── sliver_adapter.py       # Sliver integration
+│   ├── adaptix_adapter.py      # Adaptix integration
+│   └── mythic_adapter.py       # Mythic Forge integration
+├── compilation/                # Compilation engines
+│   ├── bof_compiler.py         # BOF COFF compilation
+│   └── linux_compiler.py       # Cross-compilation
+├── techniques/                 # Knowledge base
+│   ├── knowledge/              # Markdown documentation
+│   └── metadata/               # Technique metadata
+├── external/                   # External code repositories
+│   └── VX-API/                 # VX-Underground API (251 functions)
+├── data/                       # Data files
+│   ├── lessons.json            # 10 curated techniques
+│   ├── quizzes.json            # 70+ quiz questions
+│   └── rag_db/                 # ChromaDB (auto-created)
+├── templates/                  # Code templates
+│   └── bof/                    # BOF templates
+├── scripts/                    # Utility scripts
+│   ├── index_vx_sources.py     # VX-API RAG indexer
+│   └── intelligence_updater.py # Intelligence updater
+└── docs/                       # Documentation
+```
 
-Noctis-MCP aggregates intelligence from 25+ sources:
+## Documentation
 
-**Security Blogs:**
-- MDSec, Outflank, VX-Underground
-- Malware-Traffic-Analysis, MalwareTech
-- SANS, Krebs on Security, Bleeping Computer
-- *...and 18 more*
-
-**GitHub:**
-- 20+ malware-specific queries
-- Trending repositories
-- Real-world implementations
-
-**Research:**
-- arXiv security papers
-- Conference proceedings
-- Academic research
-
----
-
-##  Documentation
-
-- **[SETUP.md](docs/SETUP.md)** - Detailed installation for all platforms
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and data flows
-- **[EDUCATION_SYSTEM.md](docs/EDUCATION_SYSTEM.md)** - Learning system deep dive
+- **[SETUP.md](docs/SETUP.md)** - Detailed installation guide
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture
+- **[EDUCATION_SYSTEM.md](docs/EDUCATION_SYSTEM.md)** - Learning system documentation
 - **[C2_INTEGRATION.md](docs/C2_INTEGRATION.md)** - C2 framework integration guide
-
----
-
-## Contributing
-
-We welcome contributions! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-**Priority areas:**
-- New malware techniques
-- Additional quiz questions
-- Intelligence source integrations
-- Documentation improvements
-
----
 
 ## Security & Ethics
 
-**Noctis-MCP is designed for:**
-- ✅ Security research and education
-- ✅ Authorised penetration testing
-- ✅ Red team operations with permission
-- ✅ Detection rule development
+This platform is designed for authorized security research and red team operations. By using Noctis-MCP, you agree to:
 
-**NOT for:**
-- ❌ Unauthorised access to systems
-- ❌ Malicious activities
-- ❌ Distribution of harmful software
+- Use only in authorized penetration testing engagements
+- Follow responsible disclosure practices
+- Comply with applicable laws and regulations
+- Not use for malicious purposes or unauthorized access
 
-**By using this tool, you agree to use it responsibly and legally.**
+Misuse of this tool is illegal and against the project's intended purpose.
 
----
+## Contributing
 
-## 📜 License
+Contributions are welcome. Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Open a pull request
+
+Priority areas: new techniques, quiz questions, intelligence sources, documentation.
+
+## License
 
 MIT License - See [LICENSE](LICENSE) for details
 
@@ -572,7 +357,7 @@ MIT License - See [LICENSE](LICENSE) for details
 
 <div align="center">
 
-**Made with ❤️ by Yenn for the Community**
+**Built for the Security Research Community**
 
 [![Join Noctis AI on Discord](https://img.shields.io/badge/Join_Noctis_AI-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bBtyAWSkW)
 
