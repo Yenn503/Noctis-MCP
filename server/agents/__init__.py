@@ -59,6 +59,17 @@ class AgentRegistry:
         logger.info(f"AgentRegistry initialized with config: {list(config.keys())}")
 
     @classmethod
+    def set_learning_engine(cls, learning_engine):
+        """
+        Set learning engine after initialization to break circular dependency.
+
+        Args:
+            learning_engine: The AgenticLearningEngine instance
+        """
+        cls._config['learning_engine'] = learning_engine
+        logger.info("Learning engine injected into AgentRegistry")
+
+    @classmethod
     def get_agent(cls, agent_type: str) -> BaseAgent:
         """
         Get or create agent instance.

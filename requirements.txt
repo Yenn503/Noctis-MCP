@@ -14,7 +14,6 @@ fastmcp>=0.2.0,<1.0.0            # MCP framework for AI agent communication
 # ASYNC & PERFORMANCE
 # ============================================================================
 aiohttp>=3.9.0,<4.0.0            # Async HTTP client
-asyncio>=3.4.3                   # Async I/O support
 
 # ============================================================================
 # DATA HANDLING & PARSING

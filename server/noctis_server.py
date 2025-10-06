@@ -1202,18 +1202,22 @@ def main():
     code_assembler = CodeAssembler(rag_engine=rag_engine)
     logger.info("Code assembler initialized with RAG support")
 
-    # Initialize learning engine
+    # Initialize agent registry first (without learning engine to break circular dependency)
+    agent_config['learning_engine'] = None
+    AgentRegistry.initialize(agent_config)
+    logger.info("Agent registry initialized")
+
+    # Initialize learning engine after registry
     from server.learning_engine import AgenticLearningEngine
     learning_engine = AgenticLearningEngine(
         db_path=agent_config['db_path'],
-        agent_registry=agent_registry
+        agent_registry=AgentRegistry
     )
     logger.info("Learning engine initialized")
 
-    # Add learning engine to agent config and initialize registry
-    agent_config['learning_engine'] = learning_engine
-    AgentRegistry.initialize(agent_config)
-    logger.info("Agent registry initialized successfully")
+    # Inject learning engine back into registry
+    AgentRegistry.set_learning_engine(learning_engine)
+    logger.info("Learning engine injected into agent registry")
 
     # Register agentic API endpoints
     if rag_engine and rag_engine.enabled:
