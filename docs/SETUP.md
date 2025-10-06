@@ -52,7 +52,7 @@ Edit `~/.cursor/mcp.json`:
       "command": "/path/to/Noctis-MCP/venv/bin/python",
       "args": ["-m", "noctis_mcp_client.noctis_mcp"],
       "cwd": "/path/to/Noctis-MCP",
-      "description": "Noctis-MCP v3.0-agentic - RAG-Powered Malware Development (11 agentic tools)",
+      "description": "Noctis-MCP v3.0-agentic - RAG-Powered Malware Development (20 agentic tools)",
       "timeout": 300,
       "env": {
         "PYTHONPATH": "/path/to/Noctis-MCP"
@@ -115,7 +115,7 @@ Edit `~/.cursor/mcp.json`:
       "command": "/path/to/Noctis-MCP/venv/bin/python",
       "args": ["-m", "noctis_mcp_client.noctis_mcp"],
       "cwd": "/path/to/Noctis-MCP",
-      "description": "Noctis-MCP v3.0-agentic - RAG-Powered Malware Development (11 agentic tools)",
+      "description": "Noctis-MCP v3.0-agentic - RAG-Powered Malware Development (20 agentic tools)",
       "timeout": 300,
       "env": {
         "PYTHONPATH": "/path/to/Noctis-MCP"
@@ -170,7 +170,7 @@ Edit `%APPDATA%\Cursor\User\mcp.json`:
       "command": "C:\\path\\to\\Noctis-MCP\\venv\\Scripts\\python.exe",
       "args": ["-m", "noctis_mcp_client.noctis_mcp"],
       "cwd": "C:\\path\\to\\Noctis-MCP",
-      "description": "Noctis-MCP v3.0-agentic - RAG-Powered Malware Development (11 agentic tools)",
+      "description": "Noctis-MCP v3.0-agentic - RAG-Powered Malware Development (20 agentic tools)",
       "timeout": 300,
       "env": {
         "PYTHONPATH": "C:\\path\\to\\Noctis-MCP"
@@ -199,27 +199,52 @@ curl http://localhost:8888/health
 # Should return: {"status": "healthy", "version": "3.0.0"}
 ```
 
-### 2. Check RAG System
+### 2. Check Education System
+```bash
+curl http://localhost:8888/api/v2/education/stats
+# Should return: {"total_techniques": 10, "total_modules": 13, "total_quizzes": 70+}
+```
+
+### 3. Check RAG System
 ```bash
 curl http://localhost:8888/api/v2/rag/stats
 # Should return RAG statistics
 ```
 
-### 3. Test MCP Tools in Cursor
+### 4. Test MCP Tools in Cursor
 Ask: **"What MCP tools do you have access to?"**
 
-You should see 11 Noctis tools:
-- `search_intelligence`
-- `analyze_technique`
-- `fetch_latest`
-- `generate_code`
-- `optimize_opsec`
-- `validate_code`
-- `select_techniques`
-- `compare_techniques`
-- `compile_code`
-- `record_feedback`
-- `rag_stats`
+You should see 20 Noctis tools organized by category:
+
+**Intelligence & Research (5 tools):**
+- `search_intelligence` - Search malware techniques via RAG
+- `analyze_technique` - Deep-dive into specific techniques
+- `fetch_latest` - Get latest offensive security research
+- `compare_techniques` - Compare multiple techniques
+- `rag_stats` - View intelligence database statistics
+
+**Interactive Learning (5 tools):**
+- `get_learning_topics` - List all available learning topics
+- `start_lesson` - Begin interactive lesson on a technique
+- `get_lesson_module` - Retrieve specific lesson module
+- `take_quiz` - Test knowledge with quizzes
+- `get_learning_progress` - View learning progress and achievements
+
+**Code Generation (3 tools):**
+- `generate_code` - Generate malware code with RAG context
+- `optimize_opsec` - Enhance code for OPSEC
+- `validate_code` - Security analysis of generated code
+
+**Development Tools (4 tools):**
+- `select_techniques` - Choose techniques for specific scenarios
+- `compile_code` - Cross-compile for Windows from any OS
+- `record_feedback` - Improve RAG with feedback
+- `execute_shellcode` - Test and debug shellcode
+
+**Advanced Tools (3 tools):**
+- `dynamic_function_call` - Execute server functions dynamically
+- `advanced_evasion` - Advanced AV/EDR evasion techniques
+- `advanced_syscalls` - Direct/indirect syscall implementation
 
 ---
 
