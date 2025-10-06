@@ -711,6 +711,8 @@ def validate_code():
     This endpoint helps AI models verify code quality BEFORE final delivery.
     Returns detailed error feedback so AI can fix and retry.
     """
+    import os  # Import os module for file operations
+
     data = request.get_json()
     source_code = data.get('source_code')
     output_name = data.get('output_name', 'payload')
@@ -1066,11 +1068,19 @@ def record_detection():
         import time
 
         # Generate embedding for the feedback text (CRITICAL: ChromaDB requires embeddings)
-        # Check if embedder exists, otherwise use RAG engine's built-in method
+        # Check if RAG engine is properly enabled and has embedding capability
+        if not hasattr(agentic_bp, 'rag_engine') or not agentic_bp.rag_engine.enabled:
+            logger.debug("RAG engine not enabled, skipping feedback indexing")
+            return jsonify({
+                'recorded': True,
+                'updated_effectiveness_scores': updated_scores,
+                'indexed_to_rag': False,
+                'techniques_updated': len(updated_scores)
+            }), 200
+
+        # Generate embedding using the RAG engine's embedder
         if hasattr(agentic_bp.rag_engine, 'embedder') and agentic_bp.rag_engine.embedder:
             embedding = agentic_bp.rag_engine.embedder.encode(feedback_text).tolist()
-        elif hasattr(agentic_bp.rag_engine, 'embed_text'):
-            embedding = agentic_bp.rag_engine.embed_text(feedback_text)
         else:
             # Skip indexing if no embedding method available
             logger.warning("No embedding method available in RAG engine, skipping feedback indexing")
@@ -1081,6 +1091,7 @@ def record_detection():
                 'techniques_updated': len(updated_scores)
             }), 200
 
+        # Upsert with proper embeddings parameter
         agentic_bp.rag_engine.detection_intel.upsert(
             ids=[f"feedback_{int(time.time())}"],
             embeddings=[embedding],  # FIX: Add required embeddings parameter

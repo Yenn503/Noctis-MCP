@@ -345,7 +345,7 @@ class TechniqueSelectionAgent(BaseAgent):
 
         # For each pair of techniques, check compatibility
         for i, tech_id_1 in enumerate(technique_ids):
-            for tech_id_2 in enumerate(technique_ids[i+1:], i+1):
+            for j, tech_id_2 in enumerate(technique_ids[i+1:], i+1):
                 # TODO: Implement actual compatibility checking
                 # For now, assume all are compatible
                 matrix['compatible'].append((tech_id_1, tech_id_2))

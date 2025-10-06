@@ -360,12 +360,16 @@ class RAGEngine:
         if not results or not results.get('documents'):
             return formatted
 
-        for i, doc in enumerate(results['documents'][0]):
+        # Handle case where documents is a list of lists
+        documents = results['documents'][0] if isinstance(results['documents'][0], list) else results['documents']
+
+        for i, doc in enumerate(documents):
             formatted.append({
-                'text': doc,
-                'metadata': results['metadatas'][0][i] if results.get('metadatas') else {},
-                'distance': results['distances'][0][i] if results.get('distances') else 1.0,
-                'source_type': source_type
+                'content': doc,  # Use 'content' as primary key for consistency
+                'text': doc,     # Keep 'text' for backward compatibility
+                'metadata': results['metadatas'][0][i] if results.get('metadatas') and len(results['metadatas']) > 0 else {},
+                'distance': results['distances'][0][i] if results.get('distances') and len(results['distances']) > 0 else 1.0,
+                'source': source_type  # Use 'source' for consistency with other parts of codebase
             })
 
         return formatted
