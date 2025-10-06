@@ -36,7 +36,7 @@ Think of it as having both a **malware development expert** and a **personal tut
 
 ##  Key Features
 
-### **Interactive Education System** (NEW!)
+### **Interactive Education System** 
 
 **Learn malware development interactively with AI as your tutor:**
 
@@ -95,8 +95,10 @@ Think of it as having both a **malware development expert** and a **personal tut
 
 - **Dynamic Code Generation** - RAG-informed assembly using real GitHub patterns
 - **10 MITRE ATT&CK Techniques** - Syscalls, injection, encryption, steganography, etc.
-- **C2 Framework Integration** - Sliver, Havoc, Mythic support
-- **Cross-Platform Compilation** - Windows binaries from Linux/macOS
+- **C2 Framework Integration** - Sliver, Adaptix, Mythic with BOF support
+- **BOF Compilation** - Beacon Object Files for Sliver/Adaptix/Mythic Forge
+- **Linux Cross-Compilation** - MinGW + NASM + windres for Windows payloads
+- **Multi-File Projects** - C/C++ + Assembly + Resources compilation
 - **OPSEC Optimisation** - String encryption, API hashing, control flow obfuscation
 
 ---
@@ -126,7 +128,7 @@ Think of it as having both a **malware development expert** and a **personal tut
 ### **Step 1: Clone Repository**
 
 ```bash
-git clone https://github.com/YourUsername/Noctis-MCP.git
+git clone https://github.com/Yenn503/Noctis-MCP.git
 cd Noctis-MCP
 ```
 
@@ -235,7 +237,7 @@ python server/noctis_server.py --port 8888
 }
 ```
 
-4. Replace `/path/to/Noctis-MCP` with your actual installation path
+4. Replace `/path/to/Noctis-MCP` with your actual venv installation path
 5. Restart Cursor
 
 </details>
@@ -289,7 +291,7 @@ In your IDE, ask the AI:
 
 ---
 
-## 💡 Usage Examples
+##  Usage Examples
 
 ### 🎓 **Learning Mode**
 
@@ -570,9 +572,7 @@ MIT License - See [LICENSE](LICENSE) for details
 
 <div align="center">
 
-**Made with ❤️ by the Noctis-MCP Community**
-
-*Empowering Security Researchers, One Technique at a Time*
+**Made with ❤️ by Yenn for the Community**
 
 [![Join Noctis AI on Discord](https://img.shields.io/badge/Join_Noctis_AI-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bBtyAWSkW)
 

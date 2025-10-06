@@ -149,21 +149,22 @@ class ErrorParser:
 class LinuxCompiler:
     """
     Linux-based Windows cross-compilation engine
-    
+
     Compiles C/C++ code for Windows targets using MinGW-w64.
     Provides identical API to WindowsCompiler for seamless cross-platform use.
+    Supports: .c, .cpp, .asm (NASM), .rc (windres)
     """
-    
+
     def __init__(self, output_dir: str = "compiled"):
         """
         Initialize Linux compiler
-        
+
         Args:
             output_dir: Directory for compiled binaries
         """
         # Check MinGW installation
         self.available_archs = MinGWDetector.check_installation()
-        
+
         if not any(self.available_archs.values()):
             raise RuntimeError(
                 "MinGW-w64 not found. Install with:\n"
@@ -171,14 +172,25 @@ class LinuxCompiler:
                 "  or\n"
                 "  sudo dnf install mingw64-gcc mingw32-gcc"
             )
-        
+
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.error_parser = ErrorParser()
-        
+
+        # Check for NASM (assembly compiler)
+        self.nasm_available = shutil.which('nasm') is not None
+
+        # Check for windres (resource compiler)
+        self.windres_available = {
+            'x64': shutil.which('x86_64-w64-mingw32-windres') is not None,
+            'x86': shutil.which('i686-w64-mingw32-windres') is not None
+        }
+
         logger.info(f"LinuxCompiler initialized")
         logger.info(f"Available architectures: {self.available_archs}")
+        logger.info(f"NASM available: {self.nasm_available}")
+        logger.info(f"windres available: {self.windres_available}")
     
     def compile(
         self,
@@ -333,6 +345,178 @@ class LinuxCompiler:
                 return CompilationResult(
                     success=False,
                     errors=[f"Compilation error: {str(e)}"]
+                )
+
+    def compile_asm(self, asm_file: str, architecture: str = "x64") -> Optional[str]:
+        """
+        Compile assembly file to object file using NASM
+
+        Args:
+            asm_file: Path to .asm file
+            architecture: x64 or x86
+
+        Returns:
+            Path to .o file or None if failed
+        """
+        if not self.nasm_available:
+            logger.error("NASM not installed. Install: sudo apt-get install nasm")
+            return None
+
+        nasm_format = "win64" if architecture == "x64" else "win32"
+        output_file = asm_file.replace('.asm', '.o')
+
+        cmd = ['nasm', '-f', nasm_format, asm_file, '-o', output_file]
+
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                logger.info(f"Compiled assembly: {asm_file} -> {output_file}")
+                return output_file
+            else:
+                logger.error(f"NASM error: {result.stderr}")
+                return None
+        except Exception as e:
+            logger.error(f"Assembly compilation error: {e}")
+            return None
+
+    def compile_resource(self, rc_file: str, architecture: str = "x64") -> Optional[str]:
+        """
+        Compile resource file to object file using windres
+
+        Args:
+            rc_file: Path to .rc file
+            architecture: x64 or x86
+
+        Returns:
+            Path to .o file or None if failed
+        """
+        if not self.windres_available.get(architecture):
+            logger.error(f"windres not available for {architecture}")
+            return None
+
+        windres_cmd = 'x86_64-w64-mingw32-windres' if architecture == 'x64' else 'i686-w64-mingw32-windres'
+        output_file = rc_file.replace('.rc', '.o')
+
+        cmd = [windres_cmd, rc_file, '-o', output_file]
+
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                logger.info(f"Compiled resource: {rc_file} -> {output_file}")
+                return output_file
+            else:
+                logger.error(f"windres error: {result.stderr}")
+                return None
+        except Exception as e:
+            logger.error(f"Resource compilation error: {e}")
+            return None
+
+    def compile_project(
+        self,
+        c_files: List[str],
+        asm_files: List[str] = None,
+        rc_files: List[str] = None,
+        architecture: str = "x64",
+        optimization: str = "O2",
+        output_name: str = "payload",
+        subsystem: str = "Console"
+    ) -> CompilationResult:
+        """
+        Compile multi-file project with C, assembly, and resources
+
+        Args:
+            c_files: List of .c/.cpp files
+            asm_files: List of .asm files
+            rc_files: List of .rc files
+            architecture: x64 or x86
+            optimization: O0, O1, O2, O3
+            output_name: Name for output executable
+            subsystem: Console or Windows
+
+        Returns:
+            CompilationResult
+        """
+        start_time = datetime.now()
+        logger.info(f"Compiling multi-file project: {len(c_files)} C files, {len(asm_files or [])} ASM, {len(rc_files or [])} RC")
+
+        object_files = []
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Compile C files to object files
+            compiler = MinGWDetector.find_mingw(architecture)
+            for c_file in c_files:
+                obj_file = temp_path / (Path(c_file).stem + '.o')
+                cmd = [compiler, '-c', c_file, f'-{optimization}', '-o', str(obj_file)]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if result.returncode == 0:
+                    object_files.append(str(obj_file))
+                else:
+                    return CompilationResult(
+                        success=False,
+                        errors=[f"C compilation failed: {result.stderr}"]
+                    )
+
+            # Compile assembly files
+            if asm_files:
+                for asm_file in asm_files:
+                    obj_file = self.compile_asm(asm_file, architecture)
+                    if obj_file:
+                        object_files.append(obj_file)
+                    else:
+                        logger.warning(f"Skipping assembly file: {asm_file}")
+
+            # Compile resource files
+            if rc_files:
+                for rc_file in rc_files:
+                    obj_file = self.compile_resource(rc_file, architecture)
+                    if obj_file:
+                        object_files.append(obj_file)
+                    else:
+                        logger.warning(f"Skipping resource file: {rc_file}")
+
+            # Link all object files
+            binary_name = f"{output_name}.exe"
+            final_binary = self.output_dir / binary_name
+
+            link_cmd = [compiler] + object_files + [
+                '-o', str(final_binary),
+                f'-{optimization}',
+                '-s',  # Strip symbols
+                '-static'
+            ]
+
+            if subsystem.lower() == "windows":
+                link_cmd.append('-mwindows')
+            else:
+                link_cmd.append('-mconsole')
+
+            result = subprocess.run(link_cmd, capture_output=True, text=True)
+
+            if result.returncode == 0 and final_binary.exists():
+                compilation_time = (datetime.now() - start_time).total_seconds()
+                binary_size = final_binary.stat().st_size
+
+                logger.info(f"Multi-file compilation successful: {final_binary}")
+
+                return CompilationResult(
+                    success=True,
+                    binary_path=str(final_binary),
+                    output=result.stdout,
+                    compilation_time=compilation_time,
+                    metadata={
+                        'c_files': len(c_files),
+                        'asm_files': len(asm_files or []),
+                        'rc_files': len(rc_files or []),
+                        'architecture': architecture,
+                        'binary_size': binary_size
+                    }
+                )
+            else:
+                return CompilationResult(
+                    success=False,
+                    errors=[f"Linking failed: {result.stderr}"]
                 )
 
 

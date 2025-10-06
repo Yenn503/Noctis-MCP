@@ -30,6 +30,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from c2_adapters.base_adapter import C2Adapter, C2GenerationResult, BeaconStatus
 from c2_adapters.config import SliverConfig, Protocol, Architecture, OutputFormat
 from c2_adapters.shellcode_wrapper import ShellcodeWrapper, WrapperConfig
+from compilation.bof_compiler import BOFCompiler, BOFResult
 
 
 @dataclass
@@ -71,7 +72,7 @@ class SliverAdapter(C2Adapter):
     def __init__(self, config: SliverConfig, verbose: bool = False):
         """
         Initialize Sliver adapter
-        
+
         Args:
             config: SliverConfig with connection and beacon parameters
             verbose: Enable verbose logging
@@ -79,9 +80,13 @@ class SliverAdapter(C2Adapter):
         super().__init__(config, verbose)
         self.sliver_client = None
         self.beacon_info: Optional[SliverBeaconInfo] = None
-        
+
+        # Initialize BOF compiler
+        self.bof_compiler = BOFCompiler(output_dir="bof_output")
+
         if verbose:
             print(f"[*] SliverAdapter initialized")
+            print(f"[*] BOF compilation available")
     
     def connect(self) -> bool:
         """
@@ -379,6 +384,21 @@ class SliverAdapter(C2Adapter):
                 success=False,
                 error_message=f"Beacon generation failed: {str(e)}"
             )
+
+    def generate_bof(self, technique_id: str) -> BOFResult:
+        """
+        Generate Sliver BOF from Noctis technique
+
+        Args:
+            technique_id: Noctis technique ID (e.g., 'NOCTIS-T004')
+
+        Returns:
+            BOFResult with x86/x64 object files and extension.json
+        """
+        if self.verbose:
+            print(f"[*] Generating Sliver BOF for technique: {technique_id}")
+
+        return self.bof_compiler.compile_technique_to_bof(technique_id, "sliver")
 
 
 # Convenience function
