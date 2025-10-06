@@ -167,6 +167,15 @@ class LearningEngine:
         """Record AV/EDR detection feedback"""
         logger.info(f"Recording detection feedback: {feedback.av_edr} - Detected: {feedback.detected}")
         
+        # Validate input
+        if not feedback.techniques_used:
+            logger.warning("No techniques provided in detection feedback, skipping")
+            return
+        
+        if not feedback.av_edr:
+            logger.warning("No AV/EDR specified in detection feedback, skipping")
+            return
+        
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -202,12 +211,18 @@ class LearningEngine:
         except Exception as e:
             logger.error(f"Failed to record detection feedback: {e}")
             conn.rollback()
+            raise  # Re-raise to let caller handle the error
         finally:
             conn.close()
     
     def record_compilation(self, feedback: CompilationFeedback):
         """Record compilation feedback"""
         logger.info(f"Recording compilation feedback: Success: {feedback.success}")
+        
+        # Validate input
+        if not feedback.techniques_used:
+            logger.warning("No techniques provided in compilation feedback, skipping")
+            return
         
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -238,6 +253,7 @@ class LearningEngine:
         except Exception as e:
             logger.error(f"Failed to record compilation feedback: {e}")
             conn.rollback()
+            raise  # Re-raise to let caller handle the error
         finally:
             conn.close()
     
@@ -676,13 +692,17 @@ class AgenticLearningEngine(LearningEngine):
             target_av: Target AV/EDR name
 
         Returns:
-            Effectiveness score (0.0-1.0), defaults to 0.5 if unknown
+            Effectiveness score (0.0-10.0), defaults to 5.0 if unknown
         """
+        # Normalize AV name
+        target_av = self._normalize_av_name(target_av)
+        
         # Get AV-specific scores
         av_scores = self.technique_effectiveness.get(target_av, {})
 
-        # Get score for this technique, default to 0.5 (moderate)
-        return av_scores.get(technique_id, 0.5)
+        # Get score for this technique, default to 0.5 (moderate), scale to 10
+        base_score = av_scores.get(technique_id, 0.5)
+        return base_score * 10.0  # Scale 0.0-1.0 to 0.0-10.0
 
     def _init_av_profiles(self) -> Dict[str, Dict[str, Any]]:
         """Initialize AV/EDR profiles with characteristics and detection patterns"""

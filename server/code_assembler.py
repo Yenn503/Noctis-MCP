@@ -138,7 +138,7 @@ class SourceFileReader:
         # Enhanced pattern for function definitions
         # Matches: [static] [inline] RETURN_TYPE [*] FunctionName(PARAMS) {
         # Supports Windows types, pointers, and complex parameter lists
-        pattern = r'((?:static\s+)?(?:inline\s+)?(?:BOOL|DWORD|VOID|NTSTATUS|LPVOID|HANDLE|PVOID|PBYTE|PCHAR|BYTE|SIZE_T|ULONG_PTR|ULONG|USHORT|FARPROC|HMODULE|PWORD|PDWORD|int|void|char|unsigned\s+\w+)\s*\**\s+)(\w+)\s*\(((?:[^()]|\([^()]*\))*)\)\s*\{'
+        pattern = r'((?:static\s+)?(?:inline\s+)?(?:BOOL|DWORD|VOID|NTSTATUS|LPVOID|HANDLE|PVOID|PBYTE|PCHAR|BYTE|SIZE_T|ULONG_PTR|ULONG|USHORT|FARPROC|HMODULE|PWORD|PDWORD|QWORD|ULONGLONG|int|void|char|long|unsigned\s+\w+)\s*\**\s+)(\w+)\s*\(((?:[^()]|\([^()]*\))*)\)\s*\{'
 
         matches = re.finditer(pattern, content, re.MULTILINE)
         
@@ -202,12 +202,13 @@ class SourceFileReader:
         global_vars = []
         # Pattern for global variable declarations (outside functions)
         # Match: [extern] [static] [volatile] TYPE varname [= value];
-        pattern = r'^(?:extern\s+)?(?:static\s+)?(?:volatile\s+)?(?:const\s+)?(?:DWORD|PVOID|HANDLE|BOOL|NTSTATUS|SIZE_T|ULONG_PTR|PBYTE|int|void\*|char\*|struct\s+\w+|\w+)\s+\**\s*\w+(?:\[[^\]]*\])?\s*(?:=\s*[^;]+)?;'
+        pattern = r'^(?:extern\s+)?(?:static\s+)?(?:volatile\s+)?(?:const\s+)?(?:DWORD|PVOID|HANDLE|BOOL|NTSTATUS|SIZE_T|ULONG_PTR|PBYTE|QWORD|ULONGLONG|int|void\*|char\*|struct\s+\w+|\w+)\s+\**\s*\w+(?:\[[^\]]*\])?\s*(?:=\s*[^;]+)?;'
         matches = re.finditer(pattern, content, re.MULTILINE)
         for match in matches:
             # Exclude lines that look like they're inside functions (heuristic)
             line = match.group(0)
-            if not any(kw in line for kw in ['return', 'if (', 'for (']):
+            # More robust heuristic to exclude function-internal statements
+            if not any(kw in line for kw in ['return', 'if (', 'for (', 'while (', 'switch (']):
                 global_vars.append(line)
         return global_vars
 

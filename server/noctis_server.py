@@ -1240,10 +1240,10 @@ def main():
     app.register_blueprint(education_bp)
     logger.info("Education API endpoints registered")
 
-    # Determine host and port
-    host = args.host or config.get('server.host', '127.0.0.1')
-    port = args.port or config.get('server.port', 8888)
-    debug = args.debug or config.get('server.debug', False)
+    # Determine host and port with proper type handling
+    host = args.host if args.host is not None else config.get('server.host', '127.0.0.1')
+    port = args.port if args.port is not None else config.get('server.port', 8888)
+    debug = args.debug if args.debug else config.get('server.debug', False)
     
     # Log startup info
     logger.info(f"Starting Noctis-MCP Server")
