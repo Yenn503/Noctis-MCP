@@ -1224,6 +1224,18 @@ def main():
     else:
         logger.warning("Agentic API endpoints NOT registered (RAG disabled)")
 
+    # Register education API endpoints
+    logger.info("Registering education API endpoints...")
+    from server.education_api import education_bp, init_education_api
+    education_config = {
+        'lessons_path': config.get('paths.lessons', 'data/lessons.json'),
+        'quizzes_path': config.get('paths.quizzes', 'data/quizzes.json'),
+        'education_db': config.get('paths.education_db', 'data/education_progress.db')
+    }
+    init_education_api(education_config)
+    app.register_blueprint(education_bp)
+    logger.info("Education API endpoints registered")
+
     # Determine host and port
     host = args.host or config.get('server.host', '127.0.0.1')
     port = args.port or config.get('server.port', 8888)

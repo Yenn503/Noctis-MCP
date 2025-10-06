@@ -1,0 +1,1100 @@
+{
+  "quizzes": {
+    "process_injection": {
+      "technique_id": "process_injection",
+      "technique_title": "Process Injection Fundamentals",
+      "total_questions": 10,
+      "passing_score": 70,
+      "questions": [
+        {
+          "id": "pi_q1",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "What is the primary purpose of process injection?",
+          "options": [
+            "Execute code in another process's memory space",
+            "Terminate running processes",
+            "Monitor network traffic",
+            "Encrypt files on disk"
+          ],
+          "correct_index": 0,
+          "explanation": "Process injection allows executing arbitrary code within the address space of a separate live process, enabling evasion and gaining execution context under a legitimate process."
+        },
+        {
+          "id": "pi_q2",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "Which Windows API function is used to allocate memory in a remote process?",
+          "options": [
+            "VirtualAlloc",
+            "VirtualAllocEx",
+            "malloc",
+            "HeapAlloc"
+          ],
+          "correct_index": 1,
+          "explanation": "VirtualAllocEx is specifically designed to allocate memory in another process. VirtualAlloc only works in the current process."
+        },
+        {
+          "id": "pi_q3",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "In classic DLL injection, what function loads the DLL into the target process?",
+          "options": [
+            "CreateThread",
+            "LoadLibraryA",
+            "WriteProcessMemory",
+            "VirtualProtectEx"
+          ],
+          "correct_index": 1,
+          "explanation": "LoadLibraryA is called via CreateRemoteThread to load the DLL. The DLL path is written to the target process, and CreateRemoteThread executes LoadLibraryA with that path as the parameter."
+        },
+        {
+          "id": "pi_q4",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is the correct sequence for classic DLL injection?",
+          "options": [
+            "OpenProcess → VirtualAllocEx → WriteProcessMemory → CreateRemoteThread",
+            "CreateRemoteThread → VirtualAllocEx → WriteProcessMemory → OpenProcess",
+            "WriteProcessMemory → OpenProcess → VirtualAllocEx → CreateRemoteThread",
+            "VirtualAllocEx → CreateRemoteThread → OpenProcess → WriteProcessMemory"
+          ],
+          "correct_index": 0,
+          "explanation": "The correct order is: 1) Open target process, 2) Allocate memory for DLL path, 3) Write DLL path to allocated memory, 4) Create remote thread that calls LoadLibrary."
+        },
+        {
+          "id": "pi_q5",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "Why is classic DLL injection easily detected by modern EDR?",
+          "options": [
+            "It requires Administrator privileges",
+            "It leaves the DLL on disk and in the loaded module list",
+            "It uses too much memory",
+            "It only works on older Windows versions"
+          ],
+          "correct_index": 1,
+          "explanation": "Classic DLL injection is easily detected because the DLL file must exist on disk and will appear in the target process's loaded module list, making it trivial for EDR to identify."
+        },
+        {
+          "id": "pi_q6",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What access rights are minimally required when calling OpenProcess for DLL injection?",
+          "options": [
+            "PROCESS_ALL_ACCESS",
+            "PROCESS_CREATE_THREAD | PROCESS_VM_OPERATION | PROCESS_VM_WRITE",
+            "PROCESS_TERMINATE",
+            "PROCESS_QUERY_INFORMATION"
+          ],
+          "correct_index": 1,
+          "explanation": "You need PROCESS_CREATE_THREAD (to create the remote thread), PROCESS_VM_OPERATION (to allocate memory), and PROCESS_VM_WRITE (to write the DLL path). PROCESS_ALL_ACCESS works but grants unnecessary permissions."
+        },
+        {
+          "id": "pi_q7",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What Windows structure does EDR monitor to detect cross-process memory writes?",
+          "options": [
+            "Process Environment Block (PEB)",
+            "Thread Environment Block (TEB)",
+            "API call sequences and ETW events",
+            "Import Address Table (IAT)"
+          ],
+          "correct_index": 2,
+          "explanation": "Modern EDR monitors API call sequences (like OpenProcess → VirtualAllocEx → WriteProcessMemory → CreateRemoteThread) and ETW (Event Tracing for Windows) events to detect injection patterns."
+        },
+        {
+          "id": "pi_q8",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "Which of these is a common legitimate target process for injection?",
+          "options": [
+            "system",
+            "explorer.exe",
+            "kernel32.dll",
+            "ntdll.sys"
+          ],
+          "correct_index": 1,
+          "explanation": "explorer.exe (Windows Explorer) is a common target because it's always running, runs with user privileges, and won't raise suspicion. 'system' is not a process, and kernel32.dll/ntdll.sys are not processes."
+        },
+        {
+          "id": "pi_q9",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What does the DllMain function's DLL_PROCESS_ATTACH case represent?",
+          "options": [
+            "When the DLL is unloaded",
+            "When a new thread is created",
+            "When the DLL is first loaded into the process",
+            "When the process terminates"
+          ],
+          "correct_index": 2,
+          "explanation": "DLL_PROCESS_ATTACH is called when the DLL is first loaded (attached) to the process. This is where you place initialization code and, in malicious DLLs, your payload."
+        },
+        {
+          "id": "pi_q10",
+          "type": "true_false",
+          "difficulty": "beginner",
+          "question": "WriteProcessMemory can write to any process without special permissions.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correct_index": 1,
+          "explanation": "False. WriteProcessMemory requires a process handle with PROCESS_VM_WRITE access rights. You cannot write to arbitrary processes without proper permissions."
+        }
+      ]
+    },
+    "shellcode_injection": {
+      "technique_id": "shellcode_injection",
+      "technique_title": "Shellcode Injection Techniques",
+      "total_questions": 10,
+      "passing_score": 70,
+      "questions": [
+        {
+          "id": "si_q1",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "What is shellcode?",
+          "options": [
+            "A script written in PowerShell",
+            "Position-independent machine code designed for injection",
+            "A command-line shell program",
+            "Encrypted executable code"
+          ],
+          "correct_index": 1,
+          "explanation": "Shellcode is raw, position-independent machine code (assembly instructions) that can execute regardless of where it's loaded in memory, making it ideal for injection."
+        },
+        {
+          "id": "si_q2",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is the main advantage of shellcode injection over DLL injection?",
+          "options": [
+            "Easier to implement",
+            "Fileless execution with no module entry in PEB",
+            "Requires fewer API calls",
+            "Works on all operating systems"
+          ],
+          "correct_index": 1,
+          "explanation": "Shellcode injection is fileless (no DLL on disk) and doesn't create a module entry in the Process Environment Block, making it stealthier than DLL injection."
+        },
+        {
+          "id": "si_q3",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What memory permission is required to execute shellcode?",
+          "options": [
+            "PAGE_READONLY",
+            "PAGE_READWRITE",
+            "PAGE_EXECUTE_READ or PAGE_EXECUTE_READWRITE",
+            "PAGE_NOACCESS"
+          ],
+          "correct_index": 2,
+          "explanation": "Memory must have execute permissions (PAGE_EXECUTE_READ or PAGE_EXECUTE_READWRITE) for the CPU to execute code from that region."
+        },
+        {
+          "id": "si_q4",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "Why is allocating memory with PAGE_EXECUTE_READWRITE directly suspicious to EDR?",
+          "options": [
+            "It's not a valid memory permission",
+            "RWX memory is rare in legitimate processes and indicates potential code injection",
+            "It requires Administrator privileges",
+            "It's slower than other permission types"
+          ],
+          "correct_index": 1,
+          "explanation": "RWX (Read-Write-Execute) memory is uncommon in normal applications. EDR flags it as suspicious because it's a common indicator of code injection techniques."
+        },
+        {
+          "id": "si_q5",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is a better evasion technique than allocating RWX memory directly?",
+          "options": [
+            "Allocate RW → write shellcode → change to RX → execute",
+            "Use malloc instead of VirtualAlloc",
+            "Allocate larger memory regions",
+            "Use kernel-mode memory allocation"
+          ],
+          "correct_index": 0,
+          "explanation": "Allocating as RW (read-write), writing the shellcode, then changing to RX (read-execute) with VirtualProtectEx is less suspicious than direct RWX allocation."
+        },
+        {
+          "id": "si_q6",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "Which tool is commonly used to generate shellcode?",
+          "options": [
+            "Visual Studio",
+            "gcc",
+            "msfvenom",
+            "notepad"
+          ],
+          "correct_index": 2,
+          "explanation": "msfvenom (part of Metasploit Framework) is the standard tool for generating shellcode for various platforms and payloads."
+        },
+        {
+          "id": "si_q7",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What does position-independent code (PIC) mean?",
+          "options": [
+            "Code that only runs at a specific memory address",
+            "Code that can execute correctly regardless of where it's loaded in memory",
+            "Code that requires relocation tables",
+            "Code compiled for a specific processor"
+          ],
+          "correct_index": 1,
+          "explanation": "Position-independent code works at any memory address because it uses relative addressing instead of absolute addresses, which is essential for injected shellcode."
+        },
+        {
+          "id": "si_q8",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "In shellcode injection, what is the entry point for CreateRemoteThread?",
+          "options": [
+            "The address of LoadLibraryA",
+            "The address of the allocated shellcode buffer",
+            "The address of kernel32.dll",
+            "The address of the target process's main()"
+          ],
+          "correct_index": 1,
+          "explanation": "For shellcode injection, CreateRemoteThread's start address points directly to the allocated memory containing the shellcode, not to a library function."
+        },
+        {
+          "id": "si_q9",
+          "type": "true_false",
+          "difficulty": "beginner",
+          "question": "Shellcode must be written in C or C++ programming languages.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correct_index": 1,
+          "explanation": "False. Shellcode is raw machine code (assembly instructions). While you can write assembly and assemble it to shellcode, it's not a high-level language like C/C++."
+        },
+        {
+          "id": "si_q10",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What is a 'staged' payload in shellcode context?",
+          "options": [
+            "Shellcode that executes in multiple stages, downloading additional payloads",
+            "Shellcode that runs on a server",
+            "Shellcode that requires user interaction",
+            "Shellcode encrypted with multiple keys"
+          ],
+          "correct_index": 0,
+          "explanation": "A staged payload is small initial shellcode that establishes a connection and downloads the full payload, reducing initial injection size and improving reliability."
+        }
+      ]
+    },
+    "process_hollowing": {
+      "technique_id": "process_hollowing",
+      "technique_title": "Process Hollowing",
+      "total_questions": 8,
+      "passing_score": 70,
+      "questions": [
+        {
+          "id": "ph_q1",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is process hollowing?",
+          "options": [
+            "Deleting a process from memory",
+            "Creating a suspended process, unmapping its code, and replacing it with malicious code",
+            "Injecting a DLL into a running process",
+            "Terminating multiple processes simultaneously"
+          ],
+          "correct_index": 1,
+          "explanation": "Process hollowing creates a legitimate process in suspended state, removes its original code (unmaps), and replaces it with malicious code before resuming execution."
+        },
+        {
+          "id": "ph_q2",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What flag is used when creating a process for hollowing?",
+          "options": [
+            "CREATE_NEW_CONSOLE",
+            "CREATE_SUSPENDED",
+            "CREATE_PROTECTED_PROCESS",
+            "CREATE_BREAKAWAY_FROM_JOB"
+          ],
+          "correct_index": 1,
+          "explanation": "CREATE_SUSPENDED creates the process without executing it, allowing you to modify its memory before it runs."
+        },
+        {
+          "id": "ph_q3",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "Which function is used to unmap the original process image?",
+          "options": [
+            "VirtualFree",
+            "UnmapViewOfFile",
+            "NtUnmapViewOfSection",
+            "DeleteProcess"
+          ],
+          "correct_index": 2,
+          "explanation": "NtUnmapViewOfSection (from ntdll.dll) is used to unmap the original executable image from the process's memory space."
+        },
+        {
+          "id": "ph_q4",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "Why is process hollowing stealthier than standard injection?",
+          "options": [
+            "It uses less memory",
+            "The process appears legitimate (correct name and path) while running malicious code",
+            "It doesn't require Administrator privileges",
+            "It's faster than other techniques"
+          ],
+          "correct_index": 1,
+          "explanation": "Process hollowing makes malicious code appear as a legitimate process (e.g., svchost.exe), fooling basic process monitoring that only checks process names."
+        },
+        {
+          "id": "ph_q5",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What must be updated before resuming the hollowed process?",
+          "options": [
+            "Environment variables",
+            "The entry point (EIP/RIP) to point to malicious code",
+            "Network configuration",
+            "File handles"
+          ],
+          "correct_index": 1,
+          "explanation": "The thread's instruction pointer (EIP for x86, RIP for x64) must be set to the entry point of the malicious code using SetThreadContext."
+        },
+        {
+          "id": "ph_q6",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What can reveal process hollowing to defenders?",
+          "options": [
+            "High CPU usage",
+            "Memory regions not backed by files on disk",
+            "Network connections",
+            "Registry changes"
+          ],
+          "correct_index": 1,
+          "explanation": "Legitimate processes have memory backed by their executable files on disk. Hollowed processes have code in memory that doesn't match or isn't backed by any file, which EDR can detect."
+        },
+        {
+          "id": "ph_q7",
+          "type": "true_false",
+          "difficulty": "intermediate",
+          "question": "Process hollowing requires the malicious executable to be written to disk before injection.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correct_index": 1,
+          "explanation": "False. Process hollowing is a fileless technique. The malicious PE is written directly to memory without ever being saved to disk."
+        },
+        {
+          "id": "ph_q8",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What is process doppelgänging?",
+          "options": [
+            "Creating two processes with the same name",
+            "An evolution of hollowing using NTFS transactions to avoid detection",
+            "Running the same process twice",
+            "Copying process memory to another process"
+          ],
+          "correct_index": 1,
+          "explanation": "Process doppelgänging is an advanced variant of process hollowing that uses NTFS transactions to create processes from modified files without writing to disk, evading file-based detection."
+        }
+      ]
+    },
+    "api_hooking": {
+      "technique_id": "api_hooking",
+      "technique_title": "API Hooking and Inline Patching",
+      "total_questions": 8,
+      "passing_score": 70,
+      "questions": [
+        {
+          "id": "ah_q1",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "What is API hooking?",
+          "options": [
+            "Intercepting function calls to modify behavior or parameters",
+            "Creating new API functions",
+            "Deleting API functions from memory",
+            "Encrypting API calls"
+          ],
+          "correct_index": 0,
+          "explanation": "API hooking intercepts calls to functions, allowing you to monitor, modify, or bypass the original function's behavior."
+        },
+        {
+          "id": "ah_q2",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is the Import Address Table (IAT)?",
+          "options": [
+            "A list of exported functions in a DLL",
+            "A table of memory addresses for imported functions from other modules",
+            "A CPU register for memory management",
+            "A debugging data structure"
+          ],
+          "correct_index": 1,
+          "explanation": "The IAT contains pointers to imported functions from external DLLs. Modifying these pointers redirects function calls to your hook."
+        },
+        {
+          "id": "ah_q3",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is inline hooking?",
+          "options": [
+            "Hooking functions defined inline in code",
+            "Overwriting the beginning of a function with a JMP to your hook",
+            "Hooking only private functions",
+            "Hooking functions in the kernel"
+          ],
+          "correct_index": 1,
+          "explanation": "Inline hooking modifies the target function's code by replacing the first few bytes with a JMP instruction that redirects execution to your hook function."
+        },
+        {
+          "id": "ah_q4",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What is a trampoline in the context of inline hooking?",
+          "options": [
+            "A function that jumps between processes",
+            "A small code stub that executes the original overwritten instructions then jumps to the original function",
+            "A debugging technique",
+            "An error handling mechanism"
+          ],
+          "correct_index": 1,
+          "explanation": "A trampoline contains the original instructions that were overwritten by the hook JMP, allowing the hook to call the original function if needed."
+        },
+        {
+          "id": "ah_q5",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "Why would malware hook NtWriteFile?",
+          "options": [
+            "To improve file write performance",
+            "To hide file writes from monitoring tools",
+            "To compress files automatically",
+            "To backup files"
+          ],
+          "correct_index": 1,
+          "explanation": "Hooking NtWriteFile allows malware to intercept and filter file write operations, hiding malicious file activity from monitoring tools and forensics."
+        },
+        {
+          "id": "ah_q6",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "Which is easier to implement: IAT hooking or inline hooking?",
+          "options": [
+            "IAT hooking",
+            "Inline hooking",
+            "Both are equally complex",
+            "Neither can be implemented in user mode"
+          ],
+          "correct_index": 0,
+          "explanation": "IAT hooking is simpler - just modify a pointer in the import table. Inline hooking requires disassembly, trampolines, and careful handling of CPU instructions."
+        },
+        {
+          "id": "ah_q7",
+          "type": "true_false",
+          "difficulty": "intermediate",
+          "question": "IAT hooking can intercept calls to functions that are resolved dynamically with GetProcAddress.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correct_index": 1,
+          "explanation": "False. IAT hooking only affects statically imported functions. Dynamic resolution via GetProcAddress bypasses the IAT, requiring inline hooking instead."
+        },
+        {
+          "id": "ah_q8",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "How do EDR products use API hooking?",
+          "options": [
+            "To speed up API calls",
+            "To monitor and block suspicious API usage before it reaches the kernel",
+            "To encrypt API parameters",
+            "To debug applications"
+          ],
+          "correct_index": 1,
+          "explanation": "EDR hooks critical APIs (like VirtualAllocEx, CreateRemoteThread) to monitor, log, and potentially block suspicious behavior before it can execute."
+        }
+      ]
+    },
+    "syscalls_direct": {
+      "technique_id": "syscalls_direct",
+      "technique_title": "Direct Syscalls & Unhooking",
+      "total_questions": 8,
+      "passing_score": 70,
+      "questions": [
+        {
+          "id": "ds_q1",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is a direct syscall?",
+          "options": [
+            "Calling kernel functions without going through user-mode APIs",
+            "A faster way to call Windows APIs",
+            "A debugging technique",
+            "A network communication method"
+          ],
+          "correct_index": 0,
+          "explanation": "Direct syscalls execute the syscall instruction directly, bypassing user-mode API layers (kernel32.dll, ntdll.dll) where EDR hooks reside."
+        },
+        {
+          "id": "ds_q2",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "Why do EDR products hook ntdll.dll?",
+          "options": [
+            "To improve performance",
+            "To monitor all system calls before they reach the kernel",
+            "To fix Windows bugs",
+            "To compress memory"
+          ],
+          "correct_index": 1,
+          "explanation": "ntdll.dll is the lowest user-mode layer before kernel transition. Hooking it allows EDR to inspect all system calls and block malicious ones."
+        },
+        {
+          "id": "ds_q3",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What is a syscall number (SSN)?",
+          "options": [
+            "A unique identifier for each system call in the Windows kernel",
+            "A network port number",
+            "A process ID",
+            "A memory address"
+          ],
+          "correct_index": 0,
+          "explanation": "Each system call has a unique number (SSN) that's placed in the EAX/RAX register before executing the syscall instruction to tell the kernel which function to execute."
+        },
+        {
+          "id": "ds_q4",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What is Hell's Gate technique?",
+          "options": [
+            "A kernel exploit",
+            "Dynamically parsing ntdll.dll to extract syscall numbers and make direct syscalls",
+            "A network evasion technique",
+            "A file encryption method"
+          ],
+          "correct_index": 1,
+          "explanation": "Hell's Gate reads ntdll.dll at runtime to find syscall numbers, then makes direct syscalls, bypassing any hooks EDR placed in ntdll."
+        },
+        {
+          "id": "ds_q5",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What problem does Halo's Gate solve that Hell's Gate doesn't?",
+          "options": [
+            "It's faster",
+            "It handles hooked functions by reading neighboring unhooked functions to derive syscall numbers",
+            "It works in kernel mode",
+            "It requires no privileges"
+          ],
+          "correct_index": 1,
+          "explanation": "If EDR hooks a function in ntdll, Hell's Gate can't read its syscall number. Halo's Gate looks at nearby unhooked functions and calculates the hooked function's SSN."
+        },
+        {
+          "id": "ds_q6",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is unhooking?",
+          "options": [
+            "Removing network connections",
+            "Restoring original function bytes by reading a clean copy of ntdll.dll from disk",
+            "Disabling antivirus software",
+            "Clearing event logs"
+          ],
+          "correct_index": 1,
+          "explanation": "Unhooking reads a clean copy of ntdll.dll from disk (or from a suspended process) and overwrites the hooked functions in memory with the original bytes."
+        },
+        {
+          "id": "ds_q7",
+          "type": "true_false",
+          "difficulty": "intermediate",
+          "question": "Direct syscalls completely bypass all EDR detection mechanisms.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correct_index": 1,
+          "explanation": "False. While direct syscalls bypass user-mode hooks, advanced EDR can still detect them using kernel callbacks, ETW, or suspicious syscall patterns from user mode."
+        },
+        {
+          "id": "ds_q8",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "What instruction is used to transition from user mode to kernel mode in x64 Windows?",
+          "options": [
+            "int 0x80",
+            "syscall",
+            "sysenter",
+            "call kernel32"
+          ],
+          "correct_index": 1,
+          "explanation": "The 'syscall' instruction (x64) transitions from user mode to kernel mode. x86 uses 'sysenter'. Linux uses 'int 0x80' or 'syscall'."
+        }
+      ]
+    },
+    "pe_manipulation": {
+      "technique_id": "pe_manipulation",
+      "technique_title": "PE File Format Manipulation",
+      "total_questions": 6,
+      "passing_score": 70,
+      "questions": [
+        {
+          "id": "pe_q1",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "What does PE stand for in Windows executables?",
+          "options": [
+            "Process Execution",
+            "Portable Executable",
+            "Program Entry",
+            "Protected Environment"
+          ],
+          "correct_index": 1,
+          "explanation": "PE stands for Portable Executable, the file format for executables, DLLs, and drivers on Windows."
+        },
+        {
+          "id": "pe_q2",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "What are the magic bytes at the beginning of a PE file?",
+          "options": [
+            "PE",
+            "MZ",
+            "EXE",
+            "WIN"
+          ],
+          "correct_index": 1,
+          "explanation": "All PE files start with 'MZ' (0x5A4D) in the DOS header, a signature from MS-DOS executables that Windows still uses."
+        },
+        {
+          "id": "pe_q3",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "Which PE section typically contains executable code?",
+          "options": [
+            ".data",
+            ".text",
+            ".rdata",
+            ".rsrc"
+          ],
+          "correct_index": 1,
+          "explanation": "The .text section contains the executable code (instructions). .data is for variables, .rdata for read-only data, .rsrc for resources."
+        },
+        {
+          "id": "pe_q4",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is code cave injection in PE files?",
+          "options": [
+            "Creating new caves in mountains",
+            "Inserting malicious code into unused space within PE sections",
+            "Encrypting code sections",
+            "Compressing the entire executable"
+          ],
+          "correct_index": 1,
+          "explanation": "Code cave injection places malicious code in unused padding or slack space within existing PE sections, avoiding the suspicion of adding new sections."
+        },
+        {
+          "id": "pe_q5",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What is the Import Address Table (IAT) used for in PE files?",
+          "options": [
+            "Storing program variables",
+            "Listing functions imported from external DLLs with their runtime addresses",
+            "Containing the program's resources",
+            "Defining file permissions"
+          ],
+          "correct_index": 1,
+          "explanation": "The IAT contains function pointers for APIs imported from DLLs. The Windows loader fills these at runtime with actual function addresses."
+        },
+        {
+          "id": "pe_q6",
+          "type": "true_false",
+          "difficulty": "intermediate",
+          "question": "Adding a new section to a PE file will always be detected by antivirus.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correct_index": 1,
+          "explanation": "False. While suspicious, simply adding a section isn't always detected. AV looks at section names, permissions, entropy (randomness), and content, not just section count."
+        }
+      ]
+    },
+    "obfuscation": {
+      "technique_id": "obfuscation",
+      "technique_title": "Code Obfuscation Techniques",
+      "total_questions": 6,
+      "passing_score": 70,
+      "questions": [
+        {
+          "id": "ob_q1",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "What is the primary goal of code obfuscation?",
+          "options": [
+            "Make code run faster",
+            "Make code harder to analyze while preserving functionality",
+            "Reduce file size",
+            "Add new features"
+          ],
+          "correct_index": 1,
+          "explanation": "Obfuscation makes code difficult to reverse engineer and analyze while maintaining the same functionality."
+        },
+        {
+          "id": "ob_q2",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "Which technique obfuscates API calls by resolving them at runtime?",
+          "options": [
+            "Static linking",
+            "Dynamic API resolution with GetProcAddress",
+            "Inline assembly",
+            "Code signing"
+          ],
+          "correct_index": 1,
+          "explanation": "Using GetProcAddress to dynamically resolve API functions at runtime hides them from static analysis, as they don't appear in the import table."
+        },
+        {
+          "id": "ob_q3",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is string obfuscation?",
+          "options": [
+            "Encrypting or encoding strings to hide them from static analysis",
+            "Using longer variable names",
+            "Removing all strings from code",
+            "Translating strings to different languages"
+          ],
+          "correct_index": 0,
+          "explanation": "String obfuscation encrypts or encodes cleartext strings (like API names, URLs, commands) and decrypts them at runtime to avoid signature detection."
+        },
+        {
+          "id": "ob_q4",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What is control flow flattening?",
+          "options": [
+            "Removing all conditional statements",
+            "Linearizing code into a dispatcher-controlled loop that obscures execution flow",
+            "Optimizing code for performance",
+            "Converting loops to recursive functions"
+          ],
+          "correct_index": 1,
+          "explanation": "Control flow flattening breaks code into blocks and executes them via a dispatcher loop, making it extremely difficult to follow the program's logic flow."
+        },
+        {
+          "id": "ob_q5",
+          "type": "true_false",
+          "difficulty": "intermediate",
+          "question": "Obfuscation can make malware completely undetectable by antivirus.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correct_index": 1,
+          "explanation": "False. Obfuscation increases detection difficulty but doesn't guarantee invisibility. Behavioral detection, sandboxing, and heuristics can still detect obfuscated malware."
+        },
+        {
+          "id": "ob_q6",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What are opaque predicates?",
+          "options": [
+            "Encrypted variables",
+            "Conditions that always evaluate the same way but appear complex to confuse analysis",
+            "Transparent code comments",
+            "Hidden function parameters"
+          ],
+          "correct_index": 1,
+          "explanation": "Opaque predicates are conditions (if statements) whose outcome is predetermined but appear complex, adding confusion for reverse engineers and disassemblers."
+        }
+      ]
+    },
+    "persistence": {
+      "technique_id": "persistence",
+      "technique_title": "Persistence Mechanisms",
+      "total_questions": 6,
+      "passing_score": 70,
+      "questions": [
+        {
+          "id": "ps_q1",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "What is the purpose of persistence in malware?",
+          "options": [
+            "To encrypt files",
+            "To survive reboots and maintain access to the system",
+            "To spread to other computers",
+            "To delete log files"
+          ],
+          "correct_index": 1,
+          "explanation": "Persistence mechanisms ensure malware automatically restarts after system reboots or user logoffs, maintaining long-term access."
+        },
+        {
+          "id": "ps_q2",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "Which registry key is commonly used for basic persistence?",
+          "options": [
+            "HKEY_CLASSES_ROOT\\Persistence",
+            "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+            "HKEY_LOCAL_MACHINE\\SYSTEM\\Malware",
+            "HKEY_USERS\\Startup"
+          ],
+          "correct_index": 1,
+          "explanation": "The Run registry key automatically executes programs listed in it when the user logs in, making it a common persistence method."
+        },
+        {
+          "id": "ps_q3",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What advantage do Windows services have for persistence?",
+          "options": [
+            "They're invisible to users",
+            "They run with SYSTEM privileges and start before user login",
+            "They can't be detected",
+            "They don't require any permissions"
+          ],
+          "correct_index": 1,
+          "explanation": "Services can run with SYSTEM (highest) privileges and start at boot before any user logs in, providing powerful persistence."
+        },
+        {
+          "id": "ps_q4",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What makes WMI event subscriptions stealthy for persistence?",
+          "options": [
+            "They're encrypted by default",
+            "They're stored in WMI repository (not registry or filesystem), making them harder to find",
+            "They require no privileges",
+            "They only work on servers"
+          ],
+          "correct_index": 1,
+          "explanation": "WMI subscriptions are stored in the WMI repository database, not obvious locations like registry Run keys or Startup folder, making them stealthier."
+        },
+        {
+          "id": "ps_q5",
+          "type": "true_false",
+          "difficulty": "beginner",
+          "question": "Scheduled tasks can only run once and cannot be used for persistence.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correct_index": 1,
+          "explanation": "False. Scheduled tasks support recurring triggers (daily, at login, at startup, etc.), making them excellent for persistence."
+        },
+        {
+          "id": "ps_q6",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What folder provides user-level persistence without admin privileges?",
+          "options": [
+            "C:\\Windows\\System32\\Startup",
+            "C:\\Users\\<user>\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup",
+            "C:\\Program Files\\Startup",
+            "C:\\Boot\\Startup"
+          ],
+          "correct_index": 1,
+          "explanation": "The user's Startup folder (in AppData) is writable without admin privileges and automatically executes programs when that user logs in."
+        }
+      ]
+    },
+    "crypters_packers": {
+      "technique_id": "crypters_packers",
+      "technique_title": "Crypters and Packers",
+      "total_questions": 6,
+      "passing_score": 70,
+      "questions": [
+        {
+          "id": "cp_q1",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "What is the difference between a packer and a crypter?",
+          "options": [
+            "Packers compress, crypters encrypt",
+            "Packers are for Linux, crypters for Windows",
+            "Packers are legal, crypters are illegal",
+            "There is no difference"
+          ],
+          "correct_index": 0,
+          "explanation": "Packers primarily compress executables (with obfuscation as a side effect), while crypters specifically encrypt payloads to evade detection."
+        },
+        {
+          "id": "cp_q2",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is a crypter stub?",
+          "options": [
+            "The encrypted payload",
+            "The decryption routine prepended to the encrypted payload",
+            "The encryption key",
+            "A debugging tool"
+          ],
+          "correct_index": 1,
+          "explanation": "The stub is the small decryption program that runs first, decrypts the main payload into memory, and executes it."
+        },
+        {
+          "id": "cp_q3",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What does FUD stand for in the context of crypters?",
+          "options": [
+            "Fast User Decryption",
+            "Fully Undetectable",
+            "File Upload Download",
+            "Function Undocumented Development"
+          ],
+          "correct_index": 1,
+          "explanation": "FUD means Fully Undetectable - a crypter that successfully evades all antivirus detection (usually temporary, as AV vendors adapt)."
+        },
+        {
+          "id": "cp_q4",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What is a polymorphic crypter?",
+          "options": [
+            "A crypter that uses multiple encryption keys",
+            "A crypter that generates different-looking stubs/code for each build while maintaining functionality",
+            "A crypter for multiple operating systems",
+            "A crypter that changes file extensions"
+          ],
+          "correct_index": 1,
+          "explanation": "Polymorphic crypters change the stub's code structure with each encryption, creating unique signatures that evade static detection."
+        },
+        {
+          "id": "cp_q5",
+          "type": "true_false",
+          "difficulty": "intermediate",
+          "question": "Using a public packer like UPX is effective for evading modern antivirus.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correct_index": 1,
+          "explanation": "False. Public packers like UPX are well-known to AV. Many AV products automatically unpack them or flag UPX-packed files as suspicious."
+        },
+        {
+          "id": "cp_q6",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What technique do advanced crypters use to avoid memory-based detection?",
+          "options": [
+            "Encrypting the payload multiple times",
+            "Reflective PE loading - manually loading the payload without Windows APIs",
+            "Using larger encryption keys",
+            "Signing the code digitally"
+          ],
+          "correct_index": 1,
+          "explanation": "Reflective loading manually maps the PE into memory and resolves imports without using LoadLibrary, evading API-monitoring defenses."
+        }
+      ]
+    },
+    "c2_protocols": {
+      "technique_id": "c2_protocols",
+      "technique_title": "Command & Control Protocols",
+      "total_questions": 6,
+      "passing_score": 70,
+      "questions": [
+        {
+          "id": "c2_q1",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "What does C2 stand for?",
+          "options": [
+            "Code Compilation",
+            "Command and Control",
+            "Crypto Currency",
+            "Computer Connection"
+          ],
+          "correct_index": 1,
+          "explanation": "C2 stands for Command and Control - the infrastructure that allows remote control of compromised systems."
+        },
+        {
+          "id": "c2_q2",
+          "type": "multiple_choice",
+          "difficulty": "beginner",
+          "question": "Why is HTTP/HTTPS commonly used for C2 communication?",
+          "options": [
+            "It's the fastest protocol",
+            "It blends with normal web traffic and works through proxies/firewalls",
+            "It's encrypted by default",
+            "It's impossible to detect"
+          ],
+          "correct_index": 1,
+          "explanation": "HTTP/HTTPS traffic is ubiquitous in networks, making malicious C2 blend in with legitimate web browsing, and it typically passes through firewalls."
+        },
+        {
+          "id": "c2_q3",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is beaconing in C2 context?",
+          "options": [
+            "Broadcasting on the network",
+            "Periodically checking in with the C2 server for commands",
+            "Sending constant data streams",
+            "Scanning for other infected machines"
+          ],
+          "correct_index": 1,
+          "explanation": "Beaconing is when an implant periodically connects to the C2 server to check for commands, report status, or send data."
+        },
+        {
+          "id": "c2_q4",
+          "type": "multiple_choice",
+          "difficulty": "intermediate",
+          "question": "What is sleep jitter in C2 beaconing?",
+          "options": [
+            "A sleep disorder affecting systems",
+            "Randomizing sleep intervals between beacons to avoid pattern detection",
+            "A type of network error",
+            "Encryption for beacon data"
+          ],
+          "correct_index": 1,
+          "explanation": "Sleep jitter adds randomness to beacon intervals (e.g., 50-70 seconds instead of exactly 60), making patterns harder for defenders to detect."
+        },
+        {
+          "id": "c2_q5",
+          "type": "multiple_choice",
+          "difficulty": "advanced",
+          "question": "What is DNS tunneling used for in C2?",
+          "options": [
+            "Speeding up DNS resolution",
+            "Encapsulating C2 data in DNS queries and responses to bypass network restrictions",
+            "Blocking malicious domains",
+            "Encrypting DNS traffic"
+          ],
+          "correct_index": 1,
+          "explanation": "DNS tunneling embeds C2 data in DNS queries (e.g., subdomains) and responses, working in restrictive networks where only DNS is allowed."
+        },
+        {
+          "id": "c2_q6",
+          "type": "true_false",
+          "difficulty": "intermediate",
+          "question": "Domain fronting uses legitimate CDN services to hide the actual C2 server.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "correct_index": 0,
+          "explanation": "True. Domain fronting routes C2 traffic through legitimate CDN domains (like cloudfront.net), hiding the true C2 destination from network monitoring."
+        }
+      ]
+    }
+  }
+}
