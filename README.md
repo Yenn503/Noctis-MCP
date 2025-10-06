@@ -17,7 +17,7 @@
 
 [![Join Noctis AI on Discord](https://img.shields.io/badge/Join_Noctis_AI-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bBtyAWSkW)
 
-**Legal Disclaimer**: For authorized security research, penetration testing, and red team operations only. Unauthorized use is illegal and prohibited.
+**Legal Disclaimer**: For authorised security research, penetration testing, and red team operations only. Unauthorised use is illegal and prohibited.
 
 ---
 
@@ -34,7 +34,7 @@ Think of it as having both a **malware development expert** and a **personal tut
 
 ---
 
-## 🌟 Key Features
+##  Key Features
 
 ### 🎓 **Interactive Education System** (NEW!)
 
@@ -97,11 +97,11 @@ Think of it as having both a **malware development expert** and a **personal tut
 - **10 MITRE ATT&CK Techniques** - Syscalls, injection, encryption, steganography, etc.
 - **C2 Framework Integration** - Sliver, Havoc, Mythic support
 - **Cross-Platform Compilation** - Windows binaries from Linux/macOS
-- **OPSEC Optimization** - String encryption, API hashing, control flow obfuscation
+- **OPSEC Optimisation** - String encryption, API hashing, control flow obfuscation
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### ⚠️ **System Requirements**
 
