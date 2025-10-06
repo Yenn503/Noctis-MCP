@@ -34,6 +34,7 @@ class VXAPIIndexer:
         self.rag = RAGEngine()
         self.indexed_count = 0
         self.failed_count = 0
+        self.failed_files = []  # Track which files failed
 
     def extract_semantic_info(self, cpp_code: str, filename: str) -> dict:
         """
@@ -57,17 +58,22 @@ class VXAPIIndexer:
         function_match = None
 
         # Pattern 1: Exact filename match (most common)
+        # Include optional __stdcall, __cdecl, __fastcall calling conventions
+        # Use DOTALL to handle multiline function signatures (common in VX-API)
+        # Match: RETURN_TYPE FunctionName( ... parameters ... ) {
+        # Also try with W/A suffix for wide/ansi variants
         function_match = re.search(
-            rf'(\w+)\s+{function_name}\s*\([^{{]*\)\s*\{{',
+            rf'(\w+)\s+(?:__stdcall\s+|__cdecl\s+|__fastcall\s+)?{re.escape(function_name)}[WA]?\s*\((.*?)\)\s*\{{',
             cpp_code,
-            re.MULTILINE
+            re.MULTILINE | re.DOTALL
         )
 
         # Pattern 2: Multiple functions in file or VOID return types (use first valid one)
         if not function_match:
             # Find any function that looks like it belongs here
+            # Extended pattern to catch all Windows types including LONG, ULONG, LONGLONG
             all_functions = list(re.finditer(
-                r'(BOOL|DWORD|VOID|NTSTATUS|HANDLE|PVOID|LPVOID|SIZE_T|PBYTE|PCHAR|INT|UINT|HMODULE|FARPROC)\s+([A-Z]\w+)\s*\([^\{]*\)\s*\{',
+                r'(BOOL|DWORD|DWORD64|VOID|NTSTATUS|HANDLE|PVOID|LPVOID|SIZE_T|PBYTE|PCHAR|INT|UINT|INT32|UINT32|UINT64|HMODULE|FARPROC|HRESULT|LONG|ULONG|LONGLONG)\s+(?:__stdcall\s+|__cdecl\s+|__fastcall\s+)?([_A-Z]\w+)\s*\([^\{]*\)\s*\{',
                 cpp_code,
                 re.MULTILINE
             ))
@@ -276,8 +282,9 @@ class VXAPIIndexer:
                 # Extract semantic info
                 func_info = self.extract_semantic_info(code, filename)
                 if not func_info:
-                    logger.debug(f"  ⚠️  Could not extract function from {filename}")
+                    logger.warning(f"  ⚠️  Could not extract function from {filename}")
                     self.failed_count += 1
+                    self.failed_files.append(filename)
                     continue
 
                 # Create natural language document
@@ -308,11 +315,18 @@ class VXAPIIndexer:
             except Exception as e:
                 logger.error(f"  ❌ Failed to index {cpp_file.name}: {e}")
                 self.failed_count += 1
+                self.failed_files.append(cpp_file.name)
 
         logger.info("="*70)
         logger.info(f"✅ VX-API indexing complete!")
         logger.info(f"  Successfully indexed: {self.indexed_count} functions")
         logger.info(f"  Failed: {self.failed_count} files")
+
+        if self.failed_files:
+            logger.info(f"\n  Failed files:")
+            for fname in self.failed_files:
+                logger.info(f"    - {fname}")
+
         logger.info(f"\n  RAG can now semantically find the right code for any query!")
         logger.info(f"  Just ask naturally: 'AMSI bypass', 'process injection', etc.")
 
