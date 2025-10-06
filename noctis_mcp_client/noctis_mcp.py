@@ -14,7 +14,7 @@ Core Philosophy:
 - AI iterates until satisfied
 - AI makes intelligent, research-driven decisions
 
-11 Agentic Tools (with SMART AUTO-UPDATE):
+20 Agentic Tools (with SMART AUTO-UPDATE):
   Intelligence Gathering:
     1. search_intelligence() - Search RAG (AUTO-UPDATES if >7 days old)
     2. analyze_technique() - Deep dive into specific techniques
@@ -33,8 +33,19 @@ Core Philosophy:
     9. compile_code() - Build binaries
     10. record_feedback() - Learning from testing results
 
+  Interactive Learning:
+    11. list_learning_topics() - Browse curriculum
+    12. start_lesson() - Begin learning a technique
+    13. get_lesson_module() - Get module content
+    14. complete_module() - Mark module as done
+    15. check_understanding() - Take quiz
+    16. submit_quiz() - Submit quiz answers
+    17. get_learning_progress() - View progress
+    18. get_recommended_lesson() - Get next suggestion
+    19. search_lessons() - Search for topics
+
   Utilities:
-    11. rag_stats() - RAG system status
+    20. rag_stats() - RAG system status
 
 Author: Noctis-MCP Community
 License: MIT
@@ -600,6 +611,219 @@ def rag_stats() -> str:
     return format_response(response, 'stats')
 
 
+# ============================================================================
+# EDUCATION TOOLS - Interactive Learning System
+# ============================================================================
+
+@mcp.tool()
+def list_learning_topics(sort_by: str = "difficulty", difficulty: str = None, category: str = None) -> str:
+    """
+    📚 List all available malware development techniques you can learn.
+
+    Use this when the user wants to learn about malware techniques or asks
+    what topics are available. This shows a curated curriculum of 10 techniques.
+
+    Args:
+        sort_by: How to sort (difficulty, category, or title). Default: difficulty
+        difficulty: Filter by difficulty level (beginner, intermediate, advanced)
+        category: Filter by category (e.g., "Code Injection", "Defense Evasion")
+
+    Returns:
+        List of available topics with descriptions, difficulty, and estimated time.
+
+    Example usage:
+        - User: "I want to learn malware development"
+        - AI calls: list_learning_topics()
+        - AI shows the list and asks what they want to learn
+    """
+    params = {"sort_by": sort_by}
+    if difficulty:
+        params["difficulty"] = difficulty
+    if category:
+        params["category"] = category
+
+    response = api_get(f'/api/v2/education/topics?{_build_query_string(params)}')
+    return format_response(response, 'learning_topics')
+
+
+@mcp.tool()
+def start_lesson(technique_id: str) -> str:
+    """
+    🎓 Start learning a specific technique and get lesson overview.
+
+    Call this after the user selects a topic from list_learning_topics().
+    This provides an overview of the lesson and its modules.
+
+    Args:
+        technique_id: ID of the technique (e.g., 'process_injection', 'shellcode_injection')
+
+    Returns:
+        Lesson overview with module list, prerequisites, and difficulty.
+
+    Example flow:
+        1. User: "I want to learn process injection"
+        2. AI calls: start_lesson('process_injection')
+        3. AI shows overview and asks which module to start with
+    """
+    response = api_get(f'/api/v2/education/topic/{technique_id}')
+    return format_response(response, 'lesson_overview')
+
+
+@mcp.tool()
+def get_lesson_module(technique_id: str, module_number: int) -> str:
+    """
+    📖 Get the content for a specific lesson module.
+
+    Each lesson has multiple modules (theory, code, labs, etc.). Use this to
+    deliver the actual teaching content to the user.
+
+    Args:
+        technique_id: ID of the technique
+        module_number: Module number (starts at 1)
+
+    Returns:
+        Module content with theory, code examples, and exercises.
+
+    Example teaching flow:
+        1. AI calls: get_lesson_module('process_injection', 1)
+        2. AI teaches the content interactively
+        3. AI asks if user has questions
+        4. When ready, AI moves to next module
+    """
+    response = api_get(f'/api/v2/education/lesson/{technique_id}/module/{module_number}')
+    return format_response(response, 'lesson_module')
+
+
+@mcp.tool()
+def complete_module(technique_id: str, module_number: int) -> str:
+    """
+    ✅ Mark a module as completed and track progress.
+
+    Call this after the user has finished a module and you've confirmed
+    they understand the material.
+
+    Args:
+        technique_id: ID of the technique
+        module_number: Module number that was completed
+
+    Returns:
+        Updated progress and any achievements earned.
+    """
+    response = api_post(f'/api/v2/education/progress/{technique_id}/module/{module_number}/complete', {})
+    return format_response(response, 'module_complete')
+
+
+@mcp.tool()
+def check_understanding(technique_id: str) -> str:
+    """
+    🧠 Get quiz questions to test understanding of a technique.
+
+    Use this to assess if the user has learned the material. Present
+    questions one at a time or all together based on user preference.
+
+    Args:
+        technique_id: ID of the technique to quiz on
+
+    Returns:
+        Quiz questions (multiple choice, true/false) without answers.
+
+    Teaching flow:
+        1. After completing all modules, AI suggests taking the quiz
+        2. AI calls: check_understanding('process_injection')
+        3. AI presents questions interactively
+        4. AI collects answers and calls submit_quiz()
+    """
+    response = api_get(f'/api/v2/education/quiz/{technique_id}')
+    return format_response(response, 'quiz')
+
+
+@mcp.tool()
+def submit_quiz(technique_id: str, answers: Dict[str, int]) -> str:
+    """
+    📝 Submit quiz answers and get score with explanations.
+
+    Args:
+        technique_id: ID of the technique
+        answers: Dictionary mapping question IDs to selected option indices
+                 Example: {"pi_q1": 0, "pi_q2": 1, "pi_q3": 2}
+
+    Returns:
+        Score, correct answers, explanations, and whether user passed.
+
+    Example:
+        AI collects user's answers: {"pi_q1": 0, "pi_q2": 1, ...}
+        AI calls: submit_quiz('process_injection', answers)
+        AI shows score and reviews incorrect answers with explanations
+    """
+    response = api_post(f'/api/v2/education/quiz/{technique_id}/submit', {"answers": answers})
+    return format_response(response, 'quiz_results')
+
+
+@mcp.tool()
+def get_learning_progress() -> str:
+    """
+    📊 Get overall learning progress across all techniques.
+
+    Shows what techniques the user has started, completed, quiz scores,
+    and time spent learning.
+
+    Returns:
+        Complete progress summary with achievements.
+
+    Use when:
+        - User asks "What have I learned?"
+        - User wants to see their progress
+        - Recommending what to learn next
+    """
+    response = api_get('/api/v2/education/progress')
+    return format_response(response, 'learning_progress')
+
+
+@mcp.tool()
+def get_recommended_lesson() -> str:
+    """
+    💡 Get recommended next lesson based on completed topics.
+
+    Analyzes prerequisites and completed lessons to suggest what to
+    learn next. Great for guiding the learning path.
+
+    Returns:
+        Recommended technique with explanation of why it's suggested.
+
+    Example:
+        User: "What should I learn next?"
+        AI calls: get_recommended_lesson()
+        AI suggests the recommended topic
+    """
+    response = api_get('/api/v2/education/recommend')
+    return format_response(response, 'recommendation')
+
+
+@mcp.tool()
+def search_lessons(query: str) -> str:
+    """
+    🔍 Search for lessons by keyword.
+
+    Helps users find specific topics they want to learn about.
+
+    Args:
+        query: Search term (e.g., "injection", "evasion", "syscalls")
+
+    Returns:
+        Matching techniques with descriptions.
+
+    Example:
+        User: "How do I learn about hooking?"
+        AI calls: search_lessons("hooking")
+        AI shows matching techniques
+    """
+    response = api_get(f'/api/v2/education/search?q={query}')
+    return format_response(response, 'search_results')
+
+
+def _build_query_string(params: Dict) -> str:
+    """Helper to build URL query string"""
+    return "&".join(f"{k}={v}" for k, v in params.items() if v is not None)
 
 
 # ============================================================================
@@ -624,6 +848,24 @@ def format_response(data: Dict, format_type: str = "general") -> str:
         return _format_technique_comparison(data)
     elif format_type == "stats":
         return _format_rag_stats(data)
+    elif format_type == "learning_topics":
+        return _format_learning_topics(data)
+    elif format_type == "lesson_overview":
+        return _format_lesson_overview(data)
+    elif format_type == "lesson_module":
+        return _format_lesson_module(data)
+    elif format_type == "quiz":
+        return _format_quiz(data)
+    elif format_type == "quiz_results":
+        return _format_quiz_results(data)
+    elif format_type == "learning_progress":
+        return _format_learning_progress(data)
+    elif format_type == "recommendation":
+        return _format_recommendation(data)
+    elif format_type == "module_complete":
+        return _format_module_complete(data)
+    elif format_type == "search_results":
+        return _format_lesson_search(data)
     else:
         return _format_general(data)
 
@@ -878,6 +1120,268 @@ def _format_general(data: Dict) -> str:
     else:
         return str(data)
 
+
+# ============================================================================
+# EDUCATION FORMATTING FUNCTIONS
+# ============================================================================
+
+def _format_learning_topics(data: Dict) -> str:
+    """Format list of learning topics"""
+    output = []
+    output.append("\n📚 === MALWARE DEVELOPMENT CURRICULUM ===\n")
+
+    topics = data.get('topics', [])
+    count = data.get('count', 0)
+
+    if count == 0:
+        return "\n[!] No topics available\n"
+
+    output.append(f"✅ {count} techniques available:\n")
+
+    # Group by difficulty
+    beginner = [t for t in topics if t['difficulty'] == 'beginner']
+    intermediate = [t for t in topics if t['difficulty'] == 'intermediate']
+    advanced = [t for t in topics if t['difficulty'] == 'advanced']
+
+    if beginner:
+        output.append("🟢 BEGINNER LEVEL:")
+        for t in beginner:
+            output.append(f"  • {t['title']} ({t['estimated_minutes']} min)")
+            output.append(f"    ID: {t['id']}")
+            output.append(f"    {t['description']}\n")
+
+    if intermediate:
+        output.append("🟡 INTERMEDIATE LEVEL:")
+        for t in intermediate:
+            prereq_str = f" [Requires: {', '.join(t['prerequisites'])}]" if t['prerequisites'] else ""
+            output.append(f"  • {t['title']} ({t['estimated_minutes']} min){prereq_str}")
+            output.append(f"    ID: {t['id']}")
+            output.append(f"    {t['description']}\n")
+
+    if advanced:
+        output.append("🔴 ADVANCED LEVEL:")
+        for t in advanced:
+            prereq_str = f" [Requires: {', '.join(t['prerequisites'])}]" if t['prerequisites'] else ""
+            output.append(f"  • {t['title']} ({t['estimated_minutes']} min){prereq_str}")
+            output.append(f"    ID: {t['id']}")
+            output.append(f"    {t['description']}\n")
+
+    return "\n".join(output)
+
+
+def _format_lesson_overview(data: Dict) -> str:
+    """Format lesson overview"""
+    output = []
+    topic = data.get('topic', {})
+
+    if not topic:
+        return "\n[!] Topic not found\n"
+
+    output.append(f"\n🎓 === {topic['title']} ===\n")
+    output.append(f"Difficulty: {topic['difficulty'].upper()}")
+    output.append(f"Category: {topic['category']}")
+    output.append(f"Estimated Time: {topic['estimated_minutes']} minutes")
+
+    if topic.get('prerequisites'):
+        output.append(f"Prerequisites: {', '.join(topic['prerequisites'])}")
+
+    output.append(f"\nDescription:")
+    output.append(topic['description'])
+
+    output.append(f"\nModules ({len(topic['modules'])}):")
+    for mod in topic['modules']:
+        mod_emoji = {'theory': '📖', 'code': '💻', 'lab': '🧪', 'quiz': '🧠'}.get(mod['type'], '📄')
+        output.append(f"  {mod['module_number']}. {mod_emoji} {mod['title']} ({mod['type']})")
+
+    output.append("\nTo start learning, use: get_lesson_module('" + topic['id'] + "', 1)")
+
+    return "\n".join(output)
+
+
+def _format_lesson_module(data: Dict) -> str:
+    """Format lesson module content"""
+    module = data.get('module', {})
+
+    if not module:
+        return "\n[!] Module not found\n"
+
+    output = []
+    output.append(f"\n📖 Module {module['module_number']}: {module['title']}")
+    output.append("=" * 70)
+    output.append(f"Type: {module['type'].upper()}\n")
+
+    # Main content
+    output.append(module['content'])
+
+    # Code examples if present
+    if module.get('code_examples'):
+        output.append("\n" + "=" * 70)
+        output.append("📁 CODE EXAMPLES:")
+        for ex in module['code_examples']:
+            output.append(f"\n  • {ex['title']} ({ex['language']})")
+            output.append(f"    {ex['description']}")
+
+    output.append("\n" + "=" * 70)
+    output.append("When ready for next module, use: get_lesson_module() with next module number")
+    output.append("To mark as complete: complete_module()")
+
+    return "\n".join(output)
+
+
+def _format_quiz(data: Dict) -> str:
+    """Format quiz questions"""
+    output = []
+
+    output.append(f"\n🧠 === QUIZ: {data.get('technique_title', 'Unknown')} ===\n")
+    output.append(f"Total Questions: {data.get('total_questions', 0)}")
+    output.append(f"Passing Score: {data.get('passing_score', 70)}%\n")
+
+    questions = data.get('questions', [])
+
+    for i, q in enumerate(questions, 1):
+        output.append(f"\nQuestion {i} [{q['difficulty'].upper()}]:")
+        output.append(q['question'])
+        output.append("\nOptions:")
+        for idx, opt in enumerate(q['options']):
+            output.append(f"  {idx}. {opt}")
+        output.append(f"\n[Question ID: {q['id']}]")
+
+    output.append("\n" + "=" * 70)
+    output.append("To submit answers: submit_quiz(technique_id, answers_dict)")
+    output.append("Example: submit_quiz('process_injection', {'pi_q1': 0, 'pi_q2': 1, ...})")
+
+    return "\n".join(output)
+
+
+def _format_quiz_results(data: Dict) -> str:
+    """Format quiz results"""
+    output = []
+
+    score = data.get('score', 0)
+    passed = data.get('passed', False)
+    correct = data.get('correct_count', 0)
+    total = data.get('total_questions', 0)
+
+    output.append("\n📝 === QUIZ RESULTS ===\n")
+
+    if passed:
+        output.append(f"✅ PASSED! Score: {score}% ({correct}/{total} correct)")
+    else:
+        output.append(f"❌ Not passed. Score: {score}% ({correct}/{total} correct)")
+        output.append(f"   Required: {data.get('passing_score', 70)}%")
+
+    output.append("\nDetailed Results:")
+
+    results = data.get('results', [])
+    for i, r in enumerate(results, 1):
+        status = "✅" if r['is_correct'] else "❌"
+        output.append(f"\n{status} Question {i}:")
+        output.append(f"   Your answer: {r['user_answer']}")
+        output.append(f"   Correct answer: {r['correct_answer']}")
+        output.append(f"   💡 {r['explanation']}")
+
+    achievements = data.get('new_achievements', [])
+    if achievements:
+        output.append("\n🏆 NEW ACHIEVEMENTS UNLOCKED:")
+        for ach in achievements:
+            output.append(f"  • {ach}")
+
+    return "\n".join(output)
+
+
+def _format_learning_progress(data: Dict) -> str:
+    """Format learning progress"""
+    output = []
+    progress_list = data.get('progress', [])
+
+    output.append("\n📊 === YOUR LEARNING PROGRESS ===\n")
+
+    if not progress_list:
+        output.append("No progress yet. Start learning with: list_learning_topics()")
+        return "\n".join(output)
+
+    completed = [p for p in progress_list if p.get('completed')]
+    in_progress = [p for p in progress_list if not p.get('completed')]
+
+    output.append(f"✅ Completed: {len(completed)}")
+    output.append(f"📖 In Progress: {len(in_progress)}\n")
+
+    if completed:
+        output.append("COMPLETED TECHNIQUES:")
+        for p in completed:
+            output.append(f"  ✅ {p['technique_id']} - Quiz Score: {p.get('quiz_score', 'N/A')}%")
+
+    if in_progress:
+        output.append("\nIN PROGRESS:")
+        for p in in_progress:
+            completed_modules = p.get('completed_modules', [])
+            current = p.get('current_module', 1)
+            output.append(f"  📖 {p['technique_id']} - Module {current} (completed: {completed_modules.count(True)} modules)")
+
+    return "\n".join(output)
+
+
+def _format_recommendation(data: Dict) -> str:
+    """Format lesson recommendation"""
+    output = []
+    recommendation = data.get('recommendation')
+    completed_count = data.get('completed_count', 0)
+
+    output.append("\n💡 === RECOMMENDED NEXT LESSON ===\n")
+    output.append(f"You've completed {completed_count} techniques\n")
+
+    if not recommendation:
+        output.append("🎉 Great work! You've completed all available prerequisites.")
+        output.append("Consider reviewing advanced topics or exploring specific areas.")
+    else:
+        output.append(f"📚 Recommended: {recommendation['title']}")
+        output.append(f"   Difficulty: {recommendation['difficulty'].upper()}")
+        output.append(f"   Time: {recommendation['estimated_minutes']} minutes")
+        output.append(f"\n   {recommendation['description']}")
+        output.append(f"\nTo start: start_lesson('{recommendation['id']}')")
+
+    return "\n".join(output)
+
+
+def _format_module_complete(data: Dict) -> str:
+    """Format module completion"""
+    output = []
+
+    output.append(f"\n✅ Module {data.get('module_number')} completed!")
+
+    achievements = data.get('new_achievements', [])
+    if achievements:
+        output.append("\n🏆 NEW ACHIEVEMENTS:")
+        for ach in achievements:
+            output.append(f"  • {ach}")
+
+    progress = data.get('progress', {})
+    if progress:
+        completed = progress.get('completed_modules', [])
+        output.append(f"\nProgress: {completed.count(True)} modules completed")
+
+    return "\n".join(output)
+
+
+def _format_lesson_search(data: Dict) -> str:
+    """Format lesson search results"""
+    output = []
+    results = data.get('results', [])
+    query = data.get('query', '')
+
+    output.append(f"\n🔍 Search results for: '{query}'\n")
+
+    if not results:
+        output.append("No matching lessons found.")
+    else:
+        output.append(f"Found {len(results)} matching techniques:\n")
+        for r in results:
+            output.append(f"• {r['title']} ({r['difficulty']})")
+            output.append(f"  ID: {r['id']}")
+            output.append(f"  {r['description']}\n")
+
+    return "\n".join(output)
+
 if __name__ == "__main__":
     import argparse
 
@@ -913,11 +1417,14 @@ if __name__ == "__main__":
         # Expected on first run before server starts
         print(f"[!] Could not fetch RAG stats (server not running or RAG disabled)")
 
-    print(f"\n[*] 11 Agentic Tools Available:")
+    print(f"\n[*] 20 Agentic Tools Available:")
     print(f"    Intelligence: search_intelligence, analyze_technique, fetch_latest")
     print(f"    Code: generate_code, optimize_opsec, validate_code")
     print(f"    Selection: select_techniques, compare_techniques")
     print(f"    Build: compile_code, record_feedback")
+    print(f"    Education: list_learning_topics, start_lesson, get_lesson_module,")
+    print(f"               complete_module, check_understanding, submit_quiz,")
+    print(f"               get_learning_progress, get_recommended_lesson, search_lessons")
     print(f"    Utils: rag_stats")
     print(f"\n[*] MCP server starting in STDIO mode for IDE integration...")
     print(f"[*] Tools will be exposed to Cursor/VSCode via Model Context Protocol")
