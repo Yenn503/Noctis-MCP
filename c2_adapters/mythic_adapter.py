@@ -1,17 +1,20 @@
 """
-Mythic C2 Adapter
-=================
+Mythic C2 Adapter with Forge Integration
+=========================================
 
 Integrates with Mythic C2 framework to generate obfuscated agents.
+Supports Forge command augmentation for BOF and .NET assembly execution.
 
 Features:
-- Multiple agent types (Apollo, Apfell, Poseidon, etc.)
+- Multiple agent types (Apollo, Athena, Poseidon, etc.)
 - REST API integration
 - Modular C2 profiles
 - Docker-based deployment
+- **Forge integration** - BOF and .NET assembly aliases
 
 References:
 - Mythic Framework: https://github.com/its-a-feature/Mythic
+- Forge: https://github.com/MythicAgents/forge
 - Documentation: https://docs.mythic-c2.net
 
 Author: Noctis-MCP Team
@@ -34,6 +37,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from c2_adapters.base_adapter import C2Adapter, C2GenerationResult, BeaconStatus
 from c2_adapters.config import MythicConfig, Protocol, Architecture, OutputFormat
 from c2_adapters.shellcode_wrapper import ShellcodeWrapper, WrapperConfig
+from compilation.bof_compiler import BOFCompiler, BOFResult
 
 
 logger = logging.getLogger(__name__)
@@ -102,11 +106,16 @@ class MythicAdapter(C2Adapter):
         self.api_token = api_token or config.api_key
         self.base_url = f"https://{mythic_host}:{mythic_port}/api/v1.4"
         
+        # Initialize BOF compiler for Forge integration
+        self.bof_compiler = BOFCompiler(output_dir="bof_output")
+        self.forge_enabled = True  # Forge command augmentation support
+
         if self.verbose:
             print(f"[*] MythicAdapter initialized")
             print(f"[*] Server: {mythic_host}:{mythic_port}")
             print(f"[*] Payload type: {config.payload_type}")
             print(f"[*] C2 profile: {config.c2_profile}")
+            print(f"[*] Forge integration: enabled")
     
     def connect(self) -> bool:
         """
@@ -251,15 +260,15 @@ class MythicAdapter(C2Adapter):
     def get_framework_info(self) -> Dict[str, Any]:
         """
         Get information about Mythic C2 framework.
-        
+
         Returns:
-            Dictionary with framework information
+            Dictionary with framework information including Forge integration
         """
         return {
             'framework': 'Mythic',
             'version': '2.3+',
             'protocols': self.get_supported_protocols(),
-            'agent_types': ['Apollo', 'Apfell', 'Poseidon', 'Merlin', 'Atlas'],
+            'agent_types': ['Apollo', 'Athena', 'Poseidon', 'Merlin', 'Apfell'],
             'architectures': ['x64', 'x86', 'arm64'],
             'output_formats': ['exe', 'dll', 'shellcode', 'service_exe'],
             'features': [
@@ -268,13 +277,87 @@ class MythicAdapter(C2Adapter):
                 'REST API integration',
                 'Docker-based deployment',
                 'Custom agent development',
-                'Advanced OPSEC features'
+                'Advanced OPSEC features',
+                'Forge BOF integration',
+                '.NET assembly execution'
             ],
             'c2_profiles': ['http', 'https', 'dns', 'smb', 'websocket', 'custom'],
+            'forge': {
+                'enabled': self.forge_enabled,
+                'description': 'Command augmentation for BOF and .NET assemblies',
+                'agent_support': ['Apollo', 'Athena'],
+                'commands': [
+                    'forge_bof_* - Execute BOF via Apollo/Athena',
+                    'forge_net_* - Execute .NET assemblies',
+                    'forge_support - Dynamic agent registration'
+                ]
+            },
             'status': 'implemented',
             'requires_server': True,
             'installation': 'https://github.com/its-a-feature/Mythic'
         }
+
+    def generate_forge_bof(self, technique_id: str, target_agent: str = "apollo") -> Dict[str, Any]:
+        """
+        Generate Forge BOF command for Mythic
+
+        Forge is a "Command Augmentation" payload type that provides alias commands
+        for BOF execution. It passes commands to Apollo/Athena agents.
+
+        Per official Forge spec:
+        - Forge doesn't deploy to targets
+        - Provides alias commands that route to agent commands
+        - Preconfigured for Apollo and Athena
+        - Example: forge_bof_* → Apollo's execute_bof
+
+        Args:
+            technique_id: Noctis technique ID (e.g., NOCTIS-T004)
+            target_agent: Target agent type (apollo, athena)
+
+        Returns:
+            Dictionary with Forge command configuration and BOF files
+        """
+        if self.verbose:
+            print(f"[*] Generating Forge BOF for {technique_id} → {target_agent}")
+
+        # Compile BOF using BOFCompiler
+        bof_result = self.bof_compiler.compile_technique_to_bof(technique_id, "mythic")
+
+        if not bof_result.success:
+            return {
+                'success': False,
+                'error': bof_result.errors
+            }
+
+        # Generate Forge command name
+        technique_name = technique_id.replace('NOCTIS-T', 'noctis_').replace('-', '_')
+        forge_command = f"forge_bof_{technique_name}"
+
+        # Create Forge configuration per official pattern
+        forge_config = {
+            'success': True,
+            'command': forge_command,
+            'x86_bof': bof_result.x86_path,
+            'x64_bof': bof_result.x64_path,
+            'target_agent': target_agent,
+            'description': f'Execute {technique_id} BOF via {target_agent} agent',
+            'usage': f'{forge_command} <session_id> [args]',
+            'routing': f'{forge_command} → {target_agent}.execute_bof',
+            'implementation_notes': [
+                f'Forge routes this command to {target_agent} agent',
+                'BOF is executed via existing execute_bof mechanism',
+                'Requires Forge payload type installed in Mythic',
+                'Requires Apollo or Athena agent on target'
+            ]
+        }
+
+        if self.verbose:
+            print(f"[+] Forge command: {forge_command}")
+            print(f"[+] Routes to: {target_agent}.execute_bof")
+            print(f"[+] BOF x86: {bof_result.x86_path}")
+            print(f"[+] BOF x64: {bof_result.x64_path}")
+
+        return forge_config
 
 
 def generate_mythic_agent(

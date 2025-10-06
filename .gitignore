@@ -33,6 +33,14 @@ output/
 logs/
 *.log
 
+# BOF test directories
+bof_test/
+test_bof/
+mythic_bof_test/
+final_test_bof/
+verify_bof/
+bof_output/
+
 # Build directory
 build/*
 !build/.gitkeep
