@@ -36,7 +36,7 @@ Think of it as having both a **malware development expert** and a **personal tut
 
 ##  Key Features
 
-### 🎓 **Interactive Education System** (NEW!)
+### **Interactive Education System** (NEW!)
 
 **Learn malware development interactively with AI as your tutor:**
 
@@ -49,7 +49,7 @@ Think of it as having both a **malware development expert** and a **personal tut
 
 **Just ask: "I want to learn malware development"** and start your journey!
 
-### 🧠 **Intelligence Engine**
+### **Intelligence Engine**
 
 - **RAG-Powered Search** - 55+ knowledge chunks, GitHub repos, research papers
 - **Auto-Update System** - Fetches latest intelligence from 25+ security blogs
@@ -57,7 +57,7 @@ Think of it as having both a **malware development expert** and a **personal tut
 - **Detection Intelligence** - EDR/AV bypass patterns and effectiveness scores
 - **Learning System** - Records detection results to improve recommendations
 
-### 🛠️ **20 Agentic MCP Tools**
+### **20 Agentic MCP Tools**
 
 **Intelligence Gathering (3 tools):**
 - `search_intelligence()` - Search RAG with auto-update if data >7 days old
@@ -112,7 +112,7 @@ Think of it as having both a **malware development expert** and a **personal tut
 
 **Both must be running for the MCP tools to work!**
 
-### 📋 Prerequisites
+### Prerequisites
 
 - **Python 3.11+** (3.13.2 recommended)
 - **Compiler**: MinGW-w64 (Linux/macOS) or Visual Studio Build Tools (Windows)
@@ -121,7 +121,7 @@ Think of it as having both a **malware development expert** and a **personal tut
 
 ---
 
-## 🛠️ Installation
+## Installation
 
 ### **Step 1: Clone Repository**
 
@@ -302,14 +302,14 @@ You: "Teach me process injection"
 AI: Delivers 4 interactive modules with theory, code, and labs
 
 You: "Give me a quiz"
-AI: Presents 10 questions, grades answers, shows explanations
+AI: Presents 10 questions, grades answers, and shows explanations
 ```
 
-### 🧠 **Intelligence Research**
+### **Intelligence Research**
 
 **Search for Techniques:**
 ```
-You: "Find latest process injection techniques"
+You: "Find the latest process injection techniques"
 AI: Searches RAG, returns 10 intelligence sources from:
     - Knowledge base
     - GitHub repos
@@ -317,9 +317,9 @@ AI: Searches RAG, returns 10 intelligence sources from:
     - Security blogs
 ```
 
-**Analyze Specific Technique:**
+**Analyse Specific Technique:**
 ```
-You: "Analyze direct syscalls for EDR bypass"
+You: "Analyse direct syscalls for EDR bypass"
 AI: Returns detailed analysis with:
     - How it works
     - Evasion effectiveness
@@ -339,9 +339,9 @@ AI: Generates complete, compilable C code with:
     - Build instructions
 ```
 
-**Optimize for OPSEC:**
+**Optimise for OPSEC:**
 ```
-You: "Optimize this code for stealth"
+You: "Optimise this code for stealth"
 AI: Enhances with:
     - API hashing
     - String encryption
@@ -349,7 +349,7 @@ AI: Enhances with:
     - Anti-debugging checks
 ```
 
-### 📊 **Progress Tracking**
+### **Progress Tracking**
 
 **Check Progress:**
 ```
@@ -444,7 +444,7 @@ Noctis-MCP/
 
 6. **C2 Protocols** (65 min)
    - HTTP/HTTPS C2
-   - DNS tunneling
+   - DNS tunnelling
    - Beaconing strategies
 
 ### **Advanced Level**
@@ -518,40 +518,7 @@ Noctis-MCP aggregates intelligence from 25+ sources:
 
 ---
 
-## 🐛 Troubleshooting
-
-### **Education endpoints return 404**
-**Solution:** Restart the Noctis server
-```bash
-pkill -f "noctis_server"
-python server/noctis_server.py --port 8888
-```
-
-### **RAG search not working**
-**Solution:** Re-index knowledge base
-```bash
-# Delete RAG database
-rm -rf data/rag_db
-# Restart server (will auto-index)
-python server/noctis_server.py --port 8888
-```
-
-### **MCP tools not appearing in IDE**
-**Solution:**
-1. Verify server is running: `curl http://localhost:8888/health`
-2. Check IDE MCP configuration path is correct
-3. Restart IDE
-
-### **Import errors**
-**Solution:** Activate virtual environment
-```bash
-source venv/bin/activate  # Linux/macOS
-.\venv\Scripts\activate   # Windows
-```
-
----
-
-## 📖 Documentation
+##  Documentation
 
 - **[SETUP.md](docs/SETUP.md)** - Detailed installation for all platforms
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and data flows
@@ -560,7 +527,7 @@ source venv/bin/activate  # Linux/macOS
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please:
 
@@ -578,16 +545,16 @@ We welcome contributions! Please:
 
 ---
 
-## 🔒 Security & Ethics
+## Security & Ethics
 
 **Noctis-MCP is designed for:**
 - ✅ Security research and education
-- ✅ Authorized penetration testing
+- ✅ Authorised penetration testing
 - ✅ Red team operations with permission
 - ✅ Detection rule development
 
 **NOT for:**
-- ❌ Unauthorized access to systems
+- ❌ Unauthorised access to systems
 - ❌ Malicious activities
 - ❌ Distribution of harmful software
 
@@ -598,24 +565,6 @@ We welcome contributions! Please:
 ## 📜 License
 
 MIT License - See [LICENSE](LICENSE) for details
-
----
-
-## 🙏 Credits
-
-- **MCP Framework** - Anthropic Model Context Protocol
-- **Vector DB** - ChromaDB by Chroma
-- **Embeddings** - sentence-transformers by UKPLab
-- **Intelligence Sources** - 25+ security blogs, GitHub, arXiv
-- **Community** - Contributors and security researchers
-
----
-
-## 📞 Support
-
-- **Discord**: [Join Noctis AI Community](https://discord.gg/bBtyAWSkW)
-- **Issues**: [GitHub Issues](https://github.com/YourUsername/Noctis-MCP/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/YourUsername/Noctis-MCP/discussions)
 
 ---
 
