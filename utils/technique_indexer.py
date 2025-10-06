@@ -310,7 +310,7 @@ class TechniqueIndexer:
                     author_match = re.search(r'[Aa]uthor[:\s]+([^\n]+)', content)
                     if author_match:
                         return author_match.group(1).strip()
-            except:
+            except (FileNotFoundError, IOError, OSError, UnicodeDecodeError):
                 pass
         
         # Default to project name

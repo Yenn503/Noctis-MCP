@@ -145,7 +145,7 @@ class SliverAdapter(C2Adapter):
                 timeout=2
             )
             return result.returncode == 0
-        except:
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
             return False
     
     def generate_shellcode(self) -> bytes:
