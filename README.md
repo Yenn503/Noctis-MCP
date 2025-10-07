@@ -1,10 +1,26 @@
+<div align="center">
+
+![Noctis-MCP Logo](NoctisAI.png)
+
 # Noctis-MCP
 
 **Hybrid Intelligence System for Malware Development**
 
-Noctis-MCP provides 17 MCP tools that give AI agents (Claude, GPT-4, etc.) access to malware development intelligence and live detection testing. The AI uses this intelligence to write code, not copy templates.
+*Intelligence-Driven Red Team Operations with MCP Integration*
+
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)](https://github.com/Yenn503/Noctis-MCP)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+[![Join Noctis AI on Discord](https://img.shields.io/badge/Join_Noctis_AI-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bBtyAWSkW)
+
+</div>
+
+---
 
 **Status:** Production Ready | **Version:** 2.0 | **Tools:** 17
+
+Noctis-MCP provides 17 MCP tools that give AI agents (Claude, GPT-4, etc.) access to malware development intelligence and live detection testing. The AI uses this intelligence to write code, not copy templates.
 
 ---
 
@@ -318,11 +334,18 @@ Contributions welcome for:
 
 ---
 
-## Links
+## Links & Community
 
-- **GitHub:** https://github.com/yourusername/Noctis-MCP
+- **GitHub:** https://github.com/Yenn503/Noctis-MCP
+- **Discord:** Join [Noctis AI Community](https://discord.gg/bBtyAWSkW) for support and discussions
 - **Issues:** Report bugs and request features
 - **Docs:** See `docs/` folder
+
+## Author
+
+Created by Lewis Desmond
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/lewis-desmond-a7b00b204)
 
 ---
 

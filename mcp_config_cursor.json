@@ -6,10 +6,11 @@
         "-m",
         "noctis_mcp_client.noctis_mcp"
       ],
-      "cwd": "c:/Users/lewis/Desktop/Noctis-MCP",
-      "description": "Noctis-MCP v3.0-agentic - RAG-Powered Malware Development (11 agentic tools)",
+      "description": "Noctis-MCP v2.0 - Hybrid Intelligence System for Malware Development (17 tools)",
       "timeout": 300,
-      "env": {}
+      "env": {
+        "PYTHONPATH": "."
+      }
     }
   }
 }
