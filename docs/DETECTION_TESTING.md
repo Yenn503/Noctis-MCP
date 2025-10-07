@@ -69,10 +69,38 @@ test_detection(
 ) -> DetectionResult
 ```
 
+**IMPORTANT:** Hybrid Analysis tests against **ALL AVs** installed in the sandbox (typically 10-20 AVs). You **CANNOT** choose to test against just one AV.
+
 **Parameters:**
 - `binary_path`: Path to compiled binary
-- `target_av`: Target AV name (e.g., "CrowdStrike Falcon", "Windows Defender")
+- `target_av`: Your primary target AV for OPSEC scoring (doesn't limit which AVs test it)
+  - Used to calculate OPSEC score (penalizes if target detects it)
+  - Used to highlight if YOUR target detected it
+  - Used to tailor recommendations
+  - Does NOT prevent other AVs from testing it
 - `environment`: OS environment (Windows 7/10/11, Linux)
+
+**Testing Strategy:**
+
+**Single Target (Recommended for client work):**
+```python
+# Client only has CrowdStrike
+test_detection("malware.exe", target_av="CrowdStrike Falcon")
+
+# Focus on target_detected field in results
+# Ignore other AV detections if target shows clean
+# Stop testing once target is undetected
+```
+
+**Multi-Target (General tool):**
+```python
+# Tool for multiple clients
+test_detection("malware.exe")  # No specific target
+
+# Look at overall av_detections count
+# Target OPSEC score 7-8 (good enough)
+# Accept some detections (can't evade all)
+```
 
 **Returns:**
 ```json
@@ -311,6 +339,77 @@ result = tester.test_binary(
     max_wait=1800  # 30 minutes
 )
 ```
+
+---
+
+## CRITICAL: Don't Burn Your Technique
+
+### **THE PROBLEM**
+
+Hybrid Analysis submissions are **PUBLIC**:
+- Community members can see your submissions
+- AV vendors **actively monitor** Hybrid Analysis for new samples
+- Popular malware analysis platform = goldmine for AV researchers
+- Your undetected binary = free sample for them to signature
+
+### **THE SOLUTION**
+
+**NEVER upload your final working version:**
+
+```
+❌ WRONG (Burns technique):
+1. Test v1 → Detected
+2. Test v2 → Detected
+3. Test v3 → UNDETECTED ← Uploaded to Hybrid Analysis
+4. AV vendors download your sample
+5. Technique gets signatured within days
+6. Your bypass no longer works
+
+✅ RIGHT (Preserves technique):
+1. Test v1 → Detected (safe to upload)
+2. Test v2 → Detected (safe to upload)
+3. Test v3 → Getting close (OPSEC 7/10)
+4. STOP TESTING - switch to validate_code() (local, no upload)
+5. Deliver to user for offline testing
+6. User: "Tested in controlled environment - works!"
+7. record_feedback() - System learns WITHOUT burning
+```
+
+### **SAFE TESTING WORKFLOW**
+
+```python
+# Iteration 1
+compile_code(code_v1)
+test_detection("v1.exe", "CrowdStrike")  # Detected ✓ Safe
+
+# Iteration 2
+compile_code(code_v2)
+test_detection("v2.exe", "CrowdStrike")  # Detected ✓ Safe
+
+# Iteration 3 - Getting close
+compile_code(code_v3)
+validate_code(code_v3)  # LOCAL CHECK - NO UPLOAD ✓
+
+# If validation looks good: STOP
+# Deliver to user for real-world testing
+# User tests in isolated/offline environment
+
+# User confirms success:
+record_feedback(["syscalls"], "CrowdStrike", detected=False)
+# System learns without burning the technique!
+```
+
+### **WHEN IT'S SAFE TO UPLOAD**
+
+Upload is safe when:
+- ✅ Binary is DETECTED (already burned, can't make it worse)
+- ✅ OPSEC score < 7 (clearly detected, safe to iterate)
+- ✅ Early iterations for testing
+
+Upload is DANGEROUS when:
+- ❌ Binary is UNDETECTED (gives AVs free sample)
+- ❌ OPSEC score 8+ (almost/fully working)
+- ❌ Final version ready for delivery
 
 ---
 

@@ -388,6 +388,23 @@ def test_detection(
     Upload binary to Hybrid Analysis sandbox and get detection results.
     This validates if your malware actually evades the target defenses.
 
+    ⚠️ CRITICAL OPSEC WARNING:
+    Hybrid Analysis submissions are PUBLIC. AV vendors monitor it for samples.
+    DO NOT upload your final undetected version - it will get signatured!
+
+    SAFE WORKFLOW:
+        1-3. Test early iterations (detected = safe to upload)
+        4. When close to working: use validate_code() (local, no upload)
+        5. If undetected: STOP testing, deliver to user
+        6. User tests in controlled/offline environment
+        7. User confirms success → record_feedback() to teach system
+
+    UNSAFE WORKFLOW (DON'T DO THIS):
+        ❌ Test v1 → detected → improve
+        ❌ Test v2 → detected → improve
+        ❌ Test v3 → UNDETECTED → upload to Hybrid Analysis
+        ❌ Result: AV vendors now have your sample, technique burned
+
     Args:
         binary_path: Path to compiled binary (from compile_code)
         target_av: Target AV/EDR name (e.g., "CrowdStrike Falcon", "Defender")
@@ -403,31 +420,33 @@ def test_detection(
             "detected_by": [],
             "target_detected": False,
             "signatures": [],
-            "recommendations": [
-                "Good OPSEC! Binary shows low detection rates."
-            ]
+            "recommendations": [...]
         }
 
-    WORKFLOW:
-        1. AI writes code using search_intelligence() guidance
-        2. AI calls compile_code() to build binary
-        3. AI calls test_detection() to validate evasion
-        4. If detected: AI analyzes recommendations and rewrites
-        5. If undetected: AI calls record_feedback() with success
-
-    IMPORTANT: Requires HYBRID_ANALYSIS_API_KEY environment variable.
-    Free tier: 100 requests/hour. Results cached for 7 days.
+    RECOMMENDED USAGE:
+        - Test EARLY versions to iterate (detected versions are safe)
+        - Once OPSEC score hits 7-8, STOP uploading
+        - Use validate_code() for final local validation
+        - Deliver to user for real-world testing
+        - record_feedback() after user confirms success
 
     Example:
         User: "Build a CrowdStrike bypass and test it"
         AI:
         1. search_intelligence("CrowdStrike bypass")
         2. generate_code(["syscalls"], "CrowdStrike")
-        3. Write code based on guidance
-        4. compile_code(code, "falcon_bypass")
-        5. test_detection("compiled/falcon_bypass.exe", "CrowdStrike Falcon")
-        6. If detected: optimize_opsec() and rewrite
-        7. If clean: record_feedback(["syscalls"], "CrowdStrike", False)
+        3. Write code v1
+        4. compile_code(code_v1)
+        5. test_detection() → Detected (OPSEC 4/10) ✓ Safe to upload
+        6. Improve based on recommendations
+        7. compile_code(code_v2)
+        8. test_detection() → Detected (OPSEC 6/10) ✓ Safe to upload
+        9. Improve based on recommendations
+        10. compile_code(code_v3)
+        11. validate_code(code_v3) → Local check (NO UPLOAD) ✓
+        12. Looks good! Deliver to user WITHOUT uploading
+        13. User: "Tested offline - works!"
+        14. record_feedback(["syscalls"], "CrowdStrike", False)
     """
     response = api_post('/api/v2/detection/test', {
         'binary_path': binary_path,
@@ -1077,14 +1096,24 @@ def _format_detection_result(data: Dict) -> str:
         output.append("   2. Call optimize_opsec() for improvement suggestions")
         output.append("   3. Modify code to address detection issues")
         output.append("   4. Recompile with compile_code()")
-        output.append("   5. Test again with test_detection()")
+        output.append("   5. Test again with test_detection() (safe - already detected)")
     else:
-        output.append("✅ SUCCESS: EXCELLENT OPSEC")
+        output.append("✅ SUCCESS: UNDETECTED")
         output.append("═" * 70)
-        output.append("\n📝 NEXT STEPS:")
-        output.append("   1. Call record_feedback() to log success")
-        output.append("   2. Deliver binary to user")
-        output.append("   3. Provide OPSEC score and test results")
+        output.append("\n⚠️  CRITICAL OPSEC WARNING:")
+        output.append("   This binary is undetected! DO NOT upload it again.")
+        output.append("   Hybrid Analysis is PUBLIC - AV vendors monitor it.")
+        output.append("   Uploading = giving them your technique to signature.")
+        output.append("")
+        output.append("📝 NEXT STEPS:")
+        output.append("   1. STOP testing - don't burn this technique")
+        output.append("   2. Deliver binary to user for controlled testing")
+        output.append("   3. User tests in offline/isolated environment")
+        output.append("   4. If user confirms success:")
+        output.append("      → Call record_feedback() to teach the system")
+        output.append("      → System learns without burning the technique")
+        output.append("")
+        output.append("   Alternative: Use validate_code() for local checks (no upload)")
 
     output.append("")
 
