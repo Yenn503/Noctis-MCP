@@ -593,7 +593,7 @@ def generate_code():
             'vx_api_functions': vx_signatures,
 
             # High-level recommendations
-            'synthesis': self._synthesize_guidance(
+            'synthesis': _synthesize_guidance(
                 intelligence_by_technique,
                 patterns_by_technique,
                 target_av,
@@ -1327,7 +1327,18 @@ def record_detection():
 
         # Generate embedding using the RAG engine's embedder
         if hasattr(agentic_bp.rag_engine, 'embedder') and agentic_bp.rag_engine.embedder:
-            embedding = agentic_bp.rag_engine.embedder.encode(feedback_text).tolist()
+            try:
+                embedding = agentic_bp.rag_engine.embedder.encode(feedback_text).tolist()
+                if not embedding:
+                    raise ValueError("Embedding generation returned empty result")
+            except Exception as embed_err:
+                logger.warning(f"Embedding generation failed: {embed_err}, skipping feedback indexing")
+                return jsonify({
+                    'recorded': True,
+                    'updated_effectiveness_scores': updated_scores,
+                    'indexed_to_rag': False,
+                    'techniques_updated': len(updated_scores)
+                }), 200
         else:
             # Skip indexing if no embedding method available
             logger.warning("No embedding method available in RAG engine, skipping feedback indexing")

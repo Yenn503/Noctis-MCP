@@ -524,6 +524,10 @@ class RAGEngine:
             return formatted
 
         # Handle case where documents is a list of lists
+        # Check if documents is non-empty and if first element is a list
+        if not results['documents'] or len(results['documents']) == 0:
+            return formatted
+
         documents = results['documents'][0] if isinstance(results['documents'][0], list) else results['documents']
 
         for i, doc in enumerate(documents):

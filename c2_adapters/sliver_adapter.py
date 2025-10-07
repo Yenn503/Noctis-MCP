@@ -197,13 +197,27 @@ class SliverAdapter(C2Adapter):
     def _build_generate_command(self) -> List[str]:
         """Build Sliver generate command"""
         cmd = ['sliver-client', 'generate', 'beacon']
-        
+
+        # Validate listener host and port to prevent injection
+        import re
+        if self.config.listener_host:
+            # Allow IP addresses, hostnames, and localhost
+            if not re.match(r'^[a-zA-Z0-9\.\-]+$', self.config.listener_host):
+                raise ValueError(f"Invalid listener_host format: {self.config.listener_host}")
+        if self.config.listener_port:
+            # Ensure port is numeric and in valid range
+            port = int(self.config.listener_port)
+            if not (1 <= port <= 65535):
+                raise ValueError(f"Invalid port number: {port}")
+
         # Protocol-specific settings
         if self.config.protocol == Protocol.HTTPS:
             cmd.extend(['--http', f"{self.config.listener_host}:{self.config.listener_port}"])
         elif self.config.protocol == Protocol.HTTP:
             cmd.extend(['--http', f"{self.config.listener_host}:{self.config.listener_port}"])
         elif self.config.protocol == Protocol.DNS:
+            if not re.match(r'^[a-zA-Z0-9\.\-]+$', self.config.dns_parent_domain):
+                raise ValueError(f"Invalid DNS domain format: {self.config.dns_parent_domain}")
             cmd.extend(['--dns', self.config.dns_parent_domain])
         elif self.config.protocol == Protocol.TCP:
             cmd.extend(['--mtls', f"{self.config.listener_host}:{self.config.listener_port}"])
