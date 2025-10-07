@@ -7,12 +7,22 @@ Flask API endpoints that power the agentic MCP tools.
 These endpoints use RAG intelligence to provide dynamic responses.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 import logging
+import time
 from typing import Dict, List, Optional
 from datetime import datetime
+from functools import wraps
 
 logger = logging.getLogger(__name__)
+
+# Import caching and metrics utilities
+try:
+    from server.utils import IntelligenceCache, get_metrics_collector
+    UTILS_AVAILABLE = True
+except ImportError:
+    UTILS_AVAILABLE = False
+    logger.warning("Utils not available - caching and metrics disabled")
 
 # Create blueprint
 agentic_bp = Blueprint('agentic', __name__, url_prefix='/api/v2')
@@ -61,9 +71,47 @@ def init_agentic_api(app, rag_engine, technique_manager, code_assembler, learnin
     agentic_bp.code_assembler = code_assembler
     agentic_bp.learning_engine = learning_engine
 
+    # Initialize intelligence cache (24hr TTL)
+    if UTILS_AVAILABLE:
+        agentic_bp.intelligence_cache = IntelligenceCache(ttl_hours=24, max_size=1000)
+        agentic_bp.metrics = get_metrics_collector()
+        logger.info("[Agentic API] Cache and metrics initialized")
+    else:
+        agentic_bp.intelligence_cache = None
+        agentic_bp.metrics = None
+
     # Register blueprint
     app.register_blueprint(agentic_bp)
     logger.info("Agentic API endpoints registered")
+
+
+def track_metrics(f):
+    """
+    Decorator to track endpoint metrics automatically
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not UTILS_AVAILABLE or not agentic_bp.metrics:
+            return f(*args, **kwargs)
+
+        # Start timer
+        start_time = time.time()
+        endpoint = f.__name__
+        success = True
+
+        try:
+            # Execute endpoint
+            response = f(*args, **kwargs)
+            return response
+        except Exception as e:
+            success = False
+            raise
+        finally:
+            # Track metrics
+            duration = time.time() - start_time
+            agentic_bp.metrics.track_request(endpoint, duration, success)
+
+    return decorated_function
 
 
 # ================================================================
@@ -71,11 +119,15 @@ def init_agentic_api(app, rag_engine, technique_manager, code_assembler, learnin
 # ================================================================
 
 @agentic_bp.route('/intelligence/search', methods=['POST'])
+@track_metrics
 def search_intelligence():
     """
     Search RAG system for malware intelligence
 
-    AUTO-UPDATES: If results are stale (>7 days), automatically fetches latest intelligence
+    Performance improvements:
+    - In-memory caching (instant response for repeat queries)
+    - Parallel collection searching (3x faster)
+    - Cross-encoder re-ranking (better relevance)
 
     POST /api/v2/intelligence/search
     {
@@ -96,6 +148,15 @@ def search_intelligence():
 
         if not query:
             return jsonify({"error": "query parameter required"}), 400
+
+        # Check cache first (instant response for repeat queries)
+        cache_key = f"search:{query}:{target_av}:{max_results}"
+        if agentic_bp.intelligence_cache:
+            cached_result = agentic_bp.intelligence_cache.get(cache_key)
+            if cached_result:
+                cached_result['cached'] = True
+                logger.debug(f"[Cache HIT] Returning cached search results for: {query}")
+                return jsonify(cached_result)
 
         # Auto-update check: If RAG hasn't been updated in 7 days, fetch latest
         auto_updated = False
@@ -146,16 +207,23 @@ def search_intelligence():
                 "content": result.get('content', result.get('document', '')),
                 "source": result.get('source', 'unknown'),
                 "metadata": result.get('metadata', {}),
-                "relevance_score": 1.0 - result.get('distance', 0.5)  # Convert distance to similarity
+                "relevance_score": result.get('rerank_score', 1.0 - result.get('distance', 0.5))  # Use rerank score if available
             })
 
-        return jsonify({
+        response_data = {
             "results": formatted_results,
             "query_used": query,
             "sources_searched": sources,
             "total_results": len(formatted_results),
-            "auto_updated": auto_updated  # Tell AI if we fetched new intel
-        })
+            "auto_updated": auto_updated,  # Tell AI if we fetched new intel
+            "cached": False
+        }
+
+        # Cache the response for future requests
+        if agentic_bp.intelligence_cache:
+            agentic_bp.intelligence_cache.set(cache_key, response_data)
+
+        return jsonify(response_data)
 
     except Exception as e:
         logger.exception(f"Intelligence search failed: {e}")
@@ -558,9 +626,63 @@ def rag_stats():
     """Get RAG system statistics"""
     try:
         stats = agentic_bp.rag_engine.get_stats()
+
+        # Add cache stats if available
+        if agentic_bp.intelligence_cache:
+            stats['cache_stats'] = agentic_bp.intelligence_cache.get_stats()
+
         return jsonify(stats)
     except Exception as e:
         logger.exception(f"RAG stats failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@agentic_bp.route('/metrics', methods=['GET'])
+def get_metrics():
+    """
+    Get API metrics and performance statistics
+
+    GET /api/v2/metrics
+
+    Returns:
+        - Request counts by endpoint
+        - Average response times
+        - Error rates
+        - Cache hit rates
+    """
+    try:
+        if not agentic_bp.metrics:
+            return jsonify({"error": "Metrics not available"}), 503
+
+        metrics_data = agentic_bp.metrics.get_stats()
+
+        # Add cache stats
+        if agentic_bp.intelligence_cache:
+            metrics_data['cache'] = agentic_bp.intelligence_cache.get_stats()
+
+        return jsonify(metrics_data), 200
+
+    except Exception as e:
+        logger.exception(f"Failed to get metrics: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@agentic_bp.route('/metrics/<endpoint>', methods=['GET'])
+def get_endpoint_metrics(endpoint: str):
+    """
+    Get detailed metrics for specific endpoint
+
+    GET /api/v2/metrics/<endpoint_name>
+    """
+    try:
+        if not agentic_bp.metrics:
+            return jsonify({"error": "Metrics not available"}), 503
+
+        stats = agentic_bp.metrics.get_endpoint_stats(endpoint)
+        return jsonify(stats), 200
+
+    except Exception as e:
+        logger.exception(f"Failed to get endpoint metrics: {e}")
         return jsonify({"error": str(e)}), 500
 
 
