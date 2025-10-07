@@ -1,8 +1,8 @@
 # Noctis-MCP System Overview
 
 **Version:** 2.0 (Hybrid Intelligence System)
-**Tools:** 16 MCP tools
-**Status:** ✅ Production Ready
+**Tools:** 17 MCP tools
+**Status:** Production Ready
 
 ---
 
@@ -46,9 +46,9 @@ AI: Calls record_feedback(...) after testing
 
 ---
 
-## 16 MCP Tools
+## 17 MCP Tools
 
-### Core Malware Tools (6)
+### Core Malware Tools (7)
 
 1. **search_intelligence(query, target_av)** → Get RAG intelligence
    Returns: MITRE TTPs, OPSEC scores, recommendations, warnings
@@ -65,17 +65,20 @@ AI: Calls record_feedback(...) after testing
 5. **compile_code(source_code, architecture)** → Build binary
    Returns: Binary path or compilation errors
 
-6. **record_feedback(techniques, av, detected)** → Record detection results
+6. **test_detection(binary_path, target_av, environment)** → Test in live sandbox
+   Returns: Detection verdict, OPSEC score, signatures, recommendations
+
+7. **record_feedback(techniques, av, detected)** → Record detection results
    Returns: Updated effectiveness scores
 
 ### Education Tools (9)
 
-7-15. Full interactive learning system
+8-16. Full interactive learning system
    - List topics, start lessons, get modules, take quizzes, track progress
 
 ### Utility (1)
 
-16. **rag_stats()** → System health check
+17. **rag_stats()** → System health check
    Returns: RAG status, indexed sources count
 
 ---
@@ -98,7 +101,10 @@ AI: Calls record_feedback(...) after testing
 ### Added/Improved
 - ✅ IntelligenceProcessor extracts MITRE TTPs automatically
 - ✅ Updated MCP formatter to show intelligence (not code files)
-- ✅ Cleaned MCP client (20 tools → 16 tools)
+- ✅ Cleaned MCP client (20 tools → 16 tools → 17 tools)
+- ✅ Added live detection testing with Hybrid Analysis
+- ✅ Automated intelligence updates from 25+ sources
+- ✅ OPSEC-aware workflow to prevent technique burning
 
 ---
 
@@ -166,7 +172,7 @@ Noctis-MCP/
 │   ├── learning_engine.py         # Detection feedback
 │   └── code_assembler.py          # Code assembly
 ├── noctis_mcp_client/
-│   └── noctis_mcp.py              # 16 MCP tools
+│   └── noctis_mcp.py              # 17 MCP tools
 ├── techniques/
 │   ├── knowledge/                 # OPSEC guidance files
 │   └── security_blogs/            # Detection intelligence
@@ -186,7 +192,7 @@ python test_complete_flow.py
 # Test tools
 python -c "
 from noctis_mcp_client.noctis_mcp import *
-# All 16 tools importable
+# All 17 tools importable
 "
 ```
 
@@ -194,11 +200,11 @@ from noctis_mcp_client.noctis_mcp import *
 
 ## System Metrics
 
-- **Tools:** 16 (was 20, removed 4 redundant)
-- **Endpoints:** ~25 active (was 40+, removed 15 old)
-- **Intelligence Sources:** 353 indexed
-- **Code Quality:** Senior-level clean architecture
-- **Status:** ✅ Production ready
+- **Tools:** 17 (Core: 7, Education: 9, Utility: 1)
+- **Endpoints:** ~26 active v2 endpoints
+- **Intelligence Sources:** 353+ indexed (auto-updating)
+- **Detection Testing:** Hybrid Analysis API v2
+- **Status:** Production ready
 
 ---
 

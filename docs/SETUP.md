@@ -52,7 +52,7 @@ Edit `~/.cursor/mcp.json`:
       "command": "/path/to/Noctis-MCP/venv/bin/python",
       "args": ["-m", "noctis_mcp_client.noctis_mcp"],
       "cwd": "/path/to/Noctis-MCP",
-      "description": "Noctis-MCP v2.0 - Hybrid Intelligence System for Malware Development (16 tools)",
+      "description": "Noctis-MCP v2.0 - Hybrid Intelligence System for Malware Development (17 tools)",
       "timeout": 300,
       "env": {
         "PYTHONPATH": "/path/to/Noctis-MCP"
@@ -115,7 +115,7 @@ Edit `~/.cursor/mcp.json`:
       "command": "/path/to/Noctis-MCP/venv/bin/python",
       "args": ["-m", "noctis_mcp_client.noctis_mcp"],
       "cwd": "/path/to/Noctis-MCP",
-      "description": "Noctis-MCP v2.0 - Hybrid Intelligence System for Malware Development (16 tools)",
+      "description": "Noctis-MCP v2.0 - Hybrid Intelligence System for Malware Development (17 tools)",
       "timeout": 300,
       "env": {
         "PYTHONPATH": "/path/to/Noctis-MCP"
@@ -170,7 +170,7 @@ Edit `%APPDATA%\Cursor\User\mcp.json`:
       "command": "C:\\path\\to\\Noctis-MCP\\venv\\Scripts\\python.exe",
       "args": ["-m", "noctis_mcp_client.noctis_mcp"],
       "cwd": "C:\\path\\to\\Noctis-MCP",
-      "description": "Noctis-MCP v2.0 - Hybrid Intelligence System for Malware Development (16 tools)",
+      "description": "Noctis-MCP v2.0 - Hybrid Intelligence System for Malware Development (17 tools)",
       "timeout": 300,
       "env": {
         "PYTHONPATH": "C:\\path\\to\\Noctis-MCP"
@@ -214,14 +214,15 @@ curl http://localhost:8888/api/v2/rag/stats
 ### 4. Test MCP Tools in Cursor
 Ask: **"What MCP tools do you have access to?"**
 
-You should see 16 Noctis tools organized by category:
+You should see 17 Noctis tools organized by category:
 
-**Core Malware Tools (6):**
+**Core Malware Tools (7):**
 - `search_intelligence` - Search malware techniques via RAG with MITRE TTPs and OPSEC scores
 - `generate_code` - Get structured guidance for AI to write malware code
 - `optimize_opsec` - Get OPSEC improvement recommendations for existing code
 - `validate_code` - Check code quality and get security warnings
 - `compile_code` - Cross-compile for Windows from any OS
+- `test_detection` - Test binary in live sandbox (Hybrid Analysis) against real AV/EDR
 - `record_feedback` - Record detection results to improve system learning
 
 **Education System (9 tools):**

@@ -178,7 +178,7 @@ Noctis-MCP/
 │   ├── learning_engine.py          # Detection feedback
 │   └── code_assembler.py           # Code assembly
 ├── noctis_mcp_client/
-│   └── noctis_mcp.py               # 16 MCP tools
+│   └── noctis_mcp.py               # 17 MCP tools
 ├── techniques/
 │   ├── knowledge/                  # OPSEC guidance files
 │   └── security_blogs/             # Detection intelligence
