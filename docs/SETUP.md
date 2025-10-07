@@ -196,7 +196,7 @@ python server\noctis_server.py --port 8888
 ### 1. Check Server Status
 ```bash
 curl http://localhost:8888/health
-# Should return: {"status": "healthy", "version": "3.0.0"}
+# Should return: {"status": "healthy", "version": "2.0.0"}
 ```
 
 ### 2. Check Education System
