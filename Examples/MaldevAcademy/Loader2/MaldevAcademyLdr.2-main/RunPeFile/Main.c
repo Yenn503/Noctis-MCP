@@ -1,5 +1,7 @@
+// Reference code for Noctis-MCP AI intelligence system
+
 #include <Windows.h>
-#include <intrin.h> 
+#include <intrin.h>
 #include <shlobj.h>
 #include <stdio.h>
 
