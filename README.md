@@ -21,9 +21,9 @@ AI calls: generate_code(["injection", "syscalls"], "CrowdStrike")
   ↓
 Gets: Implementation patterns, function signatures, synthesis
   ↓
-AI WRITES CODE using all the guidance (like you're doing right now)
+AI WRITES CODE using all the guidance (straight into your IDE)
   ↓
-AI calls: validate_code() → compile_code()
+AI calls: validate_code() → compile_code(final EXE)
 ```
 
 **Key:** The AI writes code. The server provides intelligence.
