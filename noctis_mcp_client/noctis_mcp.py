@@ -377,6 +377,67 @@ def compile_code(
 
 
 @mcp.tool()
+def test_detection(
+    binary_path: str,
+    target_av: str = None,
+    environment: str = "Windows 10 64-bit"
+) -> str:
+    """
+    🔬 Test binary in live sandbox against real AV/EDR.
+
+    Upload binary to Hybrid Analysis sandbox and get detection results.
+    This validates if your malware actually evades the target defenses.
+
+    Args:
+        binary_path: Path to compiled binary (from compile_code)
+        target_av: Target AV/EDR name (e.g., "CrowdStrike Falcon", "Defender")
+        environment: OS environment (default: "Windows 10 64-bit")
+
+    Returns:
+        {
+            "detected": False,
+            "verdict": "no_threats",
+            "opsec_score": 9,
+            "threat_score": 5,
+            "av_detections": 0,
+            "detected_by": [],
+            "target_detected": False,
+            "signatures": [],
+            "recommendations": [
+                "Good OPSEC! Binary shows low detection rates."
+            ]
+        }
+
+    WORKFLOW:
+        1. AI writes code using search_intelligence() guidance
+        2. AI calls compile_code() to build binary
+        3. AI calls test_detection() to validate evasion
+        4. If detected: AI analyzes recommendations and rewrites
+        5. If undetected: AI calls record_feedback() with success
+
+    IMPORTANT: Requires HYBRID_ANALYSIS_API_KEY environment variable.
+    Free tier: 100 requests/hour. Results cached for 7 days.
+
+    Example:
+        User: "Build a CrowdStrike bypass and test it"
+        AI:
+        1. search_intelligence("CrowdStrike bypass")
+        2. generate_code(["syscalls"], "CrowdStrike")
+        3. Write code based on guidance
+        4. compile_code(code, "falcon_bypass")
+        5. test_detection("compiled/falcon_bypass.exe", "CrowdStrike Falcon")
+        6. If detected: optimize_opsec() and rewrite
+        7. If clean: record_feedback(["syscalls"], "CrowdStrike", False)
+    """
+    response = api_post('/api/v2/detection/test', {
+        'binary_path': binary_path,
+        'target_av': target_av,
+        'environment': environment
+    })
+    return format_response(response, 'detection_result')
+
+
+@mcp.tool()
 def record_feedback(
     technique_ids: List[str],
     target_av: str,
@@ -670,6 +731,8 @@ def format_response(data: Dict, format_type: str = "general") -> str:
         return _format_code_generation(data)
     elif format_type == "comparison":
         return _format_technique_comparison(data)
+    elif format_type == "detection_result":
+        return _format_detection_result(data)
     elif format_type == "stats":
         return _format_rag_stats(data)
     elif format_type == "learning_topics":
@@ -920,11 +983,119 @@ def _format_code_generation(data: Dict) -> str:
 
     return "\n".join(output)
 
+def _format_detection_result(data: Dict) -> str:
+    """Format live detection testing results"""
+    output = []
+    output.append("\n🔬 === SANDBOX DETECTION TEST RESULTS ===\n")
+
+    detected = data.get('detected', False)
+    verdict = data.get('verdict', 'unknown')
+    opsec_score = data.get('opsec_score', 0)
+    threat_score = data.get('threat_score', 0)
+
+    # Overall verdict
+    if detected:
+        output.append("⚠️  VERDICT: DETECTED")
+    else:
+        output.append("✅ VERDICT: UNDETECTED")
+
+    output.append(f"   Classification: {verdict}")
+    output.append(f"   Threat Score: {threat_score}/100")
+    output.append("")
+
+    # OPSEC Score (visual bar)
+    bar = '█' * opsec_score + '░' * (10 - opsec_score)
+    output.append(f"🎯 OPSEC SCORE: {opsec_score}/10 [{bar}]")
+    output.append("")
+
+    # AV Detections
+    av_detections = data.get('av_detections', 0)
+    detected_by = data.get('detected_by', [])
+    target_av = data.get('target_av')
+    target_detected = data.get('target_detected', False)
+
+    output.append(f"🛡️  AV DETECTIONS: {av_detections}/")
+
+    if detected_by:
+        output.append("   Detected by:")
+        for av in detected_by[:5]:
+            emoji = "🎯" if target_av and target_av.lower() in av.lower() else "   "
+            output.append(f"   {emoji} {av}")
+        if len(detected_by) > 5:
+            output.append(f"   ... and {len(detected_by) - 5} more")
+    else:
+        output.append("   No AV detections reported")
+
+    output.append("")
+
+    # Target AV result
+    if target_av:
+        if target_detected:
+            output.append(f"🎯 TARGET AV ({target_av}): DETECTED ⚠️")
+        else:
+            output.append(f"🎯 TARGET AV ({target_av}): CLEAN ✅")
+        output.append("")
+
+    # Top signatures
+    signatures = data.get('signatures', [])
+    if signatures:
+        output.append("🔍 TOP TRIGGERED SIGNATURES:")
+        for sig in signatures[:5]:
+            name = sig.get('name', 'Unknown')
+            severity = sig.get('severity', 'unknown')
+            output.append(f"   • [{severity}] {name}")
+        output.append("")
+
+    # Recommendations
+    recommendations = data.get('recommendations', [])
+    if recommendations:
+        output.append("💡 OPSEC RECOMMENDATIONS:")
+        for i, rec in enumerate(recommendations[:5], 1):
+            if "CRITICAL" in rec:
+                output.append(f"   ⚠️  {i}. {rec}")
+            else:
+                output.append(f"   {i}. {rec}")
+        output.append("")
+
+    # Environment info
+    environment = data.get('environment')
+    if environment:
+        output.append(f"🖥️  Test Environment: {environment}")
+
+    sha256 = data.get('sha256')
+    if sha256:
+        output.append(f"📄 SHA256: {sha256[:16]}...")
+
+    output.append("")
+    output.append("═" * 70)
+
+    if detected or target_detected:
+        output.append("⚠️  ACTION REQUIRED: IMPROVE OPSEC")
+        output.append("═" * 70)
+        output.append("\n📝 NEXT STEPS:")
+        output.append("   1. Review triggered signatures and recommendations")
+        output.append("   2. Call optimize_opsec() for improvement suggestions")
+        output.append("   3. Modify code to address detection issues")
+        output.append("   4. Recompile with compile_code()")
+        output.append("   5. Test again with test_detection()")
+    else:
+        output.append("✅ SUCCESS: EXCELLENT OPSEC")
+        output.append("═" * 70)
+        output.append("\n📝 NEXT STEPS:")
+        output.append("   1. Call record_feedback() to log success")
+        output.append("   2. Deliver binary to user")
+        output.append("   3. Provide OPSEC score and test results")
+
+    output.append("")
+
+    return "\n".join(output)
+
+
 def _format_technique_comparison(data: Dict) -> str:
     """Format technique comparison results"""
     output = []
     output.append("\n⚖️ === TECHNIQUE COMPARISON ===\n")
-    
+
     comparison = data.get('comparison_table', {})
     if comparison:
         output.append("📊 COMPARISON TABLE:")
@@ -933,18 +1104,18 @@ def _format_technique_comparison(data: Dict) -> str:
             for criterion, score in scores.items():
                 bar = '█' * int(score) + '░' * (10 - int(score))
                 output.append(f"    {criterion}: {score}/10 [{bar}]")
-    
+
     winner = data.get('winner_by_criteria', {})
     if winner:
         output.append(f"\n🏆 WINNERS BY CRITERIA:")
         for criterion, technique in winner.items():
             output.append(f"    {criterion}: {technique}")
-    
+
     recommendation = data.get('recommendation', '')
     if recommendation:
         output.append(f"\n💡 RECOMMENDATION:")
         output.append(f"    {recommendation}")
-    
+
     return "\n".join(output)
 
 def _format_rag_stats(data: Dict) -> str:

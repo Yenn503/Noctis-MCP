@@ -2,9 +2,9 @@
 
 **Hybrid Intelligence System for Malware Development**
 
-Noctis-MCP provides 16 MCP tools that give AI agents (Claude, GPT-4, etc.) access to malware development intelligence. The AI uses this intelligence to write code, not copy templates.
+Noctis-MCP provides 17 MCP tools that give AI agents (Claude, GPT-4, etc.) access to malware development intelligence and live detection testing. The AI uses this intelligence to write code, not copy templates.
 
-**Status:** Production Ready | **Version:** 2.0 | **Tools:** 16
+**Status:** Production Ready | **Version:** 2.0 | **Tools:** 17
 
 ---
 
@@ -80,9 +80,9 @@ AI will:
 
 ---
 
-## 16 MCP Tools
+## 17 MCP Tools
 
-### Core Malware Tools (6)
+### Core Malware Tools (7)
 
 | Tool | Purpose |
 |------|---------|
@@ -91,6 +91,7 @@ AI will:
 | `optimize_opsec(code, target_av)` | Get OPSEC improvement recommendations |
 | `validate_code(code)` | Check code quality, get warnings |
 | `compile_code(code, arch)` | Build binary (Windows/Linux) |
+| `test_detection(binary, target_av)` | Test binary in live sandbox (Hybrid Analysis) |
 | `record_feedback(techniques, av, detected)` | Record detection results for learning |
 
 ### Education System (9)
@@ -237,7 +238,7 @@ Returns **HOW** real code works, not the code itself.
 
 ## System Metrics
 
-- **Tools:** 16 (Core: 6, Education: 9, Utility: 1)
+- **Tools:** 17 (Core: 7, Education: 9, Utility: 1)
 - **Endpoints:** ~25 active v2 endpoints
 - **Intelligence:** 353+ indexed sources
 - **RAG:** ChromaDB with cross-encoder re-ranking
@@ -270,12 +271,14 @@ Noctis-MCP is designed for:
 ## What Changed in v2.0
 
 ### Removed (Redundant/Old)
-- 4 redundant tools (20 → 16 tools)
+- 4 redundant tools (20 → 16 → 17 tools after adding detection testing)
 - Old agent system (`server/agents/`)
 - Old v1 endpoints
 - Obfuscation/polymorphic modules (not used)
 
 ### Added/Improved
+- Live detection testing with Hybrid Analysis sandbox
+- Automated intelligence updates (25+ security blogs, GitHub, arXiv)
 - MITRE ATT&CK extraction in all intelligence
 - Updated tool descriptions (AI knows to write code)
 - Cleaner architecture
@@ -291,7 +294,7 @@ python -c "from server import agentic_api; print('Server loads successfully')"
 
 # Check tool count
 grep -c "^@mcp.tool()" noctis_mcp_client/noctis_mcp.py
-# Should output: 16
+# Should output: 17
 
 # Start server with debug
 python server/noctis_server.py --debug

@@ -1360,3 +1360,90 @@ def record_detection():
         'indexed_to_rag': True,
         'techniques_updated': len(updated_scores)
     }), 200
+
+
+# ============================================================================
+# DETECTION TESTING ENDPOINTS
+# ============================================================================
+
+@agentic_bp.route('/detection/test', methods=['POST'])
+def test_detection():
+    """
+    Test binary in live sandbox (Hybrid Analysis)
+
+    Request Body:
+        {
+            "binary_path": "path/to/binary.exe",
+            "target_av": "CrowdStrike Falcon" (optional),
+            "environment": "Windows 10 64-bit" (optional)
+        }
+
+    Returns:
+        {
+            "success": true,
+            "detected": false,
+            "verdict": "no_threats",
+            "opsec_score": 9,
+            "threat_score": 5,
+            "av_detections": 0,
+            "detected_by": [],
+            "target_detected": false,
+            "signatures": [],
+            "recommendations": [...],
+            "environment": "Windows 10 64-bit (v2004, Build 19041)",
+            "sha256": "abc123..."
+        }
+    """
+    data = request.get_json()
+
+    binary_path = data.get('binary_path')
+    target_av = data.get('target_av')
+    environment = data.get('environment', 'Windows 10 64-bit')
+
+    if not binary_path:
+        return jsonify({
+            'success': False,
+            'error': 'binary_path is required'
+        }), 400
+
+    try:
+        # Import detection testing module
+        from server.detection_testing import DetectionTester
+
+        # Initialize tester (API key from environment variable)
+        tester = DetectionTester()
+
+        logger.info(f"Testing binary: {binary_path}")
+        if target_av:
+            logger.info(f"Target AV: {target_av}")
+
+        # Run detection test
+        result = tester.test_binary(
+            binary_path=binary_path,
+            target_av=target_av,
+            environment=environment
+        )
+
+        # Check if it was successful
+        if not result.get('success'):
+            error_msg = result.get('error', 'Unknown error')
+            logger.error(f"Detection test failed: {error_msg}")
+            return jsonify(result), 500
+
+        logger.info(f"Detection test complete. Detected: {result.get('detected')}, OPSEC Score: {result.get('opsec_score')}/10")
+
+        return jsonify(result), 200
+
+    except ImportError as e:
+        logger.error(f"Detection testing module not available: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Detection testing not configured. Install required dependencies: requests'
+        }), 503
+
+    except Exception as e:
+        logger.exception(f"Detection testing error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Detection test failed: {str(e)}'
+        }), 500
