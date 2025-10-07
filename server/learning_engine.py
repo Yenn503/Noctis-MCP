@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-Learning Engine for Noctis-MCP
-================================
+Detection Feedback & Learning Engine for Noctis-MCP
+====================================================
+
+NOTE: This is DIFFERENT from education/learning_engine.py
+- THIS file: Learns from AV detections and compilation feedback
+- education/learning_engine.py: Tracks user's education progress
 
 Learns from user feedback, AV/EDR detections, and compilation results
 to continuously improve malware generation.
@@ -13,6 +17,8 @@ This module provides:
 - Adaptive technique selection
 - Success rate analysis
 - Pattern recognition
+
+Used by: /api/v2/learning/record-detection
 
 Author: Noctis-MCP Community
 License: MIT
