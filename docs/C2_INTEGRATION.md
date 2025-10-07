@@ -8,9 +8,9 @@ Noctis-MCP supports three major C2 frameworks with full Linux cross-compilation 
 
 | Framework | Protocols | BOF Support | Features | Status |
 |-----------|-----------|-------------|----------|--------|
-| **Sliver** | HTTPS, DNS, mTLS, TCP | ✅ Full | Beacon/Session, extensions, BOF | Production |
-| **Adaptix** | HTTPS, HTTP, TCP, Named Pipe | ✅ Full | AxScript, crash-safe BOF | Production |
-| **Mythic** | HTTPS, HTTP, WebSocket, DNS, SMB | ✅ Forge | Multi-agent, BOF/assembly aliases | Production |
+| **Sliver** | HTTPS, DNS, mTLS, TCP | Full | Beacon/Session, extensions, BOF | Production |
+| **Adaptix** | HTTPS, HTTP, TCP, Named Pipe | Full | AxScript, crash-safe BOF | Production |
+| **Mythic** | HTTPS, HTTP, WebSocket, DNS, SMB | Forge | Multi-agent, BOF/assembly aliases | Production |
 
 ---
 
@@ -19,9 +19,9 @@ Noctis-MCP supports three major C2 frameworks with full Linux cross-compilation 
 ### System Requirements
 
 **Compilers:**
-- ✅ MinGW-w64 (x64 and x86) - Windows cross-compilation
-- ✅ NASM - Assembly compilation
-- ✅ windres - Resource compilation
+- MinGW-w64 (x64 and x86) - Windows cross-compilation
+- NASM - Assembly compilation
+- windres - Resource compilation
 
 **Installation:**
 ```bash
@@ -559,8 +559,8 @@ print(f"Techniques applied: {result['techniques_applied']}")
 | **Platform** | Cross-platform | Windows | Cross-platform |
 | **Language** | Go | C/C++ | Python/Docker |
 | **Protocols** | 5 | 4 | 5 |
-| **BOF Support** | ✅ Extensions | ✅ AxScript | ✅ Forge |
-| **Linux Cross-Compile** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **BOF Support** | Extensions | AxScript | Forge |
+| **Linux Cross-Compile** | Yes | Yes | Yes |
 | **OPSEC Features** | Good | Excellent | Good |
 | **Setup Difficulty** | Easy | Medium | Medium |
 | **Best For** | General purpose | Windows red teams | Enterprise ops |
@@ -570,13 +570,13 @@ print(f"Techniques applied: {result['techniques_applied']}")
 ## Best Practices
 
 ### OPSEC Checklist
-- ✅ Use HTTPS/mTLS for encryption
-- ✅ Enable Noctis obfuscation
-- ✅ Set reasonable beacon intervals (5-60min)
-- ✅ Use redirectors/CDN
-- ✅ Test in isolated environment first
-- ✅ Monitor for anomalies
-- ✅ Clean up artifacts after ops
+- Use HTTPS/mTLS for encryption
+- Enable Noctis obfuscation
+- Set reasonable beacon intervals (5-60min)
+- Use redirectors/CDN
+- Test in isolated environment first
+- Monitor for anomalies
+- Clean up artifacts after ops
 
 ### Beacon Intervals
 

@@ -2,7 +2,7 @@
 
 **Complete setup instructions for Windows, Linux, and macOS**
 
-## ⚠️ Critical Requirements
+## Critical Requirements
 
 **The MCP tools require TWO components running:**
 1. **Noctis Server** (Flask API on port 8888)
@@ -12,7 +12,7 @@
 
 ---
 
-## 🖥️ macOS Setup
+## macOS Setup
 
 ### Prerequisites
 - **Python 3.11+** (3.13.2 recommended)
@@ -75,7 +75,7 @@ python server/noctis_server.py --port 8888
 
 ---
 
-## 🐧 Linux Setup
+## Linux Setup
 
 ### Prerequisites
 - **Python 3.11+**
@@ -136,7 +136,7 @@ python server/noctis_server.py --port 8888
 
 ---
 
-## 🪟 Windows Setup
+## Windows Setup
 
 ### Prerequisites
 - **Python 3.11+**
@@ -191,7 +191,7 @@ python server\noctis_server.py --port 8888
 
 ---
 
-## ✅ Verification Steps
+## Verification Steps
 
 ### 1. Check Server Status
 ```bash
@@ -248,7 +248,7 @@ You should see 20 Noctis tools organized by category:
 
 ---
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### "No tools" or Red Circle in Cursor
 
@@ -311,7 +311,7 @@ curl http://localhost:8888/api/v2/rag/stats
 
 ---
 
-## 🔄 Daily Usage
+## Daily Usage
 
 ### Starting Noctis-MCP
 1. **Start the server:**
@@ -335,7 +335,7 @@ python scripts/update_intelligence.py
 
 ---
 
-## 📚 Next Steps
+## Next Steps
 
 1. **Read the README.md** for usage examples
 2. **Try the Examples/** directory for sample code
@@ -344,19 +344,15 @@ python scripts/update_intelligence.py
 
 ---
 
-## ⚖️ Legal Notice
+## Legal Notice
 
 **For authorized security research, penetration testing, and red team operations only.**
 **Unauthorized use is illegal and prohibited.**
 
 ---
 
-## 🆘 Support
+## Support
 
 - **GitHub Issues:** https://github.com/Yenn503/Noctis-MCP/issues
 - **Documentation:** See `docs/` directory
 - **Community:** Check project discussions
-
----
-
-**Happy Hacking with Noctis-MCP! 🔥**

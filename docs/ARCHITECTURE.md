@@ -106,9 +106,8 @@ Noctis-MCP is an agentic malware development platform that integrates with IDEs 
 20. `rag_stats()` - RAG system status
 
 **Key Features**:
-- Response formatting for beautiful IDE display
+- Response formatting for IDE display
 - Markdown rendering in terminal/IDE
-- Emoji indicators for different content types
 - Error handling and user-friendly messages
 
 ### 2. Flask Server (`server/noctis_server.py`)
@@ -138,16 +137,18 @@ Noctis-MCP is an agentic malware development platform that integrates with IDEs 
 **Purpose**: Semantic search over malware development knowledge
 
 **Collections**:
-- `knowledge` - Markdown knowledge base (techniques/knowledge/)
-- `github` - Indexed GitHub repositories
-- `arxiv` - Research papers
-- `blogs` - Security blog posts
-- `detection_intel` - Detection signatures and patterns
+- `malware_knowledge` - Markdown knowledge base (techniques/knowledge/)
+- `github_techniques` - Indexed GitHub repositories
+- `research_papers` - Research papers
+- `security_blogs` - Security blog posts
+- `av_detections` - Detection signatures and patterns
 
 **Technology**:
 - **Vector DB**: ChromaDB (local, persistent)
 - **Embeddings**: sentence-transformers (all-MiniLM-L6-v2)
-- **Similarity**: Cosine similarity search
+- **Re-ranking**: cross-encoder/ms-marco-MiniLM-L-6-v2
+- **Search**: Parallel collection queries with ThreadPoolExecutor
+- **Caching**: Embedding cache (LRU) + Intelligence cache (24hr TTL)
 
 **Auto-Update System**:
 ```python
@@ -295,15 +296,15 @@ User: "Find latest process injection techniques"
    │          4. Return top 10 results
    ▼
 ┌────────────┐
-│ MCP Client │ Formats results with emojis/markdown
+│ MCP Client │ Formats results with markdown
 └──┬─────────┘
    │ MCP response
    ▼
 ┌─────┐
-│ IDE │ AI presents: "🔍 Found 10 intelligence sources:
-└─────┘          📚 KNOWLEDGE BASE: Process injection overview
-                 🐙 GITHUB: Modern injection techniques
-                 📝 BLOG: Latest evasion methods..."
+│ IDE │ AI presents: "Found 10 intelligence sources:
+└─────┘          KNOWLEDGE BASE: Process injection overview
+                 GITHUB: Modern injection techniques
+                 BLOG: Latest evasion methods..."
 ```
 
 ### Example 2: Code Generation with RAG Context
@@ -385,9 +386,9 @@ User: "I want to learn malware development"
    ▼
 ┌─────┐
 │ IDE │ AI shows curriculum:
-└──┬──┘ "🟢 BEGINNER: Process Injection
-    │   🟡 INTERMEDIATE: Shellcode Injection
-    │   🔴 ADVANCED: Direct Syscalls..."
+└──┬──┘ "BEGINNER: Process Injection
+    │   INTERMEDIATE: Shellcode Injection
+    │   ADVANCED: Direct Syscalls..."
     │
     │ User selects: "process injection"
     ▼
@@ -431,31 +432,55 @@ User: "I want to learn malware development"
 
 ```yaml
 server:
-  host: 127.0.0.1
+  host: "127.0.0.1"
   port: 8888
   debug: false
+  timeout: 300
+  workers: 4
 
 paths:
-  techniques: techniques
-  knowledge: techniques/knowledge
-  database: data/knowledge_base.db
-  output: output
-  rag_db: data/rag_db
-  lessons: data/lessons.json
-  quizzes: data/quizzes.json
-  education_db: data/education_progress.db
+  examples: "Examples"
+  techniques: "techniques"
+  templates: "templates"
+  output: "output"
+  cache: "cache"
+  logs: "logs"
+  data: "data"
+
+compilation:
+  msbuild_path: "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe"
+  vs_version: "2022"
+  target_arch: "x64"
+  configuration: "Release"
+  mingw_path: null
+  enable_cache: true
+  cache_duration: 3600
+
+opsec:
+  default_level: "high"
+  auto_fix: true
+  scan_strings: true
+  scan_imports: true
+  entropy_check: true
+
+learning:
+  enabled: true
+  knowledge_base: "data/knowledge_base.db"
+  track_results: true
+  auto_improve: true
 
 logging:
-  level: INFO
-  file: logs/noctis.log
+  level: "INFO"
+  file: "logs/noctis.log"
+  max_size: 10485760
+  backup_count: 5
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
-rag:
-  enabled: true
-  embedding_model: all-MiniLM-L6-v2
-  chunk_size: 1000
-  chunk_overlap: 200
-  auto_update_days: 7
-  cache_hours: 24
+# Note: RAG and education system paths are hardcoded in server code:
+# - RAG DB: data/rag_db/
+# - Lessons: data/lessons.json
+# - Quizzes: data/quizzes.json
+# - Education DB: data/education_progress.db
 ```
 
 ## File Structure
@@ -560,10 +585,18 @@ Noctis-MCP/
 
 ## Performance Metrics
 
-### RAG Search
-- **Cold search**: ~500ms (includes embedding generation)
-- **Warm search**: ~200ms (cached embeddings)
-- **Auto-update**: ~5-15 minutes (background)
+### RAG Search (With Optimizations)
+- **Cold search**: ~300-400ms (parallel collection search, 3x faster than serial)
+- **Warm search** (embedding cached): ~150-200ms (embedding cache hit)
+- **Cached search** (24hr TTL): ~5-10ms (40-100x faster, full result cache hit)
+- **Re-ranking**: +50-100ms (cross-encoder scoring, 15-30% better relevance)
+- **Auto-update**: ~5-15 minutes (background intelligence refresh)
+
+**Optimization Stack**:
+1. Intelligence cache (24hr TTL) - eliminates redundant searches
+2. Embedding cache (LRU, 500 entries) - avoids re-encoding queries
+3. Parallel collection search (ThreadPoolExecutor) - 3-4x throughput
+4. Cross-encoder re-ranking - improved result quality
 
 ### Education System
 - **Lesson load**: <50ms (JSON parsing)
@@ -572,13 +605,14 @@ Noctis-MCP/
 
 ### Code Generation
 - **Template assembly**: ~100ms
-- **RAG context retrieval**: ~300ms
-- **Total generation**: ~500ms
+- **RAG context retrieval**: ~200-300ms (with parallel search)
+- **Total generation**: ~400-600ms
 
 ### API Response Times
 - **Simple queries**: 10-50ms
-- **RAG queries**: 200-500ms
-- **Code generation**: 500-1000ms
+- **RAG queries** (cached): 5-10ms
+- **RAG queries** (uncached): 300-400ms
+- **Code generation**: 400-600ms
 
 ## Scaling Considerations
 

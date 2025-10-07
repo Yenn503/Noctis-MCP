@@ -134,7 +134,7 @@ All agents inherit from `BaseAgent` which provides:
 
 ---
 
-### 3. 🛡️ OPSEC Optimization Agent
+### 3. OPSEC Optimization Agent
 
 **Purpose:** Iterative code improvement to maximize operational security
 
@@ -176,7 +176,7 @@ All agents inherit from `BaseAgent` which provides:
 
 ---
 
-### 4. 📚 Learning Agent
+### 4. Learning Agent
 
 **Purpose:** Feedback collection and continuous improvement from real-world results
 
@@ -358,7 +358,7 @@ Initial Code
      │
      ▼
 ┌──────────────────┐
-│ Final Analysis   │ ← Score: 8.2/10 ✅
+│ Final Analysis   │ ← Score: 8.2/10
 └──────────────────┘
 ```
 

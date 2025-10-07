@@ -88,9 +88,9 @@ The Noctis-MCP Education System provides an interactive, AI-powered learning exp
    → Returns: 10 techniques sorted by difficulty
 
 3. AI shows user the curriculum organized by difficulty:
-   🟢 BEGINNER: Process Injection, Persistence...
-   🟡 INTERMEDIATE: Shellcode Injection, PE Manipulation...
-   🔴 ADVANCED: Direct Syscalls, Process Hollowing...
+   BEGINNER: Process Injection, Persistence...
+   INTERMEDIATE: Shellcode Injection, PE Manipulation...
+   ADVANCED: Direct Syscalls, Process Hollowing...
 
 4. User: "Teach me process injection"
 
@@ -370,7 +370,7 @@ User: "I want to learn malware development"
 
 AI: "Great! I can teach you 10 different techniques. Here's the curriculum:
 
-🟢 BEGINNER LEVEL:
+BEGINNER LEVEL:
   • Process Injection Fundamentals (45 min)
     ID: process_injection
     Learn the foundational technique of injecting code into running processes
@@ -379,7 +379,7 @@ AI: "Great! I can teach you 10 different techniques. Here's the curriculum:
     ID: persistence
     Implement various persistence techniques to survive reboots
 
-🟡 INTERMEDIATE LEVEL:
+INTERMEDIATE LEVEL:
   • Shellcode Injection Techniques (60 min) [Requires: process_injection]
     ID: shellcode_injection
     Learn to inject raw shellcode instead of DLLs
@@ -441,7 +441,7 @@ User: "I understand now, let's move to the next module"
 
 AI: [Marks module 1 complete, loads module 2]
 
-✅ Module 1 completed!
+Module 1 completed!
 Progress: 1/4 modules completed
 
 [... continues through all modules ...]
@@ -453,7 +453,7 @@ User: "sure"
 
 AI: "Great! Let's begin:
 
-🧠 QUIZ: Process Injection Fundamentals
+QUIZ: Process Injection Fundamentals
 
 Question 1 [BEGINNER]:
 What is the primary purpose of process injection?
@@ -468,28 +468,28 @@ Options:
 
 AI: "Quiz complete! Let me grade your answers...
 
-📝 QUIZ RESULTS
+QUIZ RESULTS
 
-✅ PASSED! Score: 90% (9/10 correct)
+PASSED! Score: 90% (9/10 correct)
 
 Detailed Results:
 
-✅ Question 1:
+Question 1:
    Your answer: 0
    Correct answer: 0
-   💡 Correct! Process injection allows executing arbitrary code within
-      the address space of a separate live process.
+   Note: Correct! Process injection allows executing arbitrary code within
+         the address space of a separate live process.
 
-❌ Question 5:
+Question 5:
    Your answer: 3
    Correct answer: 1
-   💡 Classic DLL injection is easily detected because the DLL file must
-      exist on disk and will appear in the target process's loaded
-      module list, making it trivial for EDR to identify.
+   Note: Classic DLL injection is easily detected because the DLL file must
+         exist on disk and will appear in the target process's loaded
+         module list, making it trivial for EDR to identify.
 
 [... continues with all answers ...]
 
-🏆 NEW ACHIEVEMENTS UNLOCKED:
+NEW ACHIEVEMENTS UNLOCKED:
   • First Lesson Complete - You've completed your first technique!
   • Quiz Master - Scored 70% or higher on a quiz
 
@@ -500,9 +500,9 @@ User: "yes"
 
 AI: "Based on your progress, I recommend:
 
-💡 RECOMMENDED NEXT LESSON
+RECOMMENDED NEXT LESSON
 
-📚 Recommended: Shellcode Injection Techniques
+Recommended: Shellcode Injection Techniques
    Difficulty: INTERMEDIATE
    Time: 60 minutes
 
