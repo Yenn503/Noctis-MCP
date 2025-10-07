@@ -281,46 +281,44 @@ def generate_code(
     opsec_level: str = "high"
 ) -> str:
     """
-    💻 Generate code using RAG-informed intelligence.
+    🧠 Get intelligent guidance for writing malware code.
 
-    This is DYNAMIC code generation - uses RAG to find best implementation
-    patterns from real GitHub repos, research papers, and blogs.
-    NOT static templates!
+    IMPORTANT: This provides INTELLIGENCE and PATTERNS for YOU (the AI) to write code.
+    It does NOT return complete code - you synthesize the guidance into working code.
+
+    Returns structured intelligence from 4 sources:
+    - Knowledge: Strategic OPSEC guidance (WHY techniques work)
+    - Blogs: Current detection status (WHAT'S detected NOW)
+    - GitHub: Implementation patterns (HOW real code does it)
+    - VX-API: Function signatures (BUILDING BLOCKS to use)
 
     Args:
-        technique_ids: List of techniques to combine (e.g., ["syscalls", "injection"])
-        target_av: Target AV/EDR (e.g., "CrowdStrike")
+        technique_ids: List of techniques (e.g., ["syscalls", "injection"])
+        target_av: Target AV/EDR (e.g., "CrowdStrike", "Defender")
         target_os: Target OS (default: "Windows")
         architecture: x86 or x64 (default: "x64")
-        use_rag: Use RAG intelligence for code generation (default: True)
-        opsec_level: "low", "medium", "high", "maximum"
+        use_rag: Use RAG intelligence (default: True)
+        opsec_level: "low", "medium", "high"
 
-    Returns:
-        {
-            "source_code": "Complete C/C++ code",
-            "header_code": "Header file",
-            "techniques_used": [...],
-            "rag_intelligence_used": {
-                "github_patterns": 5,
-                "research_insights": 3
-            },
-            "opsec_score": 8.5,
-            "warnings": [...]
-        }
+    Returns structured guidance including:
+        - Intelligence summaries with OPSEC scores
+        - Recommendations and warnings
+        - Implementation patterns from real malware
+        - Function call sequences
+        - VX-API function signatures
+        - Synthesis with overall approach
 
-    Example AI Workflow:
-        1. Research with search_intelligence()
-        2. Analyze techniques with analyze_technique()
-        3. generate_code(["syscalls", "injection"], "CrowdStrike", opsec_level="high")
-        4. Review generated code
-        5. optimize_opsec() if needed
+    Usage:
+        1. Call this to get guidance
+        2. Review OPSEC recommendations and warnings
+        3. Study the implementation patterns (don't copy)
+        4. Write your own code using the guidance
+        5. Use function signatures from VX-API
     """
     response = api_post('/api/v2/code/generate', {
         'technique_ids': technique_ids,
+        'objective': f"Implement {', '.join(technique_ids)}",
         'target_av': target_av,
-        'target_os': target_os,
-        'architecture': architecture,
-        'use_rag_context': use_rag,
         'opsec_level': opsec_level
     })
     return format_response(response, 'code')

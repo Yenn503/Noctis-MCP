@@ -19,9 +19,12 @@ logger = logging.getLogger(__name__)
 # Import caching and metrics utilities
 try:
     from server.utils import IntelligenceCache, get_metrics_collector
+    from server.utils.intelligence_processor import IntelligenceProcessor
     UTILS_AVAILABLE = True
+    INTELLIGENCE_PROCESSOR = IntelligenceProcessor()
 except ImportError:
     UTILS_AVAILABLE = False
+    INTELLIGENCE_PROCESSOR = None
     logger.warning("Utils not available - caching and metrics disabled")
 
 # Create blueprint
@@ -200,24 +203,52 @@ def search_intelligence():
             n_results=max_results
         )
 
-        # Format results
-        formatted_results = []
-        for result in results:
-            formatted_results.append({
-                "content": result.get('content', result.get('document', '')),
-                "source": result.get('source', 'unknown'),
-                "metadata": result.get('metadata', {}),
-                "relevance_score": result.get('rerank_score', 1.0 - result.get('distance', 0.5))  # Use rerank score if available
-            })
+        # Process intelligence using intelligent processor
+        if INTELLIGENCE_PROCESSOR and results:
+            # Convert RAG results to format processor expects
+            rag_results_formatted = []
+            for result in results:
+                rag_results_formatted.append({
+                    "content": result.get('content', result.get('document', '')),
+                    "source": result.get('source', 'unknown'),
+                    "title": result.get('metadata', {}).get('title', ''),
+                    "metadata": result.get('metadata', {})
+                })
 
-        response_data = {
-            "results": formatted_results,
-            "query_used": query,
-            "sources_searched": sources,
-            "total_results": len(formatted_results),
-            "auto_updated": auto_updated,  # Tell AI if we fetched new intel
-            "cached": False
-        }
+            # Process into structured intelligence
+            intelligence = INTELLIGENCE_PROCESSOR.process_intelligence(
+                rag_results=rag_results_formatted,
+                query=query,
+                target_av=target_av
+            )
+
+            # Return structured intelligence instead of raw results
+            response_data = {
+                **intelligence,  # All processed intelligence
+                "query_used": query,
+                "sources_searched": sources,
+                "auto_updated": auto_updated,
+                "cached": False
+            }
+        else:
+            # Fallback to raw results if processor unavailable
+            formatted_results = []
+            for result in results:
+                formatted_results.append({
+                    "content": result.get('content', result.get('document', '')),
+                    "source": result.get('source', 'unknown'),
+                    "metadata": result.get('metadata', {}),
+                    "relevance_score": result.get('rerank_score', 1.0 - result.get('distance', 0.5))
+                })
+
+            response_data = {
+                "results": formatted_results,
+                "query_used": query,
+                "sources_searched": sources,
+                "total_results": len(formatted_results),
+                "auto_updated": auto_updated,
+                "cached": False
+            }
 
         # Cache the response for future requests
         if agentic_bp.intelligence_cache:
@@ -442,100 +473,194 @@ def fetch_latest_intelligence():
 @agentic_bp.route('/code/generate', methods=['POST'])
 def generate_code():
     """
-    Generate code using RAG-informed intelligence
+    Provide intelligence and patterns for AI-driven code generation
 
     POST /api/v2/code/generate
     {
         "technique_ids": ["syscalls", "injection"],
         "target_av": "CrowdStrike",
-        "use_rag_context": true,
+        "objective": "C2 beacon with process injection",
         "opsec_level": "high"
     }
+
+    Returns structured intelligence, implementation patterns, and function signatures
+    for the AI agent to use when writing code.
     """
     try:
         data = request.json
         technique_ids = data.get('technique_ids', [])
         target_av = data.get('target_av', 'Windows Defender')
-        use_rag = data.get('use_rag_context', True)
+        objective = data.get('objective', '')
         opsec_level = data.get('opsec_level', 'high')
 
         if not technique_ids:
             return jsonify({"error": "technique_ids required"}), 400
 
-        # If using RAG, gather intelligence first
-        rag_intelligence = {}
-        if use_rag:
+        # Normalize technique IDs
+        normalized_ids = [normalize_technique_id(tid) for tid in technique_ids]
+
+        logger.info(f"Generating code guidance for: {normalized_ids}, target: {target_av}")
+
+        # 1. Gather strategic intelligence for each technique
+        intelligence_by_technique = {}
+
+        if INTELLIGENCE_PROCESSOR:
             for tech_id in technique_ids:
+                # Search RAG for this technique + target AV
+                query = f"{tech_id} {target_av} evasion implementation"
                 results = agentic_bp.rag_engine.search_knowledge(
-                    query=f"{tech_id} implementation",
+                    query=query,
                     target_av=target_av,
-                    n_results=5
+                    n_results=8
                 )
-                rag_intelligence[tech_id] = results
 
-        # Generate code using code assembler
-        generated = agentic_bp.code_assembler.assemble(
-            technique_ids=technique_ids,
-            options={
-                'target_av': target_av,
-                'opsec_level': opsec_level
-            }
-        )
+                # Process into structured intelligence
+                if results:
+                    rag_formatted = []
+                    for result in results:
+                        rag_formatted.append({
+                            "content": result.get('content', result.get('document', '')),
+                            "source": result.get('source', 'unknown'),
+                            "title": result.get('metadata', {}).get('title', ''),
+                            "metadata": result.get('metadata', {})
+                        })
 
-        # Save generated code to files
-        import os
-        from datetime import datetime
-        
-        # Create output directory if it doesn't exist
-        # Get output directory from global config or default to 'output'
-        try:
-            from server.noctis_server import config
-            output_dir = config.get('paths.output', 'output')
-        except (ImportError, AttributeError):
-            output_dir = 'output'
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Generate unique filenames with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        technique_names = "_".join([t.replace('NOCTIS-T', 'T') for t in technique_ids])
-        
-        source_filename = f"generated_{technique_names}_{timestamp}.c"
-        header_filename = f"generated_{technique_names}_{timestamp}.h"
-        
-        source_path = os.path.join(output_dir, source_filename)
-        header_path = os.path.join(output_dir, header_filename)
-        
-        # Save source code
-        with open(source_path, 'w', encoding='utf-8') as f:
-            f.write(generated.source_code)
-        
-        # Save header code
-        with open(header_path, 'w', encoding='utf-8') as f:
-            f.write(generated.header_code)
-        
-        # Add RAG intelligence summary
-        response = generated.to_dict()
-        response['files_saved'] = {
-            'source_file': source_path,
-            'header_file': header_path,
-            'output_directory': output_dir
+                    intel = INTELLIGENCE_PROCESSOR.process_intelligence(
+                        rag_results=rag_formatted,
+                        query=query,
+                        target_av=target_av
+                    )
+                    intelligence_by_technique[tech_id] = intel
+
+        # 2. Extract implementation patterns from Examples/ folder
+        from server.utils.pattern_extractor import PatternExtractor
+        pattern_extractor = PatternExtractor()
+
+        patterns_by_technique = {}
+        for tech_id in normalized_ids:
+            # Get metadata for technique
+            if tech_id in agentic_bp.code_assembler.techniques:
+                technique_meta = agentic_bp.code_assembler.techniques[tech_id]
+                source_files = technique_meta.get('source_files', [])
+
+                if source_files:
+                    patterns = pattern_extractor.extract_patterns_for_technique(
+                        tech_id, source_files
+                    )
+                    patterns_by_technique[tech_id] = patterns
+
+        # 3. Get VX-API function signatures needed
+        vx_signatures = []
+        all_functions_mentioned = set()
+
+        # Collect functions from patterns
+        for patterns in patterns_by_technique.values():
+            for api_pattern in patterns.get('api_usage_patterns', []):
+                if 'syscalls_used' in api_pattern:
+                    all_functions_mentioned.update(api_pattern['syscalls_used'])
+                if 'apis_resolved' in api_pattern:
+                    all_functions_mentioned.update(api_pattern['apis_resolved'])
+
+        # Search VX-API for these functions
+        if all_functions_mentioned:
+            vx_query = ' '.join(list(all_functions_mentioned)[:10])
+            vx_results = agentic_bp.rag_engine.search_knowledge(
+                query=vx_query,
+                n_results=15
+            )
+
+            for result in vx_results:
+                if result.get('source') == 'vx_api':
+                    vx_signatures.append({
+                        'content': result.get('content', '')[:500],
+                        'relevance': result.get('rerank_score', 0.5)
+                    })
+
+        # 4. Synthesize overall guidance
+        overall_guidance = {
+            'objective': objective or f"Implement {', '.join(technique_ids)}",
+            'target_av': target_av,
+            'opsec_level': opsec_level,
+            'techniques_requested': technique_ids,
+
+            # Strategic intelligence (WHY and WHAT to avoid)
+            'intelligence': intelligence_by_technique,
+
+            # Implementation patterns (HOW real code does it)
+            'patterns': patterns_by_technique,
+
+            # Function signatures (BUILDING BLOCKS)
+            'vx_api_functions': vx_signatures,
+
+            # High-level recommendations
+            'synthesis': self._synthesize_guidance(
+                intelligence_by_technique,
+                patterns_by_technique,
+                target_av,
+                opsec_level
+            )
         }
-        
-        if use_rag:
-            response['rag_intelligence_used'] = {
-                "github_patterns": sum(1 for tech in rag_intelligence.values()
-                                      for r in tech if r.get('source') == 'github'),
-                "research_insights": sum(1 for tech in rag_intelligence.values()
-                                        for r in tech if r.get('source') == 'research'),
-                "blog_recommendations": sum(1 for tech in rag_intelligence.values()
-                                           for r in tech if r.get('source') == 'blog')
-            }
 
-        return jsonify(response)
+        return jsonify(overall_guidance)
 
     except Exception as e:
-        logger.exception(f"Code generation failed: {e}")
+        logger.exception(f"Code guidance generation failed: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+def _synthesize_guidance(intelligence_by_technique, patterns_by_technique, target_av, opsec_level):
+    """Synthesize high-level guidance from intelligence and patterns"""
+    synthesis = {
+        'recommended_approach': [],
+        'key_considerations': [],
+        'opsec_warnings': [],
+        'implementation_order': []
+    }
+
+    # Aggregate OPSEC scores
+    all_opsec_scores = []
+    for intel in intelligence_by_technique.values():
+        for rec in intel.get('recommendations', []):
+            all_opsec_scores.append(rec.get('opsec_score', 5))
+
+    avg_opsec = sum(all_opsec_scores) / len(all_opsec_scores) if all_opsec_scores else 5
+
+    # Generate recommendations
+    if avg_opsec >= 8:
+        synthesis['recommended_approach'].append(
+            f"High OPSEC potential (avg {avg_opsec:.1f}/10) - proceed with recommended techniques"
+        )
+    elif avg_opsec >= 6:
+        synthesis['recommended_approach'].append(
+            f"Medium OPSEC (avg {avg_opsec:.1f}/10) - implement carefully with additional obfuscation"
+        )
+    else:
+        synthesis['recommended_approach'].append(
+            f"Low OPSEC (avg {avg_opsec:.1f}/10) - consider alternative techniques or heavy obfuscation"
+        )
+
+    # Extract key implementation steps from patterns
+    for tech_id, patterns in patterns_by_technique.items():
+        for func_seq in patterns.get('function_sequences', []):
+            synthesis['implementation_order'].append({
+                'technique': tech_id,
+                'sequence': func_seq.get('sequence', ''),
+                'description': func_seq.get('description', '')
+            })
+
+    # Aggregate warnings
+    for intel in intelligence_by_technique.values():
+        warnings = intel.get('warnings', [])
+        synthesis['opsec_warnings'].extend(warnings[:2])  # Top 2 per technique
+
+    # Add key considerations from memory patterns
+    for patterns in patterns_by_technique.values():
+        mem_patterns = patterns.get('memory_patterns', [])
+        for pattern in mem_patterns:
+            if '⚠' in pattern:
+                synthesis['key_considerations'].append(pattern)
+
+    return synthesis
 
 
 # ================================================================
