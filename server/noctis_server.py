@@ -231,242 +231,6 @@ def health_check():
     })
 
 
-@app.route('/api/techniques', methods=['GET'])
-def get_techniques():
-    """
-    Get all techniques or filter by parameters
-    
-    Query parameters:
-      - category: Filter by category
-      - mitre: Filter by MITRE ATT&CK ID
-      - search: Search by name/description
-    """
-    # Get query parameters
-    category = request.args.get('category')
-    mitre = request.args.get('mitre')
-    search = request.args.get('search')
-    
-    # Apply filters
-    if category:
-        techniques = technique_manager.get_by_category(category)
-    elif mitre:
-        techniques = technique_manager.get_by_mitre(mitre)
-    elif search:
-        techniques = technique_manager.search(search)
-    else:
-        techniques = technique_manager.get_all()
-    
-    return jsonify({
-        'success': True,
-        'count': len(techniques),
-        'techniques': techniques
-    })
-
-
-@app.route('/api/techniques/<technique_id>', methods=['GET'])
-def get_technique(technique_id: str):
-    """Get a specific technique by ID"""
-    technique = technique_manager.get_by_id(technique_id)
-    
-    if not technique:
-        return jsonify({
-            'success': False,
-            'error': f'Technique {technique_id} not found'
-        }), 404
-    
-    return jsonify({
-        'success': True,
-        'technique': technique
-    })
-
-
-@app.route('/api/categories', methods=['GET'])
-def get_categories():
-    """Get all available technique categories"""
-    categories = {}
-    for technique in technique_manager.get_all():
-        cat = technique.get('category', 'other')
-        categories[cat] = categories.get(cat, 0) + 1
-    
-    return jsonify({
-        'success': True,
-        'categories': [
-            {'name': cat, 'count': count}
-            for cat, count in sorted(categories.items())
-        ]
-    })
-
-
-@app.route('/api/mitre', methods=['GET'])
-def get_mitre_mappings():
-    """Get all MITRE ATT&CK mappings"""
-    mitre_map = {}
-    for technique in technique_manager.get_all():
-        for mitre_id in technique.get('mitre_attack', []):
-            if mitre_id not in mitre_map:
-                mitre_map[mitre_id] = []
-            mitre_map[mitre_id].append({
-                'id': technique.get('technique_id'),
-                'name': technique.get('name')
-            })
-    
-    return jsonify({
-        'success': True,
-        'mappings': mitre_map
-    })
-
-
-@app.route('/api/generate', methods=['POST'])
-def generate_code():
-    """
-    Generate malware code based on specifications
-    
-    Request body:
-      - techniques: List of technique IDs to combine (required)
-      - target_os: Target operating system (default: Windows)
-      - payload_type: Type of payload (default: loader)
-      - obfuscate_strings: Enable string encryption (default: False)
-      - obfuscate_apis: Enable API hashing (default: False)
-      - encryption_method: String encryption method: xor, aes, rc4 (default: xor)
-      - hash_method: API hash method: djb2, rot13xor, crc32 (default: djb2)
-      - flatten_control_flow: Enable control flow flattening (default: False)
-      - insert_junk_code: Enable junk code insertion (default: False)
-      - junk_density: Junk code density: low, medium, high (default: medium)
-      - polymorphic: Enable polymorphic code generation (default: False)
-      - mutation_level: Polymorphic mutation level: low, medium, high (default: medium)
-    """
-    data = request.get_json()
-    
-    if not data:
-        return jsonify({
-            'success': False,
-            'error': 'No data provided'
-        }), 400
-    
-    techniques = data.get('techniques', [])
-    target_os = data.get('target_os', 'Windows')
-    payload_type = data.get('payload_type', 'loader')
-    obfuscate_strings = data.get('obfuscate_strings', False)
-    obfuscate_apis = data.get('obfuscate_apis', False)
-    encryption_method = data.get('encryption_method', 'xor')
-    hash_method = data.get('hash_method', 'djb2')
-    flatten_control_flow = data.get('flatten_control_flow', False)
-    insert_junk_code = data.get('insert_junk_code', False)
-    junk_density = data.get('junk_density', 'medium')
-    polymorphic = data.get('polymorphic', False)
-    mutation_level = data.get('mutation_level', 'medium')
-    
-    if not techniques:
-        return jsonify({
-            'success': False,
-            'error': 'No techniques specified'
-        }), 400
-    
-    try:
-        # Import code assembler
-        from server.code_assembler import CodeAssembler
-        
-        logger.info(f"Generating code for {len(techniques)} techniques")
-        assembler = CodeAssembler()
-        result = assembler.assemble(techniques)
-        
-        code = result.source_code
-        additional_code = ""
-        obfuscation_info = {}
-        
-        # Apply obfuscation if requested
-        if obfuscate_strings:
-            logger.info(f"Applying string encryption: {encryption_method}")
-            from server.obfuscation import StringEncryptor
-            
-            encryptor = StringEncryptor(method=encryption_method)
-            code, decryption_funcs = encryptor.encrypt_code(code)
-            additional_code += decryption_funcs + "\n"
-            
-            obfuscation_info['strings_encrypted'] = len(encryptor.encrypted_strings)
-            obfuscation_info['encryption_method'] = encryption_method
-        
-        if obfuscate_apis:
-            logger.info(f"Applying API hashing: {hash_method}")
-            from server.obfuscation import APIHasher
-            
-            hasher = APIHasher(hash_method=hash_method)
-            code, resolver_code = hasher.obfuscate_code(code)
-            additional_code = resolver_code + "\n" + additional_code
-            
-            obfuscation_info['apis_hashed'] = len(hasher.hashed_apis)
-            obfuscation_info['hash_method'] = hash_method
-        
-        # Apply control flow flattening
-        if flatten_control_flow:
-            logger.info("Applying control flow flattening")
-            from server.obfuscation import flatten_control_flow as apply_flatten
-            
-            code = apply_flatten(code)
-            obfuscation_info['control_flow_flattened'] = True
-        
-        # Insert junk code
-        if insert_junk_code:
-            logger.info(f"Inserting junk code: {junk_density}")
-            from server.obfuscation import insert_junk_code as apply_junk
-            
-            code, num_insertions = apply_junk(code, junk_density)
-            obfuscation_info['junk_code_inserted'] = num_insertions
-            obfuscation_info['junk_density'] = junk_density
-        
-        # Apply polymorphic mutations
-        if polymorphic:
-            logger.info(f"Applying polymorphic mutations: {mutation_level}")
-            from server.polymorphic import PolymorphicEngine
-            
-            poly_engine = PolymorphicEngine()
-            code, variant_info = poly_engine.generate_variant(code, mutation_level)
-            
-            obfuscation_info['polymorphic'] = True
-            obfuscation_info['mutation_level'] = mutation_level
-            obfuscation_info['variant_uniqueness'] = variant_info['uniqueness_percent']
-            obfuscation_info['mutations_applied'] = variant_info['mutations_applied']['mutations']
-        
-        # Combine
-        final_code = additional_code + code if additional_code else code
-        
-        logger.info(f"Code generation complete")
-        
-        return jsonify({
-            'success': True,
-            'code': final_code,
-            'header': result.header_code,
-            'techniques_used': result.technique_ids,
-            'dependencies': result.dependencies,
-            'conflicts': result.conflicts,
-            'warnings': result.warnings,
-            'opsec_notes': result.opsec_notes,
-            'mitre_ttps': result.mitre_ttps,
-            'obfuscation': obfuscation_info,
-            'target_os': target_os,
-            'payload_type': payload_type,
-            'message': f'Generated code for {len(techniques)} techniques'
-        })
-        
-    except (ImportError, ModuleNotFoundError) as e:
-        logger.error(f"Code generation dependency error: {e}")
-        return jsonify({
-            'success': False,
-            'error': f"A required module is missing: {e}. Please check server dependencies."
-        }), 500
-    except KeyError as e:
-        logger.error(f"Missing key in code generation request: {e}")
-        return jsonify({'success': False, 'error': f'Missing required parameter: {e}'}), 400
-    except Exception as e:
-        logger.error(f"Code generation error: {e}")
-        import traceback
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }), 500
-
-
 @app.route('/api/compile', methods=['POST'])
 def compile_code():
     """
@@ -621,191 +385,9 @@ def compile_code():
         }), 500
 
 
-@app.route('/api/analyze/opsec', methods=['POST'])
-def analyze_opsec():
-    """
-    Analyze code for OPSEC issues
-    
-    Request body:
-      - code: Source code to analyze (required)
-    """
-    data = request.get_json()
-    
-    if not data:
-        return jsonify({
-            'success': False,
-            'error': 'No data provided'
-        }), 400
-    
-    code = data.get('code')
-    if not code:
-        return jsonify({
-            'success': False,
-            'error': 'code is required'
-        }), 400
-    
-    try:
-        # Import OpsecAnalyzer
-        from server.opsec_analyzer import OpsecAnalyzer
-        
-        # Analyze code
-        logger.info("Performing OPSEC analysis")
-        analyzer = OpsecAnalyzer()
-        report = analyzer.analyze(code)
-        
-        logger.info(f"OPSEC analysis complete: Score {report.overall_score}/10")
-        
-        return jsonify({
-            'success': True,
-            'opsec_report': report.to_dict(),
-            'message': f'OPSEC analysis complete - Score: {report.overall_score}/10'
-        })
-        
-    except (ImportError, ModuleNotFoundError) as e:
-        logger.error(f"OPSEC analyzer dependency error: {e}")
-        return jsonify({
-            'success': False,
-            'error': f"A required module is missing: {e}. Please check server dependencies."
-        }), 500
-    except Exception as e:
-        logger.error(f"OPSEC analysis error: {e}")
-        import traceback
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }), 500
-
-
 # ============================================================================
 # C2 INTEGRATION ENDPOINTS (Phase 4)
 # ============================================================================
-
-@app.route('/api/learning/report_detection', methods=['POST'])
-def report_detection():
-    """Record AV/EDR detection feedback"""
-    try:
-        from server.learning_engine import LearningEngine, DetectionFeedback
-        from datetime import datetime
-        
-        data = request.get_json()
-        
-        # Initialize learning engine
-        engine = LearningEngine()
-        
-        # Create feedback object
-        feedback = DetectionFeedback(
-            timestamp=datetime.now().isoformat(),
-            techniques_used=data.get('techniques_used', []),
-            av_edr=data.get('av_edr'),
-            detected=data.get('detected'),
-            detection_type=data.get('detection_type'),
-            obfuscation_level=data.get('obfuscation_level'),
-            notes=data.get('notes')
-        )
-        
-        # Record feedback
-        engine.record_detection(feedback)
-        
-        # Get updated stats
-        stats = {}
-        for technique_id in feedback.techniques_used:
-            tech_stats = engine.get_technique_stats(technique_id)
-            if tech_stats:
-                stats[technique_id] = {
-                    'total_uses': tech_stats.total_uses,
-                    'compilation_success_rate': round(tech_stats.compilation_success_rate, 3),
-                    'detection_rate': {
-                        av: round(rate, 3)
-                        for av, rate in tech_stats.detection_rate.items()
-                    }
-                }
-        
-        return jsonify({
-            'success': True,
-            'message': 'Detection feedback recorded successfully',
-            'insights': {
-                'av_edr': feedback.av_edr,
-                'detected': feedback.detected,
-                'techniques_tested': len(feedback.techniques_used)
-            },
-            'stats': stats
-        })
-        
-    except (ImportError, ModuleNotFoundError) as e:
-        logger.error(f"Learning engine dependency error: {e}")
-        return jsonify({'success': False, 'error': f"A required module is missing: {e}."}), 500
-    except KeyError as e:
-        logger.error(f"Missing key in detection report: {e}")
-        return jsonify({'success': False, 'error': f'Missing required parameter in detection report: {e}'}), 400
-    except Exception as e:
-        logger.error(f"Error recording detection feedback: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@app.route('/api/learning/recommendations', methods=['GET'])
-def get_recommendations():
-    """Get technique recommendations based on learned data"""
-    try:
-        from server.learning_engine import LearningEngine
-        
-        target_av = request.args.get('target_av')
-        category = request.args.get('category')
-        min_success_rate = float(request.args.get('min_success_rate', 0.7))
-        
-        # Initialize learning engine
-        engine = LearningEngine()
-        
-        # Get recommendations
-        recommendations = engine.recommend_techniques(
-            target_av=target_av,
-            category=category,
-            min_success_rate=min_success_rate
-        )
-        
-        # Format results
-        results = []
-        for technique_id, score in recommendations[:10]:  # Top 10
-            tech_stats = engine.get_technique_stats(technique_id)
-            if tech_stats:
-                results.append({
-                    'technique_id': technique_id,
-                    'name': tech_stats.name,
-                    'score': round(score, 3),
-                    'total_uses': tech_stats.total_uses,
-                    'compilation_success_rate': round(tech_stats.compilation_success_rate, 3),
-                    'detection_rates': {
-                        av: round(rate, 3)
-                        for av, rate in tech_stats.detection_rate.items()
-                    }
-                })
-        
-        return jsonify({
-            'success': True,
-            'recommendations': results,
-            'criteria': {
-                'target_av': target_av,
-                'category': category,
-                'min_success_rate': min_success_rate
-            }
-        })
-        
-    except (ImportError, ModuleNotFoundError) as e:
-        logger.error(f"Learning engine dependency error: {e}")
-        return jsonify({'success': False, 'error': f"A required module is missing: {e}."}), 500
-    except ValueError as e:
-        logger.error(f"Invalid parameter type for recommendations: {e}")
-        return jsonify({'success': False, 'error': f"Invalid parameter type provided: {e}"}), 400
-    except Exception as e:
-        logger.error(f"Error getting recommendations: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
 
 @app.route('/api/c2/sliver/generate', methods=['POST'])
 def generate_sliver_beacon():
@@ -1319,7 +901,6 @@ def main():
 # AGENT-BASED API ENDPOINTS (V2)
 # ============================================================================
 
-@app.route('/api/v2/agents/technique-selection', methods=['POST'])
 def api_v2_technique_selection():
     """
     AI-powered technique selection using TechniqueSelectionAgent
@@ -1359,7 +940,6 @@ def api_v2_technique_selection():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/api/v2/agents/malware-development', methods=['POST'])
 def api_v2_malware_development():
     """
     Autonomous malware development using MalwareDevelopmentAgent
@@ -1399,7 +979,6 @@ def api_v2_malware_development():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/api/v2/agents/opsec-optimization', methods=['POST'])
 def api_v2_opsec_optimization():
     """
     OPSEC optimization using OpsecOptimizationAgent
@@ -1435,7 +1014,6 @@ def api_v2_opsec_optimization():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/api/v2/agents/learning', methods=['POST'])
 def api_v2_learning():
     """
     Learning agent for feedback collection
@@ -1473,7 +1051,6 @@ def api_v2_learning():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/api/v2/agents/status', methods=['GET'])
 def api_v2_agents_status():
     """Get status of all registered agents"""
     try:

@@ -39,6 +39,9 @@ class IntelligenceProcessor:
             'VirtualAlloc', 'CreateThread', 'WriteProcessMemory'
         ]
 
+        # MITRE ATT&CK pattern - matches T1234, T1234.001, etc.
+        self.mitre_pattern = re.compile(r'T\d{4}(?:\.\d{3})?')
+
     def process_intelligence(
         self,
         rag_results: List[Dict],
@@ -74,11 +77,14 @@ class IntelligenceProcessor:
         implementation_patterns = self._process_github(github)
         function_signatures = self._process_vx_api(vx_api)
 
+        # Extract MITRE ATT&CK TTPs from all sources
+        mitre_ttps = self._extract_mitre_ttps(rag_results)
+
         # Synthesize into actionable intelligence
         recommendations = self._synthesize_recommendations(
             strategic_guidance, current_detections, implementation_patterns, target_av
         )
-        warnings = self._extract_warnings(strategic_guidance + current_detections, target_av)
+        warnings = self._extract_warnings(strategic_guidance, current_detections, target_av)
         opsec_analysis = self._generate_opsec_analysis(recommendations, warnings, target_av)
         summary = self._generate_summary(recommendations, warnings, current_detections, target_av)
 
@@ -89,6 +95,7 @@ class IntelligenceProcessor:
             "detection_patterns": current_detections.get('patterns', []),
             "implementation_patterns": implementation_patterns,
             "function_signatures": function_signatures,
+            "mitre_ttps": mitre_ttps,
             "opsec_analysis": opsec_analysis,
             "sources_analyzed": {
                 "knowledge_base": len(knowledge),
@@ -343,12 +350,13 @@ class IntelligenceProcessor:
         recommendations.sort(key=lambda x: x['opsec_score'], reverse=True)
         return recommendations[:5]
 
-    def _extract_warnings(self, results: List[Dict], target_av: Optional[str]) -> List[str]:
+    def _extract_warnings(self, strategic_guidance: List[Dict], current_detections: Dict, target_av: Optional[str]) -> List[str]:
         """Extract warnings from strategic and current intelligence"""
         warnings = []
 
-        for result in results:
-            content = result.get('info', '') or result.get('reasoning', '')
+        # Extract from strategic guidance
+        for result in strategic_guidance:
+            content = result.get('reasoning', '')
 
             if any(kw in content.lower() for kw in self.detection_keywords):
                 # Extract warning
@@ -362,6 +370,12 @@ class IntelligenceProcessor:
                                 warning = f"⚠ {warning}"
                             warnings.append(warning[:250])
                             break
+
+        # Extract from current detection patterns
+        for pattern in current_detections.get('patterns', []):
+            info = pattern.get('info', '')
+            if info:
+                warnings.append(f"⚠ {info[:250]}")
 
         return list(set(warnings))[:5]
 
@@ -419,6 +433,27 @@ class IntelligenceProcessor:
 
         return ' '.join(parts) if parts else "Intelligence analysis complete."
 
+    def _extract_mitre_ttps(self, rag_results: List[Dict]) -> List[str]:
+        """
+        Extract MITRE ATT&CK TTPs from RAG results
+
+        Searches all content for MITRE patterns like T1055, T1055.001, etc.
+
+        Returns:
+            List of unique MITRE TTP IDs
+        """
+        ttps = set()
+
+        for result in rag_results:
+            content = result.get('content', '')
+
+            # Find all MITRE patterns in content
+            matches = self.mitre_pattern.findall(content)
+            ttps.update(matches)
+
+        # Sort for consistent output
+        return sorted(list(ttps))
+
     def _empty_intelligence(self) -> Dict[str, Any]:
         """Return empty intelligence structure"""
         return {
@@ -428,6 +463,7 @@ class IntelligenceProcessor:
             "detection_patterns": [],
             "implementation_patterns": [],
             "function_signatures": [],
+            "mitre_ttps": [],
             "opsec_analysis": "Insufficient data.",
             "sources_analyzed": {"knowledge_base": 0, "github_repos": 0, "security_blogs": 0, "vx_api": 0}
         }

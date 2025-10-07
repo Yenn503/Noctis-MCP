@@ -52,7 +52,7 @@ Edit `~/.cursor/mcp.json`:
       "command": "/path/to/Noctis-MCP/venv/bin/python",
       "args": ["-m", "noctis_mcp_client.noctis_mcp"],
       "cwd": "/path/to/Noctis-MCP",
-      "description": "Noctis-MCP v3.0-agentic - RAG-Powered Malware Development (20 agentic tools)",
+      "description": "Noctis-MCP v2.0 - Hybrid Intelligence System for Malware Development (16 tools)",
       "timeout": 300,
       "env": {
         "PYTHONPATH": "/path/to/Noctis-MCP"
@@ -115,7 +115,7 @@ Edit `~/.cursor/mcp.json`:
       "command": "/path/to/Noctis-MCP/venv/bin/python",
       "args": ["-m", "noctis_mcp_client.noctis_mcp"],
       "cwd": "/path/to/Noctis-MCP",
-      "description": "Noctis-MCP v3.0-agentic - RAG-Powered Malware Development (20 agentic tools)",
+      "description": "Noctis-MCP v2.0 - Hybrid Intelligence System for Malware Development (16 tools)",
       "timeout": 300,
       "env": {
         "PYTHONPATH": "/path/to/Noctis-MCP"
@@ -170,7 +170,7 @@ Edit `%APPDATA%\Cursor\User\mcp.json`:
       "command": "C:\\path\\to\\Noctis-MCP\\venv\\Scripts\\python.exe",
       "args": ["-m", "noctis_mcp_client.noctis_mcp"],
       "cwd": "C:\\path\\to\\Noctis-MCP",
-      "description": "Noctis-MCP v3.0-agentic - RAG-Powered Malware Development (20 agentic tools)",
+      "description": "Noctis-MCP v2.0 - Hybrid Intelligence System for Malware Development (16 tools)",
       "timeout": 300,
       "env": {
         "PYTHONPATH": "C:\\path\\to\\Noctis-MCP"
@@ -214,37 +214,29 @@ curl http://localhost:8888/api/v2/rag/stats
 ### 4. Test MCP Tools in Cursor
 Ask: **"What MCP tools do you have access to?"**
 
-You should see 20 Noctis tools organized by category:
+You should see 16 Noctis tools organized by category:
 
-**Intelligence & Research (5 tools):**
-- `search_intelligence` - Search malware techniques via RAG
-- `analyze_technique` - Deep-dive into specific techniques
-- `fetch_latest` - Get latest offensive security research
-- `compare_techniques` - Compare multiple techniques
-- `rag_stats` - View intelligence database statistics
-
-**Interactive Learning (5 tools):**
-- `get_learning_topics` - List all available learning topics
-- `start_lesson` - Begin interactive lesson on a technique
-- `get_lesson_module` - Retrieve specific lesson module
-- `take_quiz` - Test knowledge with quizzes
-- `get_learning_progress` - View learning progress and achievements
-
-**Code Generation (3 tools):**
-- `generate_code` - Generate malware code with RAG context
-- `optimize_opsec` - Enhance code for OPSEC
-- `validate_code` - Security analysis of generated code
-
-**Development Tools (4 tools):**
-- `select_techniques` - Choose techniques for specific scenarios
+**Core Malware Tools (6):**
+- `search_intelligence` - Search malware techniques via RAG with MITRE TTPs and OPSEC scores
+- `generate_code` - Get structured guidance for AI to write malware code
+- `optimize_opsec` - Get OPSEC improvement recommendations for existing code
+- `validate_code` - Check code quality and get security warnings
 - `compile_code` - Cross-compile for Windows from any OS
-- `record_feedback` - Improve RAG with feedback
-- `execute_shellcode` - Test and debug shellcode
+- `record_feedback` - Record detection results to improve system learning
 
-**Advanced Tools (3 tools):**
-- `dynamic_function_call` - Execute server functions dynamically
-- `advanced_evasion` - Advanced AV/EDR evasion techniques
-- `advanced_syscalls` - Direct/indirect syscall implementation
+**Education System (9 tools):**
+- `list_learning_topics` - Browse 10 curated malware development techniques
+- `start_lesson` - Begin interactive lesson on a specific technique
+- `get_lesson_module` - Retrieve specific lesson module content
+- `take_quiz` - Test knowledge with interactive quizzes
+- `get_learning_progress` - View learning progress and achievements
+- `check_understanding` - Validate comprehension of current lesson
+- `list_quizzes` - Browse available quizzes by technique
+- `get_quiz_results` - Review quiz performance history
+- `reset_progress` - Reset learning progress for fresh start
+
+**Utility (1):**
+- `rag_stats` - View RAG system health and indexed source statistics
 
 ---
 
