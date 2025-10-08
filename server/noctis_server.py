@@ -695,95 +695,21 @@ def install_c2_framework():
                 'supported': ['sliver', 'mythic']
             }), 400
 
-        # Import C2 installer
-        from server.utils.c2_installer import C2Installer
-
-        # Check prerequisites
-        logger.info(f"[C2 Install] Checking prerequisites...")
-        prereqs = C2Installer.check_prerequisites()
-
-        if not all(prereqs.values()):
-            missing = [k for k, v in prereqs.items() if not v]
-            return jsonify({
-                'success': False,
-                'error': 'Missing prerequisites for C2 installation',
-                'missing_prerequisites': missing,
-                'prerequisites': prereqs
-            }), 400
-
-        # Install framework
-        logger.info(f"[C2 Install] Installing {framework}...")
-
-        if framework == 'sliver':
-            result = C2Installer.install_sliver(verbose=True)
-        elif framework == 'mythic':
-            if install_dir:
-                result = C2Installer.install_mythic(install_dir=install_dir, verbose=True)
-            else:
-                result = C2Installer.install_mythic(verbose=True)
-
-        # Return result
-        if result['success']:
-            logger.info(f"[C2 Install] {framework} installed successfully")
-
-            response_data = {
-                'success': True,
-                'framework': framework,
-                'message': result['message'],
-                'install_path': result.get('install_path'),
-                'install_time': result.get('install_time'),
-                'next_steps': []
-            }
-
-            # Add next steps based on framework
-            if framework == 'sliver':
-                response_data['next_steps'] = [
-                    'Start Sliver server: sliver-server',
-                    'Connect client: sliver-client',
-                    'Create listener: https --lhost <IP> --lport 443',
-                    'Generate beacon: Call generate_c2_beacon() MCP tool'
-                ]
-                response_data['mcp_example'] = 'generate_c2_beacon("sliver", "10.0.0.1", 443, "https")'
-
-            elif framework == 'mythic':
-                response_data['ui_url'] = result.get('ui_url', 'https://127.0.0.1:7443')
-                response_data['next_steps'] = [
-                    f'Access Mythic UI: {response_data["ui_url"]}',
-                    'Get credentials from install directory',
-                    'Create listener via UI',
-                    'Generate agent: Call generate_c2_beacon() MCP tool with API token'
-                ]
-                response_data['mcp_example'] = 'generate_c2_beacon("mythic", "10.0.0.1", 80, "http", api_token="<token>")'
-
-            return jsonify(response_data)
-        else:
-            logger.error(f"[C2 Install] Installation failed: {result['message']}")
-            return jsonify({
-                'success': False,
-                'framework': framework,
-                'error': result['message'],
-                'install_time': result.get('install_time'),
-                'troubleshooting': {
-                    'sliver': 'Check sudo access and internet connectivity. Run: curl https://sliver.sh/install',
-                    'mythic': 'Ensure Docker is installable. Check: /opt/Mythic/install_docker_ubuntu.sh'
-                }.get(framework)
-            }), 500
-
-    except ImportError as e:
-        logger.error(f"[C2 Install] Import error: {e}")
+        # C2 installer removed - install C2 frameworks manually
         return jsonify({
             'success': False,
-            'error': f'C2 installer module not found: {e}',
-            'fix': 'Ensure server/utils/c2_installer.py exists'
-        }), 500
-
+            'error': 'Legacy C2 install endpoint deprecated',
+            'message': 'Install C2 frameworks manually or use /api/v2/generate_beacon',
+            'sliver_install': 'curl https://sliver.sh/install | sudo bash',
+            'mythic_install': 'git clone https://github.com/its-a-feature/Mythic && cd Mythic && sudo ./install_docker_ubuntu.sh',
+            'adaptix_install': 'Visit https://github.com/Adaptix-Framework/AdaptixC2',
+            'new_endpoint': 'POST /api/v2/generate_beacon'
+        }), 410
     except Exception as e:
         logger.error(f"[C2 Install] Error: {e}")
-        import traceback
         return jsonify({
             'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
+            'error': str(e)
         }), 500
 
 
@@ -836,19 +762,16 @@ def start_c2_listener(framework):
                 'error': 'lhost and lport are required'
             }), 400
 
-        # Check if framework is installed
-        from server.utils.c2_detector import C2Detector
-
-        frameworks = C2Detector.detect_all()
-        if framework not in frameworks:
-            return jsonify({
-                'success': False,
-                'error': f'{framework} is not installed',
-                'suggestion': f'Install using: POST /api/c2/install with framework={framework}',
-                'installed_frameworks': list(frameworks.keys())
-            }), 400
-
-        logger.info(f"[C2 Listener] Starting {framework} listener on {protocol}://{lhost}:{lport}")
+        # C2 listener endpoint deprecated - configure listeners manually
+        return jsonify({
+            'success': False,
+            'error': 'Legacy C2 listener endpoint deprecated',
+            'message': 'Configure C2 listeners manually or use /api/v2/generate_beacon',
+            'sliver_setup': 'Run sliver-client, then: https --lhost <IP> --lport 443',
+            'mythic_setup': 'Configure listener in Mythic UI at https://127.0.0.1:7443',
+            'adaptix_setup': 'Configure listener in Adaptix UI',
+            'new_endpoint': 'POST /api/v2/generate_beacon (handles listener detection automatically)'
+        }), 410
 
         # Framework-specific listener setup
         if framework == 'sliver':
@@ -1122,16 +1045,7 @@ def main():
         logger.warning("Agentic features will be disabled")
         rag_engine = None
 
-    # Initialize code assembler with RAG
-    from server.code_assembler import CodeAssembler
-    code_assembler = CodeAssembler(rag_engine=rag_engine)
-    logger.info("Code assembler initialized with RAG support")
-
-    # Initialize learning engine (v2)
-    from server.learning_engine import AgenticLearningEngine
-    db_path = config.get('paths.database', 'data/knowledge_base.db')
-    learning_engine = AgenticLearningEngine(db_path=db_path)
-    logger.info("Learning engine initialized")
+    # Code assembler and learning engine removed - functionality moved to agentic_api.py
 
     # Register agentic API endpoints
     if rag_engine and rag_engine.enabled:
