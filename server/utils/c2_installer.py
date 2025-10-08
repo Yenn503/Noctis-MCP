@@ -167,10 +167,10 @@ class C2Installer:
             parent_dir = os.path.dirname(install_dir)
             os.makedirs(parent_dir, exist_ok=True)
 
-            clone_cmd = f'sudo git clone https://github.com/its-a-feature/Mythic.git {install_dir}'
+            # Use shell=False to prevent command injection via install_dir
             process = subprocess.run(
-                clone_cmd,
-                shell=True,
+                ['sudo', 'git', 'clone', 'https://github.com/its-a-feature/Mythic.git', install_dir],
+                shell=False,
                 capture_output=not verbose,
                 text=True,
                 timeout=180
@@ -189,8 +189,14 @@ class C2Installer:
             if verbose:
                 logger.info("[C2 Installer] Installing Docker...")
 
-            docker_cmd = f'cd {install_dir} && sudo ./install_docker_ubuntu.sh'
-            subprocess.run(docker_cmd, shell=True, capture_output=True, timeout=300)
+            # Use shell=False and cwd parameter to prevent command injection
+            subprocess.run(
+                ['sudo', './install_docker_ubuntu.sh'],
+                cwd=install_dir,
+                shell=False,
+                capture_output=True,
+                timeout=300
+            )
 
             # Start Mythic
             if verbose:

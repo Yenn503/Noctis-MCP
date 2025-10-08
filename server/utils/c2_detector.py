@@ -98,7 +98,8 @@ class C2Detector:
             # Check for server
             server_path = shutil.which('sliver-server')
             if not server_path:
-                server_path = client_path.replace('client', 'server')
+                # Replace only first occurrence of '-client' with '-server'
+                server_path = client_path.replace('-client', '-server', 1)
                 if not os.path.exists(server_path):
                     server_path = None
 
@@ -152,7 +153,7 @@ class C2Detector:
                 import requests
                 response = requests.get('https://127.0.0.1:7443', verify=False, timeout=2)
                 running = True
-            except:
+            except Exception:
                 pass
 
             return {

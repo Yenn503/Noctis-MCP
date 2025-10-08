@@ -206,7 +206,7 @@ class VirusTotalAPI:
                         logger.info(f"Analysis status: {analysis_obj.status}... waiting")
                         time.sleep(10)
 
-                    logger.error("Analysis timeout")
+                    logger.error(f"Analysis timeout for {analysis_id} after {max_wait}s (hash: {file_hash[:8]}...)")
                     return None
 
         except ImportError:

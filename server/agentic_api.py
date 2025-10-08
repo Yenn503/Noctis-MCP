@@ -401,7 +401,8 @@ def fetch_latest_intelligence():
             from datetime import datetime, timedelta
 
             cache_file = f"data/fetch_cache_{topic.replace(' ', '_')}.json"
-            if os.path.exists(cache_file):
+            # Fix TOCTOU race: use try-except instead of exists() check
+            try:
                 with open(cache_file, 'r') as f:
                     cache = json.load(f)
 
@@ -413,6 +414,8 @@ def fetch_latest_intelligence():
                         "cached": True,
                         "cache_age_hours": (datetime.now() - cached_time).seconds // 3600
                     }), 200
+            except FileNotFoundError:
+                pass  # Cache doesn't exist, continue to fetch
 
         # Import live intelligence module
         from server.intelligence import LiveIntelligence
