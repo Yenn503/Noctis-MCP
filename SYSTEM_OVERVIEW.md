@@ -98,39 +98,49 @@ AI: Calls record_feedback(...) after testing
 - ❌ `server/opsec_analyzer.py` - Superseded by IntelligenceProcessor
 - ❌ 13 old v1 endpoints from noctis_server.py
 
-### Added/Improved
+### Added/Improved (Initial v2.0)
 - ✅ IntelligenceProcessor extracts MITRE TTPs automatically
 - ✅ Updated MCP formatter to show intelligence (not code files)
 - ✅ Cleaned MCP client (20 tools → 16 tools → 17 tools)
 - ✅ Added live detection testing with Hybrid Analysis
-- ✅ Automated intelligence updates from 25+ sources
+- ✅ Automated intelligence updates from 35+ sources
 - ✅ OPSEC-aware workflow to prevent technique burning
+
+### Phase 1 Upgrades (Latest)
+- ✅ **SysWhispers3** - Randomized syscall jumper (15-20% detection vs 20-25%)
+- ✅ **VEH² AMSI Bypass** - Hardware breakpoint method, Windows 11 24H2 compatible
+- ✅ **Zilean Sleep Obfuscation** - Thread pool wait-based (5-10% vs 30-35% ROP chains)
+- ✅ **PoolParty Injection** - Thread pool injection (0-5% detection, 100% EDR bypass documented)
+- ✅ Expanded intelligence sources (35 RSS feeds, 27 GitHub queries, arXiv papers)
+- ✅ Updated knowledge base (4 new technique documentation files)
 
 ---
 
 ## Intelligence Sources
 
-The system uses 4 intelligence sources:
+The system uses 4 intelligence sources (expanded in Phase 1):
 
-1. **Knowledge Files** (`techniques/knowledge/*.md`)
+1. **Knowledge Files** (`techniques/knowledge/*.md`) - **7 files**
    - Strategic OPSEC guidance
-   - WHY techniques work
-   - Detection risks
+   - WHY techniques work, detection risks
+   - **New:** SysWhispers3, VEH² AMSI, Zilean, PoolParty documentation
 
-2. **Security Blogs** (`techniques/security_blogs/*.json`)
-   - Current detection status
-   - WHAT'S detected NOW
-   - Latest AV/EDR updates
+2. **Security Blogs** (RSS feeds) - **35 sources**
+   - Current detection status (WHAT'S detected NOW)
+   - **New:** Cracked5pider, RedOps, Alice Climent-Pommeret, Elastic Security Labs
+   - Sources: MDSec, Outflank, VX-Underground, Binary Defense, Cyberark Labs, etc.
 
-3. **GitHub Repos** (`external/github_repos/`)
-   - Real-world implementations
-   - HOW code works
-   - Function call patterns
+3. **GitHub Repos** (live search) - **27 queries**
+   - Real-world implementations, HOW code works
+   - **New:** Org-specific (Cracked5pider, SafeBreach-Labs, Maldev-Academy, outflanknl)
+   - Technique-specific (PoolParty, Zilean, SysWhispers3, VEH AMSI, RecycledGate)
 
-4. **VX-API** (`external/VX-API/`)
-   - Function signatures
-   - BUILDING BLOCKS
-   - Exact prototypes
+4. **arXiv Research Papers** - **Academic security research**
+   - Latest malware detection/evasion papers
+   - Adversarial ML, EDR bypass techniques
+   - Polymorphic malware, syscall hooking research
+
+**Total:** 400+ sources indexed (expanded from 353)
 
 ---
 

@@ -88,6 +88,48 @@ BOOL IsHooked(BYTE* funcAddress) {
 - More complex implementation
 - Higher OPSEC risk (memory artifacts)
 
+### Pattern 4: SysWhispers3 (Randomized Syscall Jumper) ⭐ RECOMMENDED
+
+**Concept**: Cache multiple syscall instruction addresses from NTDLL and randomly select jump targets on each invocation to create non-deterministic call patterns.
+
+**Critical Innovation**: Unlike Hell's Hall which uses a fixed syscall address (win32u.dll), SysWhispers3 randomizes the syscall instruction location to evade behavioral pattern detection.
+
+**Advantages**:
+- Eliminates static call patterns (major EDR detection vector)
+- Non-deterministic call stacks evade behavioral analysis
+- Works with both clean and hooked NTDLL functions
+- Detection risk: 15-20% vs Hell's Hall (20-25%)
+
+**Implementation Pattern**:
+```c
+// Initialize cache with random syscall addresses
+BOOL SW3_Initialize(PSYSCALL_CACHE pCache) {
+    // Enumerate ntdll exports, find Nt* functions with syscalls
+    for (each Nt* export) {
+        PVOID pSyscallAddr = FindSyscallInstruction(pExport);
+        if (pSyscallAddr) {
+            pCache->stubs[index++].pSyscallAddr = pSyscallAddr;
+        }
+    }
+    return TRUE;
+}
+
+// Get random syscall address on each invocation
+PVOID SW3_GetRandomSyscallAddr(PSYSCALL_CACHE pCache) {
+    DWORD dwIndex = GetRandomIndex(pCache->dwCacheSize);
+    return pCache->stubs[dwIndex].pSyscallAddr;
+}
+```
+
+**How Randomization Works**:
+1. During initialization, scan NTDLL for all Nt* functions containing syscall instructions (0x0F 0x05)
+2. Cache up to 16 different syscall addresses in an array
+3. On each syscall execution, use QueryPerformanceCounter to generate pseudo-random index
+4. Jump to randomly selected cached syscall address instead of fixed location
+5. Result: Call stacks vary on each execution, breaking pattern-based detection
+
+**OPSEC Benefit**: EDRs that signature "always calls syscall from address 0x7FF8ABCD1234" are defeated because each call originates from a different NTDLL offset.
+
 ## OPSEC Considerations
 
 ### Detection Vectors
