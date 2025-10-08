@@ -19,12 +19,10 @@ logger = logging.getLogger(__name__)
 # Import caching and metrics utilities
 try:
     from server.utils import IntelligenceCache, get_metrics_collector
-    from server.utils.intelligence_processor import IntelligenceProcessor
+    from server.utils.simple_recommender import recommend_template, get_technique_files
     UTILS_AVAILABLE = True
-    INTELLIGENCE_PROCESSOR = IntelligenceProcessor()
 except ImportError:
     UTILS_AVAILABLE = False
-    INTELLIGENCE_PROCESSOR = None
     logger.warning("Utils not available - caching and metrics disabled")
 
 # Create blueprint
