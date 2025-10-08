@@ -100,7 +100,7 @@ class RAGEngine:
     def __del__(self):
         """Cleanup thread pool on destruction to prevent resource leak"""
         if hasattr(self, 'executor'):
-            self.executor.shutdown(wait=False)
+            self.executor.shutdown(wait=True)
             logger.debug("[RAG] Thread pool shut down")
 
     def _get_or_create_collection(self, name: str):
@@ -374,32 +374,34 @@ class RAGEngine:
 
         # Index README.md from examples directory
         readme_path = examples_path / "README.md"
-        if readme_path.exists():
-            try:
-                with open(readme_path, 'r', encoding='utf-8') as f:
-                    readme_content = f.read()
+        # Attempt to open directly instead of checking exists() first to avoid TOCTOU race
+        try:
+            with open(readme_path, 'r', encoding='utf-8') as f:
+                readme_content = f.read()
 
-                # Chunk README by sections (## headers)
-                chunks = self._chunk_markdown(readme_content)
-                for i, chunk in enumerate(chunks):
-                    embedding = self.embedder.encode(chunk['text']).tolist()
-                    self.knowledge.upsert(
-                        ids=[f"examples_readme_{i}"],
-                        embeddings=[embedding],
-                        documents=[chunk['text']],
-                        metadatas=[{
-                            'source': str(readme_path),
-                            'type': 'examples_guide',
-                            'section': chunk['heading'],
-                            'template_type': 'documentation'
-                        }]
-                    )
-                    indexed_count += 1
+            # Chunk README by sections (## headers)
+            chunks = self._chunk_markdown(readme_content)
+            for i, chunk in enumerate(chunks):
+                embedding = self.embedder.encode(chunk['text']).tolist()
+                self.knowledge.upsert(
+                    ids=[f"examples_readme_{i}"],
+                    embeddings=[embedding],
+                    documents=[chunk['text']],
+                    metadatas=[{
+                        'source': str(readme_path),
+                        'type': 'examples_guide',
+                        'section': chunk['heading'],
+                        'template_type': 'documentation'
+                    }]
+                )
+                indexed_count += 1
 
-                logger.info(f"[RAG] Indexed examples README ({len(chunks)} sections)")
+            logger.info(f"[RAG] Indexed examples README ({len(chunks)} sections)")
 
-            except Exception as e:
-                logger.error(f"[RAG] Error indexing README: {e}")
+        except FileNotFoundError:
+            logger.debug(f"[RAG] Examples README not found at {readme_path}, skipping")
+        except Exception as e:
+            logger.error(f"[RAG] Error indexing README: {e}")
 
         logger.info(f"[RAG] ✅ Indexed {indexed_count} integration examples")
         return indexed_count

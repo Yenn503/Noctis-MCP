@@ -206,7 +206,10 @@ class SliverAdapter(C2Adapter):
                 raise ValueError(f"Invalid listener_host format: {self.config.listener_host}")
         if self.config.listener_port:
             # Ensure port is numeric and in valid range
-            port = int(self.config.listener_port)
+            try:
+                port = int(self.config.listener_port)
+            except (ValueError, TypeError):
+                raise ValueError(f"listener_port must be a valid integer, got: {self.config.listener_port}")
             if not (1 <= port <= 65535):
                 raise ValueError(f"Invalid port number: {port}")
 

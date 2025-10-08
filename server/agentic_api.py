@@ -83,9 +83,14 @@ def search_techniques():
                 '2. Use noctis_recommend_template() to get a complete implementation',
                 '3. Combine techniques based on your objective',
                 '4. Test and record results with noctis_record_result()'
-            ],
-            'tip': f'Top result has {formatted_results[0]["relevance_score"]:.0%} relevance - start there!'
+            ]
         }
+
+        # Add tip only if results exist
+        if formatted_results:
+            output['tip'] = f'Top result has {formatted_results[0]["relevance_score"]:.0%} relevance - start there!'
+        else:
+            output['tip'] = 'No results found. Try a different query or broader search terms.'
 
         return jsonify(output)
 

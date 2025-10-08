@@ -27,9 +27,13 @@ import sys
 import json
 import requests
 import logging
+import urllib3
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
+
+# Disable SSL warnings for lab environments with self-signed certs
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -133,10 +137,12 @@ class MythicAdapter(C2Adapter):
                 headers['Authorization'] = f'Bearer {self.api_token}'
             
             # Test connection to Mythic API
+            # Note: verify=False is intentional for lab environments with self-signed certs
+            # SSL warnings are suppressed at module level
             response = requests.get(
                 f"{self.base_url}/operations",
                 headers=headers,
-                verify=False,
+                verify=False,  # Lab environments typically use self-signed certificates
                 timeout=5
             )
             
