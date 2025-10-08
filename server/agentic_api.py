@@ -535,7 +535,7 @@ def generate_code():
                     )
                     intelligence_by_technique[tech_id] = intel
 
-        # 2. Extract implementation patterns from Examples/ folder
+        # 2. Extract implementation patterns from reference implementations
         from server.utils.pattern_extractor import PatternExtractor
         pattern_extractor = PatternExtractor()
 

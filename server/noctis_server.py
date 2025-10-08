@@ -1093,22 +1093,16 @@ def main():
     metadata_path = config.get('paths.techniques', 'techniques') + '/metadata'
     technique_manager = TechniqueManager(metadata_path)
 
-    # Initialize agent registry
-    logger.info("Initializing agent registry...")
-    from server.agents import AgentRegistry
-    agent_config = {
-        'db_path': config.get('paths.database', 'data/knowledge_base.db'),
-        'metadata_path': metadata_path,
-        'output_dir': config.get('paths.output', 'output'),
-        'rag_db_path': config.get('paths.rag_db', 'data/rag_db')
-    }
-    agent_registry = AgentRegistry
+    # Initialize agent registry (v1 - deprecated in v2.0)
+    # agent_registry = None  # Old agent system removed
+    logger.info("Agent registry (v1) skipped - using v2 agentic API")
 
     # Initialize RAG engine for agentic intelligence
     logger.info("Initializing RAG engine...")
     try:
         from server.rag import RAGEngine
-        rag_engine = RAGEngine(persist_dir=agent_config['rag_db_path'])
+        rag_db_path = config.get('paths.rag_db', 'data/rag_db')
+        rag_engine = RAGEngine(persist_dir=rag_db_path)
         logger.info(f"RAG engine initialized: {rag_engine.get_stats()}")
 
         # Auto-index knowledge base on startup if empty
@@ -1118,10 +1112,10 @@ def main():
             indexed = rag_engine.index_knowledge_base('techniques/knowledge')
             logger.info(f"Indexed {indexed} knowledge chunks")
 
-            # Index Phase 5 integration examples (templates)
-            logger.info("Indexing integration example templates...")
-            indexed_examples = rag_engine.index_examples('techniques/examples')
-            logger.info(f"Indexed {indexed_examples} integration examples")
+            # Index integration templates
+            logger.info("Indexing integration templates...")
+            indexed_examples = rag_engine.index_examples('techniques/templates')
+            logger.info(f"Indexed {indexed_examples} integration templates")
 
             # Index AI integration guides
             logger.info("Indexing AI integration guides...")
@@ -1138,21 +1132,11 @@ def main():
     code_assembler = CodeAssembler(rag_engine=rag_engine)
     logger.info("Code assembler initialized with RAG support")
 
-    # Initialize agent registry first (without learning engine to break circular dependency)
-    agent_config['learning_engine'] = None
-    AgentRegistry.initialize(agent_config)
-    logger.info("Agent registry initialized")
-
-    # Initialize learning engine after registry
+    # Initialize learning engine (v2)
     from server.learning_engine import AgenticLearningEngine
-    learning_engine = AgenticLearningEngine(
-        db_path=agent_config['db_path']
-    )
+    db_path = config.get('paths.database', 'data/knowledge_base.db')
+    learning_engine = AgenticLearningEngine(db_path=db_path)
     logger.info("Learning engine initialized")
-
-    # Inject learning engine back into registry
-    AgentRegistry.set_learning_engine(learning_engine)
-    logger.info("Learning engine injected into agent registry")
 
     # Register agentic API endpoints
     if rag_engine and rag_engine.enabled:
