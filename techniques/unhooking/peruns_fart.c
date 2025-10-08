@@ -134,7 +134,13 @@ BOOL _PerunsFart_FindRemoteNtdll(PUNHOOK_CONTEXT pContext) {
     LIST_ENTRY* pListHead = &ldrData.InLoadOrderModuleList;
     LIST_ENTRY* pCurrentEntry = ldrData.InLoadOrderModuleList.Flink;
 
-    while (pCurrentEntry != pListHead) {
+    // CRITICAL FIX: Add iteration limit and null checks to prevent infinite loop
+    DWORD dwMaxIterations = 1000;
+    DWORD dwIterations = 0;
+
+    while (pCurrentEntry != pListHead && pCurrentEntry != NULL && dwIterations < dwMaxIterations) {
+        dwIterations++;
+
         LDR_DATA_TABLE_ENTRY ldrEntry = { 0 };
 
         if (!ReadProcessMemory(pContext->hSacrificialProcess,
@@ -143,16 +149,29 @@ BOOL _PerunsFart_FindRemoteNtdll(PUNHOOK_CONTEXT pContext) {
             return FALSE;
         }
 
-        // Read module name
+        // Read module name with bounds checking
         WCHAR wzModuleName[MAX_PATH] = { 0 };
-        if (ldrEntry.BaseDllName.Length > 0 && ldrEntry.BaseDllName.Length < MAX_PATH * 2) {
-            ReadProcessMemory(pContext->hSacrificialProcess, ldrEntry.BaseDllName.Buffer,
-                            wzModuleName, ldrEntry.BaseDllName.Length, &szBytesRead);
+        if (ldrEntry.BaseDllName.Length > 0 &&
+            ldrEntry.BaseDllName.Length < MAX_PATH * 2 &&
+            ldrEntry.BaseDllName.Buffer != NULL) {
 
-            if (_wcsicmp(wzModuleName, L"ntdll.dll") == 0) {
-                pContext->pRemoteNtdllBase = ldrEntry.DllBase;
-                return TRUE;
+            if (ReadProcessMemory(pContext->hSacrificialProcess, ldrEntry.BaseDllName.Buffer,
+                                wzModuleName, ldrEntry.BaseDllName.Length, &szBytesRead)) {
+
+                // Validate read was successful
+                if (szBytesRead == ldrEntry.BaseDllName.Length) {
+                    if (_wcsicmp(wzModuleName, L"ntdll.dll") == 0) {
+                        pContext->pRemoteNtdllBase = ldrEntry.DllBase;
+                        return TRUE;
+                    }
+                }
             }
+        }
+
+        // Validate Flink before advancing
+        if (ldrEntry.InLoadOrderLinks.Flink == NULL ||
+            ldrEntry.InLoadOrderLinks.Flink == pCurrentEntry) {
+            break;  // Circular reference or null - stop
         }
 
         pCurrentEntry = ldrEntry.InLoadOrderLinks.Flink;
@@ -199,11 +218,36 @@ BOOL _PerunsFart_UnhookSyscalls(PUNHOOK_CONTEXT pContext) {
     }
 
     PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)pContext->pCleanNtdll;
+
+    // CRITICAL FIX: Validate DOS header
+    if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE ||
+        pDosHeader->e_lfanew >= (LONG)pContext->szNtdllSize - sizeof(IMAGE_NT_HEADERS)) {
+        return FALSE;
+    }
+
     PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)((BYTE*)pContext->pCleanNtdll + pDosHeader->e_lfanew);
+
+    // Validate NT headers
+    if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE) {
+        return FALSE;
+    }
+
+    // Validate export directory RVA
+    DWORD dwExportDirRVA = pNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+    if (dwExportDirRVA == 0 || dwExportDirRVA >= pContext->szNtdllSize - sizeof(IMAGE_EXPORT_DIRECTORY)) {
+        return FALSE;
+    }
+
     PIMAGE_EXPORT_DIRECTORY pExportDir = (PIMAGE_EXPORT_DIRECTORY)(
-        (BYTE*)pContext->pCleanNtdll +
-        pNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress
+        (BYTE*)pContext->pCleanNtdll + dwExportDirRVA
     );
+
+    // Validate export table RVAs
+    if (pExportDir->AddressOfFunctions >= pContext->szNtdllSize ||
+        pExportDir->AddressOfNames >= pContext->szNtdllSize ||
+        pExportDir->AddressOfNameOrdinals >= pContext->szNtdllSize) {
+        return FALSE;
+    }
 
     DWORD* pAddressOfFunctions = (DWORD*)((BYTE*)pContext->pCleanNtdll + pExportDir->AddressOfFunctions);
     DWORD* pAddressOfNames = (DWORD*)((BYTE*)pContext->pCleanNtdll + pExportDir->AddressOfNames);

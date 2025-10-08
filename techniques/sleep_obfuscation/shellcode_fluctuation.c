@@ -14,6 +14,11 @@ BOOL Fluctuation_AES256_Encrypt(BYTE* pData, SIZE_T szDataLen, BYTE* pKey, BYTE*
     NTSTATUS status;
     BOOL bResult = FALSE;
 
+    // Validate data size is 16-byte aligned for AES
+    if (szDataLen % 16 != 0 || szDataLen > ULONG_MAX) {
+        return FALSE;
+    }
+
     status = BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_AES_ALGORITHM, NULL, 0);
     if (!BCRYPT_SUCCESS(status)) goto cleanup;
 
@@ -24,9 +29,13 @@ BOOL Fluctuation_AES256_Encrypt(BYTE* pData, SIZE_T szDataLen, BYTE* pKey, BYTE*
     status = BCryptGenerateSymmetricKey(hAlg, &hKey, NULL, 0, pKey, 32, 0);
     if (!BCRYPT_SUCCESS(status)) goto cleanup;
 
+    // CRITICAL FIX: Create IV copy - BCryptEncrypt modifies IV in CBC mode
+    BYTE ivCopy[16];
+    memcpy(ivCopy, pIV, 16);
+
     ULONG cbResult;
     status = BCryptEncrypt(hKey, pData, (ULONG)szDataLen, NULL,
-        pIV, 16, pData, (ULONG)szDataLen, &cbResult, 0);
+        ivCopy, 16, pData, (ULONG)szDataLen, &cbResult, 0);
     if (!BCRYPT_SUCCESS(status)) goto cleanup;
 
     bResult = TRUE;
@@ -44,6 +53,11 @@ BOOL Fluctuation_AES256_Decrypt(BYTE* pData, SIZE_T szDataLen, BYTE* pKey, BYTE*
     NTSTATUS status;
     BOOL bResult = FALSE;
 
+    // Validate data size is 16-byte aligned for AES
+    if (szDataLen % 16 != 0 || szDataLen > ULONG_MAX) {
+        return FALSE;
+    }
+
     status = BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_AES_ALGORITHM, NULL, 0);
     if (!BCRYPT_SUCCESS(status)) goto cleanup;
 
@@ -54,9 +68,13 @@ BOOL Fluctuation_AES256_Decrypt(BYTE* pData, SIZE_T szDataLen, BYTE* pKey, BYTE*
     status = BCryptGenerateSymmetricKey(hAlg, &hKey, NULL, 0, pKey, 32, 0);
     if (!BCRYPT_SUCCESS(status)) goto cleanup;
 
+    // CRITICAL FIX: Create IV copy - BCryptDecrypt modifies IV in CBC mode
+    BYTE ivCopy[16];
+    memcpy(ivCopy, pIV, 16);
+
     ULONG cbResult;
     status = BCryptDecrypt(hKey, pData, (ULONG)szDataLen, NULL,
-        pIV, 16, pData, (ULONG)szDataLen, &cbResult, 0);
+        ivCopy, 16, pData, (ULONG)szDataLen, &cbResult, 0);
     if (!BCRYPT_SUCCESS(status)) goto cleanup;
 
     bResult = TRUE;

