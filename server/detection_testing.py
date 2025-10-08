@@ -207,7 +207,12 @@ class VirusTotalAPI:
                         time.sleep(10)
 
                     logger.error(f"Analysis timeout for {analysis_id} after {max_wait}s (hash: {file_hash[:8]}...)")
-                    return None
+                    return {
+                        'success': False,
+                        'error': f'Analysis timeout after {max_wait}s',
+                        'analysis_id': analysis_id,
+                        'file_hash': file_hash
+                    }
 
         except ImportError:
             logger.error("vt-py not installed. Run: pip install vt-py")

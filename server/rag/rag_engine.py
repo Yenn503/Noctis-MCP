@@ -97,6 +97,12 @@ class RAGEngine:
 
         logger.info("[RAG] ChromaDB initialized successfully")
 
+    def __del__(self):
+        """Cleanup thread pool on destruction to prevent resource leak"""
+        if hasattr(self, 'executor'):
+            self.executor.shutdown(wait=False)
+            logger.debug("[RAG] Thread pool shut down")
+
     def _get_or_create_collection(self, name: str):
         """Get or create collection"""
         try:
@@ -260,6 +266,8 @@ class RAGEngine:
             try:
                 results = future.result(timeout=5.0)  # 5 second timeout
                 all_results.extend(results)
+            except TimeoutError:
+                logger.error(f"[RAG] Search timeout exceeded (5s) for parallel collection search")
             except Exception as e:
                 logger.error(f"[RAG] Parallel search failed: {e}")
 

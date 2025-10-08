@@ -398,9 +398,12 @@ def fetch_latest_intelligence():
         if not force:
             import os
             import json
+            import re
             from datetime import datetime, timedelta
 
-            cache_file = f"data/fetch_cache_{topic.replace(' ', '_')}.json"
+            # Sanitize topic name to prevent path traversal
+            safe_topic = re.sub(r'[^\w\-]', '_', topic)
+            cache_file = f"data/fetch_cache_{safe_topic}.json"
             # Fix TOCTOU race: use try-except instead of exists() check
             try:
                 with open(cache_file, 'r') as f:
@@ -456,7 +459,10 @@ def fetch_latest_intelligence():
 
         # Save to cache
         import json
-        cache_file = f"data/fetch_cache_{topic.replace(' ', '_')}.json"
+        import re
+        # Sanitize topic name to prevent path traversal
+        safe_topic = re.sub(r'[^\w\-]', '_', topic)
+        cache_file = f"data/fetch_cache_{safe_topic}.json"
         results_summary['timestamp'] = datetime.now().isoformat()
         results_summary['cached'] = False
 
