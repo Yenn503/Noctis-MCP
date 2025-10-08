@@ -48,28 +48,38 @@ class LiveIntelligence:
             "XPN InfoSec": "https://blog.xpnsec.com/rss.xml",
             "TrustedSec": "https://www.trustedsec.com/feed/",
             "SpecterOps": "https://posts.specterops.io/feed",
+            "Alice Climent-Pommeret": "https://alice.climent-pommeret.red/feed",  # Maldev researcher
+            "RedOps": "https://redops.at/en/blog/feed/",  # Syscall evasion focus
 
             # Malware Analysis & Techniques
             "Malware-Traffic-Analysis": "https://www.malware-traffic-analysis.net/blog-entries.rss",
             "Malwarebytes Labs": "https://www.malwarebytes.com/blog/feed/index.xml",
             "Hybrid Analysis Blog": "https://www.hybrid-analysis.com/feed",
             "VX Underground": "https://www.vx-underground.org/feed.xml",  # Premier malware research
+            "Red Canary": "https://redcanary.com/blog/feed/",  # Threat detection intelligence
+            "Elastic Security Labs": "https://www.elastic.co/security-labs/rss/feed.xml",
 
             # Exploit Development & Research
             "Exploit-DB": "https://www.exploit-db.com/rss.xml",
             "Project Zero": "https://googleprojectzero.blogspot.com/feeds/posts/default",
             "ZDI (Zero Day Initiative)": "https://www.zerodayinitiative.com/blog?format=rss",
+            "Praetorian Security": "https://www.praetorian.com/blog/feed/",  # Vuln research
+            "Binary Defense": "https://binarydefense.com/resources/blog/feed/",
+            "Cyberark Labs": "https://www.cyberark.com/resources/threat-research-blog/feed/",
 
             # Windows Internals & Evasion
             "Red Team Notes (ired.team)": "https://www.ired.team/feed",
             "Pentester Academy": "https://blog.pentesteracademy.com/feed",
             "0x00sec": "https://0x00sec.org/posts.rss",
             "Hexacorn": "https://www.hexacorn.com/blog/feed/",  # EDR bypass guru
+            "5pider.net": "https://5pider.net/blog/feed/",  # C5pider personal blog
+            "PPN (snovvcrash)": "https://ppn.snovvcrash.rocks/feed.xml",  # Pentester's notebook
 
             # APT & Advanced Techniques
             "Unit42 Palo Alto": "https://unit42.paloaltonetworks.com/feed/",
             "Mandiant": "https://www.mandiant.com/resources/blog/rss.xml",
             "CrowdStrike Blog": "https://www.crowdstrike.com/blog/feed/",
+            "IBM X-Force": "https://www.ibm.com/blogs/ibm-x-force/feed/",
 
             # General Security News (filtered for malware content)
             "Bleeping Computer": "https://www.bleepingcomputer.com/feed/",

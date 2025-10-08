@@ -149,7 +149,24 @@ class IntelligenceUpdater:
             "unhooking NTDLL",
             "stack spoofing",
             "API hashing malware",
-            "process hollowing doppelganging"
+            "process hollowing doppelganging",
+            # New queries from Argus research (2024-2025)
+            "PoolParty thread pool injection",
+            "Zilean sleep obfuscation",
+            "SysWhispers3 indirect syscalls",
+            "Phantom DLL Hollowing",
+            "VEH AMSI bypass Windows 11",
+            "Early Cascade Injection",
+            "RecycledGate syscalls",
+            # Specific GitHub organizations
+            "org:Cracked5pider",
+            "org:SafeBreach-Labs",
+            "org:Maldev-Academy",
+            "org:outflanknl",
+            "org:WKL-Sec",
+            "org:vxunderground",
+            "user:gmh5225 syscall",
+            "user:am0nsec"
         ]
 
         arxiv_queries = [
