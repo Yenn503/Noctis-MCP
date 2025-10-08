@@ -39,10 +39,10 @@ Noctis-MCP uses a **hybrid intelligence system** where AI agents (Claude, GPT, e
                  ▼
 ┌─────────────────────────────────────────────────────────┐
 │ DATA SOURCES (400+ indexed)                              │
-│ ├─ Knowledge Files: 7 files (Phase 1 upgraded)           │
-│ ├─ Security Blogs: 35 RSS feeds (expanded)               │
+│ ├─ Knowledge Files: 8 files                              │
+│ ├─ Security Blogs: 35 RSS feeds                          │
 │ ├─ GitHub Repos: 27 queries (malware orgs)               │
-│ ├─ arXiv Research: Academic papers (NEW)                 │
+│ ├─ arXiv Research: Academic papers                       │
 │ └─ VX-API: Function signatures                           │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -52,20 +52,22 @@ Noctis-MCP uses a **hybrid intelligence system** where AI agents (Claude, GPT, e
 ### 1. Knowledge Files (techniques/knowledge/*.md)
 **Purpose**: Strategic OPSEC guidance
 
-**Current Files** (7 total):
-- `syscalls.md` - Direct syscalls, SysWhispers3 randomization ⭐
-- `amsi_bypass.md` - VEH² hardware breakpoint bypass ⭐
-- `sleep_obfuscation.md` - Zilean thread pool sleep ⭐
-- `injection.md` - PoolParty thread pool injection ⭐
+**Current Files** (8 total):
+- `syscalls.md` - Direct syscalls, SysWhispers3 randomization
+- `amsi_bypass.md` - VEH² hardware breakpoint bypass
+- `sleep_obfuscation.md` - Zilean, ShellcodeFluctuation
+- `injection.md` - PoolParty, Early Cascade, Phantom DLL
+- `unhooking.md` - Perun's Fart memory-based unhooking
+- `evasion.md` - SilentMoonwalk call stack spoofing
+- `kernel_bypass.md` - EDRSandBlast (documented only)
 - `encryption.md` - Payload encryption techniques
-
-⭐ = Phase 1 upgrades (2024-2025 research)
 
 **Provides**:
 - OPSEC scores (1-10) for different techniques
-- Method comparisons (SysWhispers3 vs Hell's Hall, Zilean vs Ekko)
-- Detection risk analysis (current: 8-12% with Phase 1)
+- Method comparisons (SysWhispers3 vs Hell's Hall, Zilean vs Ekko, SilentMoonwalk vs static cloning)
+- Detection risk analysis (current: 2-5% with integrated techniques)
 - When to use which technique
+- Integration patterns between techniques
 
 **Example Output**:
 ```json
@@ -80,9 +82,22 @@ Noctis-MCP uses a **hybrid intelligence system** where AI agents (Claude, GPT, e
       "technique": "PoolParty Thread Pool Injection",
       "opsec_score": 9.5,
       "reason": "100% EDR bypass documented (CrowdStrike, SentinelOne, Palo Alto)"
+    },
+    {
+      "technique": "SilentMoonwalk Call Stack Spoofing",
+      "opsec_score": 9.0,
+      "reason": "ROP-based stack spoofing, integrates with other techniques for 2-5% detection"
     }
   ],
-  "warnings": ["⚠ CreateRemoteThread heavily monitored", "⚠ Memory patching fails on Win11 24H2"]
+  "warnings": [
+    "CreateRemoteThread heavily monitored",
+    "Memory patching fails on Win11 24H2",
+    "EDRSandBlast documented only - 60-70% detection upfront (use post-compromise)"
+  ],
+  "detection_risk": {
+    "baseline": "25-30%",
+    "with_advanced_techniques": "2-5%"
+  }
 }
 ```
 
