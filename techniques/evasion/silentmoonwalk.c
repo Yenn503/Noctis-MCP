@@ -3,6 +3,7 @@
 
 #include "silentmoonwalk.h"
 #include <stdio.h>
+#include <time.h>
 
 // ROP gadget byte patterns (x64)
 static BYTE PATTERN_POP_RBP_RET[] = {0x5D, 0xC3};                    // pop rbp; ret
@@ -33,6 +34,10 @@ BOOL SilentMoonwalk_Initialize(
     }
 
     pContext->gadgets.bInitialized = TRUE;
+
+    // Initialize random seed for synthetic frame generation
+    srand((unsigned int)time(NULL));
+
     return TRUE;
 }
 
@@ -47,6 +52,18 @@ BOOL _SilentMoonwalk_ScanGadgets(
     PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)hModule;
     if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE) return FALSE;
 
+    // Validate e_lfanew to prevent access violation
+    SIZE_T moduleSize = 0;
+    {
+        MEMORY_BASIC_INFORMATION mbi;
+        if (VirtualQuery(hModule, &mbi, sizeof(mbi)) == 0) return FALSE;
+        moduleSize = mbi.RegionSize;
+    }
+
+    if (pDosHeader->e_lfanew > moduleSize - sizeof(IMAGE_NT_HEADERS)) {
+        return FALSE; // e_lfanew points outside module
+    }
+
     PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)((BYTE*)hModule + pDosHeader->e_lfanew);
     if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE) return FALSE;
 
@@ -58,9 +75,17 @@ BOOL _SilentMoonwalk_ScanGadgets(
     SIZE_T szTextSize = 0;
 
     for (WORD i = 0; i < pNtHeaders->FileHeader.NumberOfSections; i++) {
-        if (memcmp(pSection[i].Name, ".text", 5) == 0) {
-            pTextBase = (BYTE*)hModule + pSection[i].VirtualAddress;
-            szTextSize = pSection[i].Misc.VirtualSize;
+        PIMAGE_SECTION_HEADER pCurrentSection = &pSection[i];
+
+        // Check for .text section (compare full 8 bytes to handle padding correctly)
+        if (memcmp(pCurrentSection->Name, ".text\0\0\0", 8) == 0) {
+            // Validate section is within module bounds
+            if (pCurrentSection->VirtualAddress + pCurrentSection->Misc.VirtualSize > szModuleSize) {
+                continue; // Skip invalid section
+            }
+
+            pTextBase = (BYTE*)hModule + pCurrentSection->VirtualAddress;
+            szTextSize = pCurrentSection->Misc.VirtualSize;
             break;
         }
     }
@@ -104,9 +129,13 @@ PVOID _SilentMoonwalk_FindGadget(
 ) {
     if (!pModuleBase || !pattern || patternSize == 0) return NULL;
 
+    // Guard against integer underflow
+    if (szModuleSize < patternSize) return NULL;
+
     BYTE* pScanBase = (BYTE*)pModuleBase;
 
-    for (SIZE_T i = 0; i < szModuleSize - patternSize; i++) {
+    // Fix off-by-one: i <= szModuleSize - patternSize (not <)
+    for (SIZE_T i = 0; i <= szModuleSize - patternSize; i++) {
         if (memcmp(pScanBase + i, pattern, patternSize) == 0) {
             return (PVOID)(pScanBase + i);
         }
@@ -120,7 +149,18 @@ BOOL SilentMoonwalk_BuildSyntheticStack(
     PSPOOF_CONTEXT pContext,
     DWORD dwFrameCount
 ) {
-    if (!pContext || dwFrameCount == 0 || dwFrameCount > 4) return FALSE;
+    if (!pContext || dwFrameCount == 0) return FALSE;
+
+    // Validate frame count against mode-specific limits
+    DWORD maxFrames = (pContext->mode == SPOOF_MODE_SYNTHETIC) ? 8 : 4;
+    if (dwFrameCount > maxFrames) return FALSE;
+
+    // Verify gadgets were successfully initialized
+    if (!pContext->gadgets.bInitialized ||
+        !pContext->gadgets.popRbpRet.pAddress ||
+        !pContext->gadgets.addRsp20Ret.pAddress) {
+        return FALSE;
+    }
 
     HMODULE hNtdll = GetModuleHandleW(L"ntdll.dll");
     HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
@@ -176,13 +216,28 @@ PVOID SilentMoonwalk_GetLegitimateReturnAddress(HMODULE hModule) {
     // Find .text section
     PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNtHeaders);
     for (WORD i = 0; i < pNtHeaders->FileHeader.NumberOfSections; i++) {
-        if (memcmp(pSection[i].Name, ".text", 5) == 0) {
-            PVOID pTextBase = (BYTE*)hModule + pSection[i].VirtualAddress;
-            SIZE_T szTextSize = pSection[i].Misc.VirtualSize;
+        PIMAGE_SECTION_HEADER pCurrentSection = &pSection[i];
+
+        if (memcmp(pCurrentSection->Name, ".text\0\0\0", 8) == 0) {
+            // Validate section is within module bounds
+            SIZE_T szModuleSize = pNtHeaders->OptionalHeader.SizeOfImage;
+            if (pCurrentSection->VirtualAddress + pCurrentSection->Misc.VirtualSize > szModuleSize) {
+                continue;
+            }
+
+            PVOID pTextBase = (BYTE*)hModule + pCurrentSection->VirtualAddress;
+            SIZE_T szTextSize = pCurrentSection->Misc.VirtualSize;
+
+            // Ensure .text section is large enough for safe random selection
+            if (szTextSize < 256) return NULL;
 
             // Return random address within .text (must be valid instruction)
             // For reference implementation, use offset that's likely a valid instruction
             SIZE_T offset = (rand() % (szTextSize / 16)) * 16; // Align to 16 bytes
+
+            // Paranoid bounds check
+            if (offset >= szTextSize) return NULL;
+
             return (BYTE*)pTextBase + offset;
         }
     }

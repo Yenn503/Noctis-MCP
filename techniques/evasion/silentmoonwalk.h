@@ -70,7 +70,7 @@ typedef struct _SYNTHETIC_FRAME {
 typedef struct _SPOOF_CONTEXT {
     SPOOF_MODE mode;            // Spoofing mode (SYNTHETIC or DESYNC)
     GADGET_CACHE gadgets;       // ROP gadget cache
-    SYNTHETIC_FRAME frames[4];  // Synthetic frames (max 4)
+    SYNTHETIC_FRAME frames[8];  // Synthetic frames (max 8 for SYNTHETIC mode, 4 for DESYNC)
     DWORD dwFrameCount;         // Number of synthetic frames
     PVOID pTargetFunction;      // API to call with spoofed stack
     PVOID pOriginalRsp;         // Original RSP (for restoration)
