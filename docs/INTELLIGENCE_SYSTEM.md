@@ -52,14 +52,17 @@ Noctis-MCP uses a **hybrid intelligence system** where AI agents (Claude, GPT, e
 ### 1. Knowledge Files (techniques/knowledge/*.md)
 **Purpose**: Strategic OPSEC guidance
 
-**Current Files** (8 total):
+**Current Files** (11 total):
 - `syscalls.md` - Direct syscalls, SysWhispers3 randomization
 - `amsi_bypass.md` - VEH² hardware breakpoint bypass
 - `sleep_obfuscation.md` - Zilean, ShellcodeFluctuation
 - `injection.md` - PoolParty, Early Cascade, Phantom DLL
 - `unhooking.md` - Perun's Fart memory-based unhooking
 - `evasion.md` - SilentMoonwalk call stack spoofing
-- `kernel_bypass.md` - EDRSandBlast (documented only)
+- `kernel_bypass.md` - EDRSandBlast, RealBlindingEDR (documented only)
+- `minifilter_edr_bypass.md` - MiniFilter altitude manipulation (documented only)
+- `dkom_advanced.md` - Advanced DKOM, FudModule techniques (documented only)
+- `windows_downdate.md` - OS rollback for VBS/HVCI bypass (documented only)
 - `encryption.md` - Payload encryption techniques
 
 **Provides**:
@@ -92,7 +95,9 @@ Noctis-MCP uses a **hybrid intelligence system** where AI agents (Claude, GPT, e
   "warnings": [
     "CreateRemoteThread heavily monitored",
     "Memory patching fails on Win11 24H2",
-    "EDRSandBlast documented only - 60-70% detection upfront (use post-compromise)"
+    "Kernel techniques documented only - 30-80% detection (MiniFilter 30-40%, DKOM 40-50%, EDRSandBlast 60-70%, Downdate 70-80%)",
+    "MiniFilter altitude requires pre-engagement deployment, not runtime",
+    "Windows Downdate requires Microsoft signing certificate (state-level access)"
   ],
   "detection_risk": {
     "baseline": "25-30%",

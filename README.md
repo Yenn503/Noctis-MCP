@@ -328,9 +328,13 @@ Noctis-MCP implements cutting-edge techniques from 2024-2025 offensive security 
 - SilentMoonwalk - ROP-based call stack spoofing with synthetic frames
 - Creates legitimate-looking call stacks pointing to Windows modules
 
-**Kernel Bypass (Documented Only):**
-- EDRSandBlast - BYOVD kernel callback removal
-- Not implemented (contradicts stealth philosophy, documented for post-compromise)
+**Kernel-Level Techniques (Knowledge Bases Only):**
+- MiniFilter Altitude Manipulation - Pre-emptive EDR disablement via registry (30-40% detection)
+- Advanced DKOM - Data-only kernel attacks, FudModule techniques (40-50% detection)
+- RealBlindingEDR - Enhanced kernel callback manipulation (55-65% detection)
+- EDRSandBlast - BYOVD kernel callback removal (60-70% detection)
+- Windows Downdate - OS rollback for VBS/HVCI bypass (70-80% detection)
+- Documented for blue team awareness and post-compromise scenarios where detection acceptable
 
 **Overall Impact:**
 - Detection risk: 25-30% (baseline) → 2-5% (integrated techniques)

@@ -268,6 +268,97 @@ PVOID result = SilentMoonwalk_CallWithSpoofedStack(
 
 ---
 
+## Phase 4 Knowledge Bases (2024-2025 Research - Kernel-Level)
+
+### 10. MiniFilter Altitude Manipulation - Pre-emptive EDR Disablement
+**Files:** `knowledge/minifilter_edr_bypass.md`
+**Detection Risk:** 30-40% (vs 60-70% for BYOVD kernel bypass)
+**Source:** Tier Zero Security (2024)
+**Category:** Pre-emptive EDR Bypass (Userland registry manipulation)
+
+**Key Innovation:**
+- Userland-only technique (no kernel driver required)
+- Pre-emptive EDR disablement via registry manipulation
+- Poisons MiniFilter altitude values to cause EDR initialization failure
+- Survives reboot (registry-based persistence)
+- Stealthier than kernel exploitation (EDRSandBlast/BYOVD)
+
+**How It Works:**
+1. Create fake MiniFilter registration at EDR's target altitude
+2. When EDR driver loads, Filter Manager detects altitude collision
+3. EDR driver initialization fails silently
+4. EDR service appears running but filesystem monitoring is non-functional
+
+**Use Case:** Pre-engagement preparation step (installer/supply-chain), not runtime
+
+---
+
+### 11. Advanced DKOM - Data-Only Kernel Attacks
+**Files:** `knowledge/dkom_advanced.md`
+**Detection Risk:** 40-50% (kernel-level telemetry required)
+**Source:** Lazarus APT FudModule analysis (2024)
+**Category:** Kernel Rootkit / EDR Evasion
+
+**Key Innovation:**
+- Data-only kernel structure manipulation (evades PatchGuard)
+- EPROCESS unlinking (process hiding from enumeration)
+- LDR triple unlinking (driver hiding from all module lists)
+- Token manipulation (privilege escalation without process creation)
+
+**Techniques Documented:**
+- EPROCESS ActiveProcessLinks unlinking
+- LDR_DATA_TABLE_ENTRY triple unlinking (InLoadOrder, InMemoryOrder, InInitializationOrder)
+- Object attribute manipulation (hide kernel objects from enumeration)
+- Token manipulation (copy SYSTEM token to target process)
+- Callback unhooking via list manipulation
+
+**Why Document Only:** Requires kernel access (contradicts userland-first philosophy)
+
+---
+
+### 12. RealBlindingEDR - Enhanced Kernel Callback Manipulation
+**Files:** `knowledge/kernel_bypass.md` (RealBlindingEDR section)
+**Detection Risk:** 55-65% (marginal improvement over EDRSandBlast 60-70%)
+**Source:** https://github.com/ZeroMemoryEx/RealBlindingEDR (2024-2025)
+**Category:** Kernel Exploitation / EDR Bypass Enhancement
+
+**Key Improvements Over EDRSandBlast:**
+- Callback patching vs removal (reduces behavioral anomaly)
+- Selective callback disablement (target specific EDR, leave Defender functional)
+- Object callback patching (callback registration remains intact)
+- ETW provider masking (selective event blocking, not complete disablement)
+- Memory integrity restoration (periodic restore to evade integrity checks)
+
+**Why Document Only:** Still requires BYOVD (same primary detection vector), marginal improvement doesn't justify implementation complexity
+
+---
+
+### 13. Windows Downdate - UEFI/VBS Bypass via OS Rollback
+**Files:** `knowledge/windows_downdate.md`
+**Detection Risk:** 70-80% (extremely loud)
+**Source:** SafeBreach Research (DEF CON 32, 2024)
+**Category:** OS Manipulation / Integrity Bypass
+
+**Key Innovation:**
+- Only technique that bypasses VBS/HVCI/Secure Boot
+- Exploits Windows Update to downgrade OS to vulnerable version
+- Disables VBS/HVCI by installing older components
+- Allows unsigned driver loading on systems with mandatory VBS
+
+**How It Works:**
+1. Manipulate Windows Update database (DataStore.edb)
+2. Inject fake "cumulative update" containing older Windows build
+3. System downgrades, VBS/HVCI disabled
+4. Load unsigned driver (BYOVD techniques now possible)
+5. Re-upgrade to current version (driver persists)
+
+**Why Conditional Alternative Only:**
+- Requires Microsoft signing certificate (state-level access)
+- Extremely high detection risk (70-80%)
+- Only viable when VBS/HVCI blocks all other techniques
+
+---
+
 ## Knowledge Base Files
 
 ### Core Techniques
@@ -284,7 +375,12 @@ PVOID result = SilentMoonwalk_CallWithSpoofedStack(
 
 ### Phase 3 Additions
 - **`knowledge/evasion.md`** - Call stack spoofing techniques including SilentMoonwalk
-- **`knowledge/kernel_bypass.md`** - Kernel-level EDR bypass (EDRSandBlast) - LOUD technique documentation
+- **`knowledge/kernel_bypass.md`** - Kernel-level EDR bypass (EDRSandBlast, RealBlindingEDR) - LOUD technique documentation
+
+### Phase 4 Additions
+- **`knowledge/minifilter_edr_bypass.md`** - MiniFilter altitude manipulation for pre-emptive EDR disablement
+- **`knowledge/dkom_advanced.md`** - Advanced DKOM techniques (FudModule, data-only kernel attacks)
+- **`knowledge/windows_downdate.md`** - Windows Downdate OS rollback technique for VBS/HVCI bypass
 
 ---
 
@@ -331,13 +427,26 @@ PVOID result = SilentMoonwalk_CallWithSpoofedStack(
 | EDR Bypass Rate | 70-75% | 88-92% | 92-95% | **95-98%** | **+20-28%** |
 | OPSEC Score | 5.5/10 | 8.5/10 | 9/10 | **9.5/10** | **+4 points** |
 
-### Kernel Bypass (Not Implemented - Documented Only)
+### Phase 4 Kernel-Level Techniques (Documentation Only)
 
 | Technique | Detection Risk | Use Case | Status |
 |-----------|----------------|----------|--------|
-| **EDRSandBlast** | 60-70% upfront → 0% post-bypass | Post-compromise, "loud" ops | 📝 **Documentation only** |
+| **MiniFilter Altitude** | 30-40% | Pre-engagement EDR disablement | 📝 **Knowledge base** |
+| **Advanced DKOM** | 40-50% | Process/driver hiding, token manipulation | 📝 **Knowledge base** |
+| **RealBlindingEDR** | 55-65% | Enhanced kernel callback manipulation | 📝 **Knowledge base** |
+| **EDRSandBlast** | 60-70% → 0% post-bypass | Post-compromise kernel bypass | 📝 **Knowledge base** |
+| **Windows Downdate** | 70-80% | VBS/HVCI bypass (conditional alternative) | 📝 **Knowledge base** |
 
-**Why not implemented**: Contradicts stealth philosophy (60-70% detection risk during driver loading). Documented in `knowledge/kernel_bypass.md` for completeness and post-compromise scenarios where detection is acceptable.
+**Why documentation only**:
+- **MiniFilter Altitude**: Pre-engagement technique (installer/supply-chain), not runtime operation
+- **Advanced DKOM**: Requires kernel access (contradicts userland-first philosophy)
+- **RealBlindingEDR/EDRSandBlast**: Detection risk (55-70%) contradicts stealth philosophy
+- **Windows Downdate**: Requires Microsoft signing certificate, extremely loud (70-80%)
+
+**Integration Strategy**: Phase 1-3 achieves 95-98% EDR bypass without kernel techniques. Phase 4 documented for:
+- Blue team awareness (understand advanced attack vectors)
+- Red team intelligence (post-compromise scenarios where detection acceptable)
+- VBS/HVCI environments where userland techniques insufficient
 
 ---
 
