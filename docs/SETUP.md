@@ -37,10 +37,21 @@ chmod +x scripts/setup/setup.sh
 ./scripts/setup/setup.sh
 ```
 
-### Step 4: Initialize RAG System
+### Step 4: Initialize Intelligence System
 ```bash
 source venv/bin/activate
-python scripts/rag_setup.py
+
+# Install RAG dependencies
+pip install chromadb sentence-transformers
+
+# Index all technique implementations (PoolParty, SysWhispers3, VEH², Zilean, etc.)
+python scripts/index_all_techniques.py
+
+# Index VX-API function signatures (400+)
+python scripts/index_vx_sources.py
+
+# Optional: Update live intelligence (blogs, GitHub, arXiv)
+# python scripts/update_intelligence.py --mode weekly
 ```
 
 ### Step 5: Configure MCP for Cursor

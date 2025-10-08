@@ -408,11 +408,12 @@ def fetch_latest_intelligence():
 
                 cached_time = datetime.fromisoformat(cache.get('timestamp'))
                 if (datetime.now() - cached_time) < timedelta(hours=24):
-                    logger.info(f"Returning cached results for '{topic}' (fetched {(datetime.now() - cached_time).seconds // 3600}h ago)")
+                    cache_age_hours = int((datetime.now() - cached_time).total_seconds() // 3600)
+                    logger.info(f"Returning cached results for '{topic}' (fetched {cache_age_hours}h ago)")
                     return jsonify({
                         **cache,
                         "cached": True,
-                        "cache_age_hours": (datetime.now() - cached_time).seconds // 3600
+                        "cache_age_hours": cache_age_hours
                     }), 200
             except FileNotFoundError:
                 pass  # Cache doesn't exist, continue to fetch
