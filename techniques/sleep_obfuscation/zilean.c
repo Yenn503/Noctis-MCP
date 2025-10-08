@@ -68,10 +68,15 @@ BOOL Zilean_AES256_Encrypt(BYTE* pData, SIZE_T szDataLen, BYTE* pKey, BYTE* pIV)
     status = BCryptGenerateSymmetricKey(hAlg, &hKey, NULL, 0, pKey, 32, 0);
     if (!BCRYPT_SUCCESS(status)) goto cleanup;
 
+    // IMPORTANT: BCrypt modifies IV in-place during CBC mode
+    // Must copy IV to preserve original for decryption
+    BYTE ivCopy[16];
+    memcpy(ivCopy, pIV, 16);
+
     // Encrypt in-place
     ULONG cbResult;
     status = BCryptEncrypt(hKey, pData, (ULONG)szDataLen, NULL,
-        pIV, 16, pData, (ULONG)szDataLen, &cbResult, 0);
+        ivCopy, 16, pData, (ULONG)szDataLen, &cbResult, 0);
     if (!BCRYPT_SUCCESS(status)) goto cleanup;
 
     bResult = TRUE;
@@ -102,10 +107,15 @@ BOOL Zilean_AES256_Decrypt(BYTE* pData, SIZE_T szDataLen, BYTE* pKey, BYTE* pIV)
     status = BCryptGenerateSymmetricKey(hAlg, &hKey, NULL, 0, pKey, 32, 0);
     if (!BCRYPT_SUCCESS(status)) goto cleanup;
 
+    // IMPORTANT: BCrypt modifies IV in-place during CBC mode
+    // Must copy IV to preserve original
+    BYTE ivCopy[16];
+    memcpy(ivCopy, pIV, 16);
+
     // Decrypt in-place
     ULONG cbResult;
     status = BCryptDecrypt(hKey, pData, (ULONG)szDataLen, NULL,
-        pIV, 16, pData, (ULONG)szDataLen, &cbResult, 0);
+        ivCopy, 16, pData, (ULONG)szDataLen, &cbResult, 0);
     if (!BCRYPT_SUCCESS(status)) goto cleanup;
 
     bResult = TRUE;

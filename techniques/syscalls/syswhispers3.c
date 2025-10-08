@@ -63,12 +63,19 @@ static DWORD _SW3_ResolveSSN(HMODULE hNtdll, LPCSTR pszFunctionName) {
 
     BYTE* pBytes = (BYTE*)pFunctionAddr;
 
+    // BEST PRACTICE: Validate memory is readable before pattern matching
+    // In production, verify pFunctionAddr is within ntdll module bounds
+    MEMORY_BASIC_INFORMATION mbi;
+    if (VirtualQuery(pFunctionAddr, &mbi, sizeof(mbi)) == 0) return 0;
+    if (mbi.State != MEM_COMMIT || !(mbi.Protect & PAGE_EXECUTE_READ)) return 0;
+
     // Check for direct syscall pattern: mov r10, rcx; mov eax, SSN
     // Pattern: 4C 8B D1 B8 [SSN] [SSN] 00 00
+    // IMPORTANT: Read full WORD for SSN (2 bytes), not DWORD (4 bytes)
     if (pBytes[0] == 0x4C && pBytes[1] == 0x8B && pBytes[2] == 0xD1 && pBytes[3] == 0xB8) {
-        // Extract SSN from bytes 4-5
-        DWORD dwSSN = *(DWORD*)(pBytes + 4);
-        return dwSSN;
+        // Extract SSN from bytes 4-5 (WORD = 2 bytes)
+        WORD wSSN = *(WORD*)(pBytes + 4);
+        return (DWORD)wSSN;
     }
 
     // If hooked, try neighboring functions (Halo's Gate approach)
@@ -90,7 +97,21 @@ BOOL SW3_Initialize(PSYSCALL_CACHE pCache) {
 
     // Enumerate ntdll exports to find syscall instructions
     PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)pCache->hNtdll;
+
+    // BEST PRACTICE: Validate DOS header
+    if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE) return FALSE;
+
+    // BEST PRACTICE: Validate e_lfanew is within bounds
+    SIZE_T szModuleSize = 0;
+    MEMORY_BASIC_INFORMATION mbi;
+    if (VirtualQuery(pCache->hNtdll, &mbi, sizeof(mbi)) > 0) {
+        szModuleSize = mbi.RegionSize;
+    }
+    if (pDosHeader->e_lfanew > szModuleSize - sizeof(IMAGE_NT_HEADERS)) return FALSE;
+
     PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)((BYTE*)pCache->hNtdll + pDosHeader->e_lfanew);
+    if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE) return FALSE;
+
     PIMAGE_EXPORT_DIRECTORY pExportDir = (PIMAGE_EXPORT_DIRECTORY)((BYTE*)pCache->hNtdll +
         pNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
 
@@ -109,6 +130,10 @@ BOOL SW3_Initialize(PSYSCALL_CACHE pCache) {
 
         // Use ordinal table to map name index to function index
         WORD wOrdinal = pOrdinalArray[i];
+
+        // BEST PRACTICE: Validate ordinal is within bounds
+        if (wOrdinal >= pExportDir->NumberOfFunctions) continue;
+
         PVOID pFunctionAddr = (PVOID)((BYTE*)pCache->hNtdll + pFunctionArray[wOrdinal]);
         PVOID pSyscallAddr = _SW3_FindSyscallInFunction(pFunctionAddr);
 
@@ -151,12 +176,25 @@ PVOID SW3_GetRandomSyscallAddr(PSYSCALL_CACHE pCache) {
     return pCache->stubs[dwIndex].pSyscallAddr;
 }
 
-// Assembly stub for syscall execution (x64)
-// This will be called from C and performs the actual syscall
-// Parameters: RCX = SSN, RDX = syscall address, R8 = arg count, R9+ = arguments
+// ============================================================================
+// INCOMPLETE: Assembly stub for syscall execution (x64)
+// ============================================================================
+// This is a REFERENCE IMPLEMENTATION showing the technique pattern.
+// Production code requires actual assembly stub in separate .asm file.
+//
+// The stub performs:
+// 1. Copies SSN to EAX register
+// 2. Jumps to random syscall instruction from cached address
+// 3. Syscall instruction executes with randomized location
+//
+// Example assembly (x64):
+//   mov r10, rcx          ; Standard syscall prologue
+//   mov eax, [dwSSN]      ; Load SSN from parameter
+//   jmp [pSyscallAddr]    ; Jump to random syscall instruction
+//
+// AI should generate similar logic when writing custom implementations.
+// ============================================================================
 extern NTSTATUS SW3_SyscallStub(DWORD dwSSN, PVOID pSyscallAddr, ...);
-
-// Note: The actual assembly implementation would be in a separate .asm file
 // For now, this is a placeholder. Production code needs inline assembly or .asm file
 
 // Wrapper: NtAllocateVirtualMemory
