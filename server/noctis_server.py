@@ -223,11 +223,22 @@ agent_registry = None  # Agent registry (initialized in main)
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
+    from pathlib import Path
+
+    # Count actual implementations
+    impl_folders = ['injection', 'syscalls', 'amsi', 'unhooking', 'sleep_obfuscation', 'crypto', 'evasion']
+    impl_count = 0
+    for folder in impl_folders:
+        folder_path = Path('techniques') / folder
+        if folder_path.exists():
+            impl_count += len(list(folder_path.glob('*.c'))) + len(list(folder_path.glob('*.cpp')))
+
     return jsonify({
         'status': 'healthy',
         'version': '2.0.0',
         'timestamp': datetime.now().isoformat(),
-        'techniques_loaded': len(technique_manager.techniques) if technique_manager else 0
+        'technique_implementations': impl_count,
+        'legacy_metadata_count': len(technique_manager.techniques) if technique_manager else 0
     })
 
 
@@ -1164,16 +1175,27 @@ def main():
     port = args.port or config.get('server.port', 8888)
     debug = args.debug or config.get('server.debug', False)
     
+    # Count actual technique implementations
+    from pathlib import Path
+    impl_folders = ['injection', 'syscalls', 'amsi', 'unhooking', 'sleep_obfuscation', 'crypto', 'evasion']
+    impl_count = 0
+    for folder in impl_folders:
+        folder_path = Path('techniques') / folder
+        if folder_path.exists():
+            impl_count += len(list(folder_path.glob('*.c'))) + len(list(folder_path.glob('*.cpp')))
+
     # Log startup info
     logger.info(f"Starting Noctis-MCP Server")
     logger.info(f"Host: {host}")
     logger.info(f"Port: {port}")
     logger.info(f"Debug: {debug}")
-    logger.info(f"Techniques loaded: {len(technique_manager.techniques)}")
-    
+    logger.info(f"Technique metadata: {len(technique_manager.techniques)} (legacy)")
+    logger.info(f"Technique implementations: {impl_count} files")
+
     # Print access URL
     print(f"\n[*] Server starting on http://{host}:{port}")
-    print(f"[*] Techniques loaded: {len(technique_manager.techniques)}")
+    print(f"[*] Technique implementations: {impl_count} production-grade C/C++ files")
+    print(f"    (PoolParty, SysWhispers3, VEH², Zilean, Perun's Fart, etc.)")
     print(f"\n[*] API Endpoints:")
     print(f"   - GET  /health                      - Health check")
     print(f"   - GET  /api/techniques              - List all techniques")
