@@ -92,10 +92,15 @@ SilentMoonwalk uses **Return-Oriented Programming (ROP)** to create synthetic ca
 
 // Initialize spoofing engine
 SPOOF_CONTEXT ctx;
-SilentMoonwalk_Initialize(&ctx, SPOOF_MODE_DESYNC);
+if (!SilentMoonwalk_Initialize(&ctx, SPOOF_MODE_DESYNC)) {
+    return FALSE; // Failed to scan ROP gadgets
+}
 
 // Build 3 synthetic frames (ntdll → kernel32 → ntdll)
-SilentMoonwalk_BuildSyntheticStack(&ctx, 3);
+if (!SilentMoonwalk_BuildSyntheticStack(&ctx, 3)) {
+    SilentMoonwalk_Cleanup(&ctx);
+    return FALSE; // Failed to create synthetic frames
+}
 
 // Call NtAllocateVirtualMemory with spoofed stack
 PVOID baseAddress = NULL;
@@ -238,15 +243,24 @@ Dynamic stack cloning scans running processes for legitimate threads, captures t
 ```c
 // Use SysWhispers3 for syscall, SilentMoonwalk for stack
 SPOOF_CONTEXT ctx;
-SilentMoonwalk_Initialize(&ctx, SPOOF_MODE_DESYNC);
-SilentMoonwalk_BuildSyntheticStack(&ctx, 3);
+if (!SilentMoonwalk_Initialize(&ctx, SPOOF_MODE_DESYNC)) {
+    return FALSE;
+}
+if (!SilentMoonwalk_BuildSyntheticStack(&ctx, 3)) {
+    SilentMoonwalk_Cleanup(&ctx);
+    return FALSE;
+}
 
 // Call NtAllocateVirtualMemory via direct syscall with spoofed stack
 PVOID result = SilentMoonwalk_CallWithSpoofedStack(
     &ctx,
     SW3_NtAllocateVirtualMemory,  // Direct syscall (no hooks)
-    ...
+    (PVOID)GetCurrentProcess(),
+    &baseAddress,
+    0,
+    &regionSize
 );
+SilentMoonwalk_Cleanup(&ctx);
 ```
 
 **Stack Spoofing + Sleep Obfuscation** (NOCTIS-T006):
