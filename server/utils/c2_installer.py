@@ -85,7 +85,7 @@ class C2Installer:
                     '/usr/bin/sliver-client'
                 ]
                 for path in common_paths:
-                    if os.path.exists(path):
+                    if os.path.exists(path) and os.access(path, os.X_OK):
                         client_path = path
                         break
 
