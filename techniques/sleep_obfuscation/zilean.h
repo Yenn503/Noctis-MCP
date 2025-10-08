@@ -39,6 +39,7 @@ typedef struct _ZILEAN_CONTEXT {
     DWORD dwOriginalProtect;        // Original memory protection
     ZILEAN_CONFIG config;           // Configuration
     BOOL bSleeping;                 // Sleep state flag
+    BYTE bIV[16];                   // AES initialization vector
 } ZILEAN_CONTEXT, *PZILEAN_CONTEXT;
 
 // NTDLL function typedefs for RtlRegisterWait

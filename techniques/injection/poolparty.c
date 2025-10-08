@@ -233,13 +233,13 @@ BOOL PoolParty_QueueTPTimer(HANDLE hProcess, PVOID pTimer) {
                         NTSTATUS status = pNtQueueApcThread(hThread, timer.Timer.Callback,
                             timer.Timer.Context, NULL, NULL);
 
-                        CloseHandle(hThread);
-
                         if (status == 0) {
                             bFound = TRUE;
+                            CloseHandle(hThread);
                             break;
                         }
                     }
+                    // Always close handle before next iteration
                     CloseHandle(hThread);
                 }
             }

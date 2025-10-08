@@ -96,6 +96,7 @@ BOOL SW3_Initialize(PSYSCALL_CACHE pCache) {
 
     DWORD* pNameArray = (DWORD*)((BYTE*)pCache->hNtdll + pExportDir->AddressOfNames);
     DWORD* pFunctionArray = (DWORD*)((BYTE*)pCache->hNtdll + pExportDir->AddressOfFunctions);
+    WORD* pOrdinalArray = (WORD*)((BYTE*)pCache->hNtdll + pExportDir->AddressOfNameOrdinals);
 
     DWORD dwCacheIndex = 0;
 
@@ -106,10 +107,16 @@ BOOL SW3_Initialize(PSYSCALL_CACHE pCache) {
         // Only process Nt* functions
         if (pszName[0] != 'N' || pszName[1] != 't') continue;
 
-        PVOID pFunctionAddr = (PVOID)((BYTE*)pCache->hNtdll + pFunctionArray[i]);
+        // Use ordinal table to map name index to function index
+        WORD wOrdinal = pOrdinalArray[i];
+        PVOID pFunctionAddr = (PVOID)((BYTE*)pCache->hNtdll + pFunctionArray[wOrdinal]);
         PVOID pSyscallAddr = _SW3_FindSyscallInFunction(pFunctionAddr);
 
         if (pSyscallAddr) {
+            // Resolve and cache SSN for completeness
+            DWORD dwSSN = _SW3_ResolveSSN(pCache->hNtdll, pszName);
+
+            pCache->stubs[dwCacheIndex].dwSSN = dwSSN;
             pCache->stubs[dwCacheIndex].pSyscallAddr = pSyscallAddr;
             pCache->stubs[dwCacheIndex].bCached = TRUE;
             dwCacheIndex++;

