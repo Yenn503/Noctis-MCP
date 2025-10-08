@@ -205,12 +205,16 @@ Noctis-MCP/
 ├── noctis_mcp_client/
 │   └── noctis_mcp.py               # 21 MCP tools
 └── techniques/
-    ├── reference_implementations/  # Working loaders (MaldevAcademy, MyOwn)
-    ├── templates/                  # Code generation templates
-    ├── vx-api/                     # Function signatures (VX-Underground)
-    ├── knowledge/                  # OPSEC guidance files
-    ├── injection/                  # Technique implementations
-    └── ...                         # Other technique folders
+    ├── injection/                  # Process injection techniques
+    ├── syscalls/                   # Direct syscall implementations
+    ├── amsi/                       # AMSI bypass techniques
+    ├── unhooking/                  # EDR unhooking methods
+    ├── sleep_obfuscation/          # Memory encryption during sleep
+    ├── crypto/                     # Payload encryption
+    ├── evasion/                    # Evasion techniques
+    ├── templates/                  # Production-ready templates
+    ├── bof_templates/              # Beacon Object File templates
+    └── knowledge/                  # OPSEC guidance files
 ```
 
 ---
@@ -246,7 +250,7 @@ RAG Search → IntelligenceProcessor → Structured Output
   |              ├─ Find patterns        |
   |              └─ Synthesize recommendations
   |
-  └─ 4 Sources: Knowledge, Blogs, GitHub, VX-API
+  └─ 3 Sources: Knowledge, Blogs, GitHub
 ```
 
 ### Pattern Extraction

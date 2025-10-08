@@ -47,11 +47,7 @@ pip install chromadb sentence-transformers
 # Index all technique implementations (PoolParty, SysWhispers3, VEH², Zilean, etc.)
 python scripts/index_all_techniques.py
 
-# Index VX-API function signatures (400+)
-python scripts/index_vx_sources.py
-
-# Optional: Update live intelligence (blogs, GitHub, arXiv)
-# python scripts/update_intelligence.py --mode weekly
+# Note: Techniques are automatically indexed on server startup
 ```
 
 ### Step 5: Configure MCP for Cursor
