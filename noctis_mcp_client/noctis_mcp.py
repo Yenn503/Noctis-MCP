@@ -1121,6 +1121,44 @@ def _format_code_generation(data: Dict) -> str:
         output.append(f"🎯 TARGET: {target_av} | OPSEC: {opsec_level}")
         output.append("")
 
+    # Template recommendation (CRITICAL - AI must read this file!)
+    template_rec = data.get('template_recommendation', {})
+    if template_rec:
+        output.append("📄 === TEMPLATE RECOMMENDATION ===\n")
+        output.append("⚡ CRITICAL: READ THIS FILE FIRST before writing code!\n")
+
+        template_file = template_rec.get('template_file', '')
+        template_name = template_rec.get('template_name', '')
+        use_case = template_rec.get('use_case', '')
+        detection_risk = template_rec.get('detection_risk', '')
+        techniques = template_rec.get('techniques_included', '')
+        recommendation = template_rec.get('recommendation', '')
+
+        if template_file:
+            output.append(f"   📁 FILE TO READ: {template_file}")
+        if template_name:
+            output.append(f"   📝 Template: {template_name}")
+        if use_case:
+            output.append(f"   🎯 Use Case: {use_case}")
+        if detection_risk:
+            output.append(f"   🛡️  Detection Risk: {detection_risk}")
+        if techniques:
+            output.append(f"   🔧 Includes: {techniques}")
+        if recommendation:
+            output.append(f"   💡 {recommendation}")
+
+        output.append("\n   ⚠️  ACTION: Use the Read tool to read the template file above!")
+        output.append("   📝 Then modify it based on the intelligence below.\n")
+        output.append("")
+
+    # Reference implementations available
+    output.append("📂 === REFERENCE IMPLEMENTATIONS AVAILABLE ===\n")
+    output.append("   You can also read these for implementation examples:\n")
+    output.append("   • techniques/reference_implementations/MaldevAcademy/")
+    output.append("   • techniques/reference_implementations/MyOwn/")
+    output.append("   ℹ️  These show HOW real malware implements techniques (patterns, structure)")
+    output.append("")
+
     # Intelligence gathered
     intelligence = data.get('intelligence', {})
     if intelligence:
@@ -1224,14 +1262,26 @@ def _format_code_generation(data: Dict) -> str:
     output.append("⚡ ACTION REQUIRED: START WRITING CODE NOW")
     output.append("═" * 70)
     output.append("\n📝 NEXT STEPS:")
-    output.append("   1. Create a new .c file or open existing code")
-    output.append("   2. Start writing code using the guidance above")
-    output.append("   3. Follow OPSEC recommendations (high scores)")
-    output.append("   4. AVOID warned techniques (CreateRemoteThread, etc.)")
-    output.append("   5. Use provided function signatures")
-    output.append("   6. Add comments explaining OPSEC decisions")
-    output.append("   7. After writing, call validate_code() to check")
-    output.append("   8. Then call compile_code() to build\n")
+    if template_rec:
+        output.append("   1. 📖 READ the recommended template file (shown above)")
+        output.append("   2. 📝 Copy template to new .c file or modify it directly")
+        output.append("   3. 🔧 Customize based on intelligence (OPSEC recs, warnings)")
+        output.append("   4. 💡 Add/modify techniques per synthesis recommendations")
+        output.append("   5. ⚠️  AVOID warned techniques from intelligence")
+        output.append("   6. 💬 Add comments explaining OPSEC decisions")
+        output.append("   7. ✅ After writing, call validate_code() to check")
+        output.append("   8. 🔨 Then call compile_code() to build")
+    else:
+        output.append("   1. 📝 Create a new .c file")
+        output.append("   2. 💡 Optionally read techniques/templates/ for examples")
+        output.append("   3. ✍️  Start writing code using the guidance above")
+        output.append("   4. 🎯 Follow OPSEC recommendations (high scores)")
+        output.append("   5. ⚠️  AVOID warned techniques (CreateRemoteThread, etc.)")
+        output.append("   6. 🔨 Use provided function signatures")
+        output.append("   7. 💬 Add comments explaining OPSEC decisions")
+        output.append("   8. ✅ After writing, call validate_code() to check")
+        output.append("   9. 🔨 Then call compile_code() to build")
+    output.append("")
 
     return "\n".join(output)
 
