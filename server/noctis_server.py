@@ -308,24 +308,8 @@ def compile_code():
         
         # If compilation failed and auto_fix enabled, try to fix
         if not result.success and auto_fix:
-            logger.info("Compilation failed, attempting auto-fix...")
-            from server.autofix_engine import AutoFixEngine
-            
-            autofix = AutoFixEngine(max_iterations=3)
-            
-            # Define compile function for iterative fixing
-            def compile_func(code):
-                comp_result = compiler.compile(
-                    source_code=code,
-                    architecture=architecture,
-                    optimization=optimization,
-                    output_name=output_name,
-                    subsystem=subsystem
-                )
-                return comp_result.success, comp_result.output
-            
-            # Try to fix and recompile
-            fix_result = autofix.fix_with_recompile(source_code, compile_func)
+            logger.warning("Auto-fix disabled - autofix_engine removed")
+            fix_result = type('obj', (object,), {'success': False})()
             
             if fix_result.success:
                 # Recompile with fixed code
@@ -1153,22 +1137,12 @@ def main():
     if rag_engine and rag_engine.enabled:
         logger.info("Registering agentic API endpoints...")
         from server.agentic_api import init_agentic_api
-        init_agentic_api(app, rag_engine, technique_manager, code_assembler, learning_engine)
+        init_agentic_api(app, rag_engine)
         logger.info("Agentic API endpoints registered")
     else:
         logger.warning("Agentic API endpoints NOT registered (RAG disabled)")
 
-    # Register education API endpoints
-    logger.info("Registering education API endpoints...")
-    from server.education_api import education_bp, init_education_api
-    education_config = {
-        'lessons_path': config.get('paths.lessons', 'data/lessons.json'),
-        'quizzes_path': config.get('paths.quizzes', 'data/quizzes.json'),
-        'education_db': config.get('paths.education_db', 'data/education_progress.db')
-    }
-    init_education_api(education_config)
-    app.register_blueprint(education_bp)
-    logger.info("Education API endpoints registered")
+    # Education API removed - not needed for red team operations
 
     # Determine host and port
     host = args.host or config.get('server.host', '127.0.0.1')

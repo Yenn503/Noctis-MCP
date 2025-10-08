@@ -6,7 +6,7 @@
         "-m",
         "noctis_mcp_client.noctis_mcp"
       ],
-      "description": "Noctis-MCP v2.0 - Hybrid Intelligence System for Malware Development (17 tools)",
+      "description": "Noctis-MCP - Professional Red Team Malware Development Platform (5 core tools)",
       "timeout": 300,
       "env": {
         "PYTHONPATH": "."
