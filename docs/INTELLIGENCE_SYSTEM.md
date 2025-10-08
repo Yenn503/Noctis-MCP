@@ -38,11 +38,12 @@ Noctis-MCP uses a **hybrid intelligence system** where AI agents (Claude, GPT, e
                  │
                  ▼
 ┌─────────────────────────────────────────────────────────┐
-│ DATA SOURCES                                             │
-│ ├─ Knowledge Files (OPSEC guidance, WHY)                 │
-│ ├─ Security Blogs (Current detections, WHAT NOW)         │
-│ ├─ GitHub Repos (Implementation HOW)                     │
-│ └─ VX-API (Function signatures, BUILDING BLOCKS)         │
+│ DATA SOURCES (400+ indexed)                              │
+│ ├─ Knowledge Files: 7 files (Phase 1 upgraded)           │
+│ ├─ Security Blogs: 35 RSS feeds (expanded)               │
+│ ├─ GitHub Repos: 27 queries (malware orgs)               │
+│ ├─ arXiv Research: Academic papers (NEW)                 │
+│ └─ VX-API: Function signatures                           │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -51,10 +52,19 @@ Noctis-MCP uses a **hybrid intelligence system** where AI agents (Claude, GPT, e
 ### 1. Knowledge Files (techniques/knowledge/*.md)
 **Purpose**: Strategic OPSEC guidance
 
+**Current Files** (7 total):
+- `syscalls.md` - Direct syscalls, SysWhispers3 randomization ⭐
+- `amsi_bypass.md` - VEH² hardware breakpoint bypass ⭐
+- `sleep_obfuscation.md` - Zilean thread pool sleep ⭐
+- `injection.md` - PoolParty thread pool injection ⭐
+- `encryption.md` - Payload encryption techniques
+
+⭐ = Phase 1 upgrades (2024-2025 research)
+
 **Provides**:
 - OPSEC scores (1-10) for different techniques
-- Method comparisons (Hell's Gate vs Heaven's Gate)
-- Detection risk analysis
+- Method comparisons (SysWhispers3 vs Hell's Hall, Zilean vs Ekko)
+- Detection risk analysis (current: 8-12% with Phase 1)
 - When to use which technique
 
 **Example Output**:
@@ -62,32 +72,52 @@ Noctis-MCP uses a **hybrid intelligence system** where AI agents (Claude, GPT, e
 {
   "recommendations": [
     {
-      "technique": "Indirect Syscalls",
-      "opsec_score": 8,
-      "reason": "Bypasses CrowdStrike Falcon v7 hooks effectively"
+      "technique": "SysWhispers3 Randomized Syscalls",
+      "opsec_score": 8.5,
+      "reason": "Eliminates static call patterns, 15-20% detection vs 20-25% Hell's Hall"
+    },
+    {
+      "technique": "PoolParty Thread Pool Injection",
+      "opsec_score": 9.5,
+      "reason": "100% EDR bypass documented (CrowdStrike, SentinelOne, Palo Alto)"
     }
   ],
-  "warnings": ["⚠ CreateRemoteThread heavily monitored"]
+  "warnings": ["⚠ CreateRemoteThread heavily monitored", "⚠ Memory patching fails on Win11 24H2"]
 }
 ```
 
 ### 2. Security Blogs (RSS feeds)
 **Purpose**: Current detection status
 
+**Sources** (35 RSS feeds):
+- **Elite Researchers**: Cracked5pider (Havoc C2), Alice Climent-Pommeret, am0nsec
+- **Security Firms**: MDSec, Outflank, SafeBreach Labs, RedOps, Binary Defense
+- **Research Labs**: Elastic Security Labs, Cyberark Labs, IBM X-Force
+- **Communities**: VX-Underground, Red Canary, PPN (snovvcrash)
+- **Full list**: 35 feeds (expanded from 23 in Phase 1)
+
 **Provides**:
 - Recent security updates (what's detected NOW)
 - Bypass techniques that currently work
 - AV/EDR version-specific information
+- Latest malware research (Zilean, PoolParty, etc.)
 
 **Example Output**:
 ```json
 {
   "detection_patterns": [
-    "CrowdStrike Falcon v7.2 (March 2024) now detects Hell's Gate"
+    "CrowdStrike Falcon v7.2 (March 2024) now detects Hell's Gate",
+    "Windows 11 24H2 blocks traditional AMSI memory patching"
   ],
   "bypasses": [
     {
-      "title": "Halo's Gate still effective against Falcon",
+      "title": "SysWhispers3 randomization evades Falcon behavioral detection",
+      "source": "Cracked5pider",
+      "recent": true
+    },
+    {
+      "title": "VEH² hardware breakpoint AMSI bypass works on Win11 24H2",
+      "source": "CrowdStrike disclosure (Black Hat MEA 2023)",
       "recent": true
     }
   ]
@@ -96,6 +126,12 @@ Noctis-MCP uses a **hybrid intelligence system** where AI agents (Claude, GPT, e
 
 ### 3. GitHub Repos (indexed repositories)
 **Purpose**: Real-world implementation patterns
+
+**Search Queries** (27 total):
+- **Technique-specific**: PoolParty, Zilean, SysWhispers3, VEH AMSI, Phantom DLL Hollowing, RecycledGate
+- **Organization-specific**: org:Cracked5pider, org:SafeBreach-Labs, org:Maldev-Academy, org:outflanknl, org:WKL-Sec, org:vxunderground
+- **User-specific**: user:gmh5225 syscall, user:am0nsec
+- **General**: Process injection, syscalls evasion, AMSI bypass, Cobalt Strike
 
 **Provides**:
 - HOW real malware implements techniques
@@ -106,17 +142,53 @@ Noctis-MCP uses a **hybrid intelligence system** where AI agents (Claude, GPT, e
 ```json
 {
   "patterns": {
-    "implementation_approach": ["Dynamic SSN resolution from clean NTDLL copy"],
+    "implementation_approach": [
+      "SysWhispers3: Cache 16 syscall addresses, randomize on each invocation",
+      "PoolParty: Thread pool TP_TIMER + module stomping (100% EDR bypass)"
+    ],
     "function_sequences": [{
-      "sequence": "NtAllocateVirtualMemory → NtWriteVirtualMemory → NtCreateThreadEx",
-      "description": "Safe injection pattern"
+      "sequence": "FindStompModule → StompModule → CreateTPTimer → QueueTPTimer",
+      "description": "PoolParty injection pattern"
     }],
-    "memory_patterns": ["Allocate RW, write payload, change to RX - OPSEC safe"]
+    "memory_patterns": [
+      "Allocate RW, write payload, change to RX - OPSEC safe",
+      "Shellcode in legitimate DLL .text section (PoolParty method)"
+    ]
   }
 }
 ```
 
-### 4. VX-API (external/VX-API/)
+### 4. arXiv Research Papers (NEW in Phase 1)
+**Purpose**: Academic security research
+
+**Search Queries**:
+- Malware detection evasion
+- Adversarial machine learning security
+- EDR bypass techniques
+- Polymorphic malware
+- Syscall hooking research
+
+**Provides**:
+- Latest academic research on evasion
+- Novel detection bypass methods
+- Theoretical foundations for techniques
+- Emerging threat intelligence
+
+**Example Output**:
+```json
+{
+  "research_papers": [
+    {
+      "title": "Evading Machine Learning Malware Detection via Adversarial Examples",
+      "authors": "Chen et al.",
+      "year": 2024,
+      "findings": "Gradient-based perturbations can evade ML-based EDR classifiers"
+    }
+  ]
+}
+```
+
+### 5. VX-API (external/VX-API/)
 **Purpose**: Function signatures
 
 **Provides**:
