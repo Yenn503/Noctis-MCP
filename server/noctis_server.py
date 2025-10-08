@@ -140,8 +140,7 @@ class TechniqueManager:
     def load_techniques(self):
         """Load all technique metadata from JSON files"""
         if not self.metadata_path.exists():
-            logger.warning(f"Metadata path does not exist: {self.metadata_path}")
-            logger.info("Run 'python utils/technique_indexer.py' to generate metadata")
+            logger.info(f"Legacy metadata system disabled (v2 uses RAG instead)")
             return
         
         json_files = list(self.metadata_path.glob('*.json'))
