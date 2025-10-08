@@ -592,7 +592,7 @@ def generate_mythic_agent_endpoint():
 def get_c2_frameworks():
     """
     Get list of supported C2 frameworks
-    
+
     Returns:
         JSON with supported frameworks and their capabilities
     """
@@ -643,6 +643,350 @@ def get_c2_frameworks():
             }
         ]
     })
+
+
+@app.route('/api/c2/install', methods=['POST'])
+def install_c2_framework():
+    """
+    Auto-install C2 framework on Linux system
+
+    Requirements:
+        - Linux OS
+        - sudo privileges
+        - Internet connectivity
+
+    Request JSON:
+    {
+        "framework": "sliver",  # sliver or mythic
+        "auto_start": true,     # Auto-start after installation
+        "install_dir": "/opt/Mythic"  # Optional, for Mythic only
+    }
+
+    Returns:
+        JSON with installation results
+    """
+    try:
+        import platform
+
+        # Check if running on Linux
+        if platform.system() != 'Linux':
+            return jsonify({
+                'success': False,
+                'error': 'C2 installation only supported on Linux',
+                'client_os': platform.system(),
+                'instructions': {
+                    'message': 'Deploy Noctis-MCP on a Linux server to use C2 auto-installation',
+                    'alternative': 'Manually install C2 framework and use generate_c2_beacon() tool'
+                }
+            }), 400
+
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+
+        framework = data.get('framework', 'sliver')
+        auto_start = data.get('auto_start', True)
+        install_dir = data.get('install_dir')
+
+        # Validate framework
+        if framework not in ['sliver', 'mythic']:
+            return jsonify({
+                'success': False,
+                'error': f'Unsupported framework: {framework}',
+                'supported': ['sliver', 'mythic']
+            }), 400
+
+        # Import C2 installer
+        from server.utils.c2_installer import C2Installer
+
+        # Check prerequisites
+        logger.info(f"[C2 Install] Checking prerequisites...")
+        prereqs = C2Installer.check_prerequisites()
+
+        if not all(prereqs.values()):
+            missing = [k for k, v in prereqs.items() if not v]
+            return jsonify({
+                'success': False,
+                'error': 'Missing prerequisites for C2 installation',
+                'missing_prerequisites': missing,
+                'prerequisites': prereqs
+            }), 400
+
+        # Install framework
+        logger.info(f"[C2 Install] Installing {framework}...")
+
+        if framework == 'sliver':
+            result = C2Installer.install_sliver(verbose=True)
+        elif framework == 'mythic':
+            if install_dir:
+                result = C2Installer.install_mythic(install_dir=install_dir, verbose=True)
+            else:
+                result = C2Installer.install_mythic(verbose=True)
+
+        # Return result
+        if result['success']:
+            logger.info(f"[C2 Install] {framework} installed successfully")
+
+            response_data = {
+                'success': True,
+                'framework': framework,
+                'message': result['message'],
+                'install_path': result.get('install_path'),
+                'install_time': result.get('install_time'),
+                'next_steps': []
+            }
+
+            # Add next steps based on framework
+            if framework == 'sliver':
+                response_data['next_steps'] = [
+                    'Start Sliver server: sliver-server',
+                    'Connect client: sliver-client',
+                    'Create listener: https --lhost <IP> --lport 443',
+                    'Generate beacon: Call generate_c2_beacon() MCP tool'
+                ]
+                response_data['mcp_example'] = 'generate_c2_beacon("sliver", "10.0.0.1", 443, "https")'
+
+            elif framework == 'mythic':
+                response_data['ui_url'] = result.get('ui_url', 'https://127.0.0.1:7443')
+                response_data['next_steps'] = [
+                    f'Access Mythic UI: {response_data["ui_url"]}',
+                    'Get credentials from install directory',
+                    'Create listener via UI',
+                    'Generate agent: Call generate_c2_beacon() MCP tool with API token'
+                ]
+                response_data['mcp_example'] = 'generate_c2_beacon("mythic", "10.0.0.1", 80, "http", api_token="<token>")'
+
+            return jsonify(response_data)
+        else:
+            logger.error(f"[C2 Install] Installation failed: {result['message']}")
+            return jsonify({
+                'success': False,
+                'framework': framework,
+                'error': result['message'],
+                'install_time': result.get('install_time'),
+                'troubleshooting': {
+                    'sliver': 'Check sudo access and internet connectivity. Run: curl https://sliver.sh/install',
+                    'mythic': 'Ensure Docker is installable. Check: /opt/Mythic/install_docker_ubuntu.sh'
+                }.get(framework)
+            }), 500
+
+    except ImportError as e:
+        logger.error(f"[C2 Install] Import error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'C2 installer module not found: {e}',
+            'fix': 'Ensure server/utils/c2_installer.py exists'
+        }), 500
+
+    except Exception as e:
+        logger.error(f"[C2 Install] Error: {e}")
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+
+@app.route('/api/c2/<framework>/listener/start', methods=['POST'])
+def start_c2_listener(framework):
+    """
+    Start C2 listener for specified framework
+
+    Requirements:
+        - C2 framework must be installed
+        - Appropriate permissions (may require sudo)
+
+    Request JSON:
+    {
+        "protocol": "https",       # Protocol to use
+        "lhost": "10.0.0.1",      # Listener host
+        "lport": 443,              # Listener port
+        "listener_name": "main",   # Optional listener name
+        "api_token": "..."         # For Mythic only
+    }
+
+    Returns:
+        JSON with listener setup results
+    """
+    try:
+        # Validate framework
+        if framework not in ['sliver', 'mythic', 'adaptix']:
+            return jsonify({
+                'success': False,
+                'error': f'Unsupported framework: {framework}',
+                'supported': ['sliver', 'mythic', 'adaptix']
+            }), 400
+
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+
+        protocol = data.get('protocol', 'https')
+        lhost = data.get('lhost')
+        lport = data.get('lport')
+        listener_name = data.get('listener_name', f'{framework}_listener')
+
+        if not lhost or not lport:
+            return jsonify({
+                'success': False,
+                'error': 'lhost and lport are required'
+            }), 400
+
+        # Check if framework is installed
+        from server.utils.c2_detector import C2Detector
+
+        frameworks = C2Detector.detect_all()
+        if framework not in frameworks:
+            return jsonify({
+                'success': False,
+                'error': f'{framework} is not installed',
+                'suggestion': f'Install using: POST /api/c2/install with framework={framework}',
+                'installed_frameworks': list(frameworks.keys())
+            }), 400
+
+        logger.info(f"[C2 Listener] Starting {framework} listener on {protocol}://{lhost}:{lport}")
+
+        # Framework-specific listener setup
+        if framework == 'sliver':
+            # Start Sliver listener
+            import subprocess
+
+            # Check if sliver-server is running
+            try:
+                result = subprocess.run(
+                    ['pgrep', '-f', 'sliver-server'],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+
+                if result.returncode != 0:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Sliver server is not running',
+                        'instructions': [
+                            'Start Sliver server: sliver-server',
+                            'Or run in daemon mode: sliver-server daemon',
+                            'Then retry listener setup'
+                        ]
+                    }), 400
+
+            except subprocess.TimeoutExpired:
+                pass
+
+            # Create listener command script
+            listener_cmd = f'{protocol} --lhost {lhost} --lport {lport}'
+
+            return jsonify({
+                'success': True,
+                'framework': 'sliver',
+                'listener_name': listener_name,
+                'protocol': protocol,
+                'lhost': lhost,
+                'lport': lport,
+                'status': 'manual_setup_required',
+                'instructions': [
+                    'Sliver listeners must be created via interactive client',
+                    'Run: sliver-client',
+                    f'Execute: {listener_cmd}',
+                    'Verify with: jobs'
+                ],
+                'command': listener_cmd,
+                'next_step': f'Once listener is running, generate beacon with: generate_c2_beacon("sliver", "{lhost}", {lport}, "{protocol}")'
+            })
+
+        elif framework == 'mythic':
+            # Mythic listeners are created via API or UI
+            api_token = data.get('api_token')
+
+            if not api_token:
+                return jsonify({
+                    'success': False,
+                    'error': 'api_token is required for Mythic',
+                    'instructions': [
+                        'Get API token from Mythic UI',
+                        'Login at: https://127.0.0.1:7443',
+                        'Navigate to: Settings > API Tokens',
+                        'Create new token and use in request'
+                    ]
+                }), 400
+
+            # Check if Mythic is running
+            mythic_info = frameworks['mythic']
+            if not mythic_info.get('running'):
+                return jsonify({
+                    'success': False,
+                    'error': 'Mythic server is not running',
+                    'instructions': [
+                        f'Start Mythic: cd {mythic_info["path"]} && sudo ./mythic-cli start',
+                        'Wait for startup (~30-60 seconds)',
+                        'Verify at: https://127.0.0.1:7443',
+                        'Then retry listener setup'
+                    ]
+                }), 400
+
+            return jsonify({
+                'success': True,
+                'framework': 'mythic',
+                'listener_name': listener_name,
+                'protocol': protocol,
+                'lhost': lhost,
+                'lport': lport,
+                'status': 'manual_setup_required',
+                'instructions': [
+                    'Mythic listeners must be created via UI or API',
+                    'Login to UI: https://127.0.0.1:7443',
+                    'Navigate to: C2 Profiles > Create Listener',
+                    f'Configure: {protocol}://{lhost}:{lport}',
+                    'Activate listener'
+                ],
+                'ui_url': 'https://127.0.0.1:7443',
+                'next_step': f'Once listener is running, generate agent with: generate_c2_beacon("mythic", "{lhost}", {lport}, "{protocol}", api_token="<token>")'
+            })
+
+        elif framework == 'adaptix':
+            # Adaptix listener setup
+            return jsonify({
+                'success': True,
+                'framework': 'adaptix',
+                'listener_name': listener_name,
+                'protocol': protocol,
+                'lhost': lhost,
+                'lport': lport,
+                'status': 'manual_setup_required',
+                'instructions': [
+                    'Adaptix listeners are framework-specific',
+                    'Refer to Adaptix documentation for listener setup',
+                    'Typically: adaptix-server --listen <IP>:<PORT>',
+                    'Verify listener is active before generating beacons'
+                ],
+                'next_step': f'Once listener is running, generate beacon with: generate_c2_beacon("adaptix", "{lhost}", {lport})'
+            })
+
+    except ImportError as e:
+        logger.error(f"[C2 Listener] Import error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'C2 detector module not found: {e}'
+        }), 500
+
+    except Exception as e:
+        logger.error(f"[C2 Listener] Error: {e}")
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
 
 
 @app.route('/api/stats', methods=['GET'])
@@ -774,6 +1118,16 @@ def main():
             indexed = rag_engine.index_knowledge_base('techniques/knowledge')
             logger.info(f"Indexed {indexed} knowledge chunks")
 
+            # Index Phase 5 integration examples (templates)
+            logger.info("Indexing integration example templates...")
+            indexed_examples = rag_engine.index_examples('techniques/examples')
+            logger.info(f"Indexed {indexed_examples} integration examples")
+
+            # Index AI integration guides
+            logger.info("Indexing AI integration guides...")
+            indexed_guides = rag_engine.index_ai_guides('docs')
+            logger.info(f"Indexed {indexed_guides} AI guidance sections")
+
     except Exception as e:
         logger.warning(f"RAG engine initialization failed: {e}")
         logger.warning("Agentic features will be disabled")
@@ -845,8 +1199,12 @@ def main():
     print(f"   - POST /api/generate                - Generate code")
     print(f"   - POST /api/compile                 - Compile code")
     print(f"   - POST /api/analyze/opsec           - OPSEC analysis")
+    print(f"\n[*] C2 Integration Endpoints:")
     print(f"   - GET  /api/c2/frameworks           - List C2 frameworks")
     print(f"   - POST /api/c2/sliver/generate      - Generate Sliver beacon")
+    print(f"   - POST /api/c2/mythic/generate      - Generate Mythic agent")
+    print(f"   - POST /api/c2/install              - Auto-install C2 framework (Linux)")
+    print(f"   - POST /api/c2/<fw>/listener/start  - Setup C2 listener")
     print(f"\n[*] Agent API Endpoints (V2):")
     print(f"   - POST /api/v2/agents/technique-selection   - AI technique selection")
     print(f"   - POST /api/v2/agents/malware-development   - Autonomous malware dev")

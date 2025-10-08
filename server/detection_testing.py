@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """
-Live Detection Testing with Hybrid Analysis
-============================================
+Live Detection Testing with VirusTotal
+=======================================
 
-Integrates with Hybrid Analysis sandbox to test malware against real AV/EDR.
+Integrates with VirusTotal to test malware against 70+ AV/EDR engines.
 
 Features:
-- Upload binaries to Hybrid Analysis
-- Test against specific AV/EDR configurations
-- Get detection verdicts and signatures
+- Upload binaries to VirusTotal
+- Test against 70+ AV engines simultaneously
+- Get detection verdicts in seconds (not minutes)
 - Calculate OPSEC scores based on results
 - Smart caching to avoid redundant uploads
+- Automated recommendations for OPSEC improvements
 
-API Documentation: https://www.hybrid-analysis.com/docs/api/v2
+API Documentation: https://docs.virustotal.com/reference/overview
 
 Usage:
     from server.detection_testing import DetectionTester
@@ -29,51 +30,38 @@ import time
 import hashlib
 import json
 import logging
-import requests
 from pathlib import Path
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 
-class HybridAnalysisAPI:
-    """Client for Hybrid Analysis API v2"""
+class VirusTotalAPI:
+    """Client for VirusTotal API v3"""
 
     def __init__(self, api_key: Optional[str] = None):
         """
-        Initialize Hybrid Analysis API client
+        Initialize VirusTotal API client
 
         Args:
-            api_key: Hybrid Analysis API key (or use HYBRID_ANALYSIS_API_KEY env var)
+            api_key: VirusTotal API key (or use VT_API_KEY env var)
         """
-        self.api_key = api_key or os.getenv("HYBRID_ANALYSIS_API_KEY")
+        self.api_key = api_key or os.getenv("VT_API_KEY")
         if not self.api_key:
-            logger.warning("No Hybrid Analysis API key provided. Set HYBRID_ANALYSIS_API_KEY env variable.")
+            logger.warning("No VirusTotal API key provided. Set VT_API_KEY env variable.")
 
-        self.base_url = "https://www.hybrid-analysis.com/api/v2"
-        self.headers = {
-            "api-key": self.api_key,
-            "User-Agent": "Noctis-MCP-Detection-Testing",
-            "Accept": "application/json"
-        }
-
-        # Rate limiting (100 requests per hour for free tier)
-        self.rate_limit_delay = 36  # seconds between requests
+        # Rate limiting (Free tier: 4 requests per minute)
+        self.rate_limit_delay = 15  # seconds between requests (4/min = 15s)
         self.last_request_time = 0
 
         # Cache directory for results
         self.cache_dir = Path("data/detection_cache")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-
-        # Environment IDs (Hybrid Analysis environment codes)
-        self.environments = {
-            "Windows 7 32-bit": 100,
-            "Windows 7 64-bit": 110,
-            "Windows 10 64-bit": 120,
-            "Windows 11 64-bit": 160,
-            "Linux (Ubuntu 16.04, 64-bit)": 300,
-        }
 
     def _rate_limit(self):
         """Enforce rate limiting"""
@@ -102,10 +90,22 @@ class HybridAnalysisAPI:
                     cached = json.load(f)
 
                 # Check if cache is still valid (7 days)
-                cache_date = datetime.fromisoformat(cached.get("cached_at", "2000-01-01"))
+                cached_at = cached.get("cached_at")
+                if not cached_at:
+                    logger.warning(f"Cache missing timestamp for {file_hash[:8]}, treating as expired")
+                    return None
+
+                try:
+                    cache_date = datetime.fromisoformat(cached_at)
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Invalid cache timestamp '{cached_at}' for {file_hash[:8]}: {e}")
+                    return None
+
                 if datetime.now() - cache_date < timedelta(days=7):
                     logger.info(f"Using cached result for {file_hash[:8]}...")
                     return cached
+                else:
+                    logger.info(f"Cache expired for {file_hash[:8]} (age: {(datetime.now() - cache_date).days} days)")
             except Exception as e:
                 logger.warning(f"Failed to load cache: {e}")
 
@@ -123,22 +123,15 @@ class HybridAnalysisAPI:
         except Exception as e:
             logger.warning(f"Failed to save cache: {e}")
 
-    def submit_file(
-        self,
-        file_path: str,
-        environment: str = "Windows 10 64-bit",
-        comment: Optional[str] = None
-    ) -> Optional[Dict]:
+    def submit_file(self, file_path: str) -> Optional[Dict]:
         """
-        Submit file to Hybrid Analysis for scanning
+        Submit file to VirusTotal for scanning
 
         Args:
             file_path: Path to binary file
-            environment: Target OS environment
-            comment: Optional comment for submission
 
         Returns:
-            Submission data with job_id for status checking
+            Scan results with detection data
         """
         if not self.api_key:
             logger.error("No API key configured")
@@ -150,155 +143,77 @@ class HybridAnalysisAPI:
         if cached_result:
             return cached_result
 
-        # Rate limit
-        self._rate_limit()
-
-        # Get environment ID
-        env_id = self.environments.get(environment, 120)  # Default to Win10
-
-        logger.info(f"Submitting {Path(file_path).name} to Hybrid Analysis...")
-        logger.info(f"Environment: {environment} (ID: {env_id})")
+        logger.info(f"Submitting {Path(file_path).name} to VirusTotal...")
 
         try:
-            with open(file_path, 'rb') as f:
-                files = {'file': (Path(file_path).name, f, 'application/octet-stream')}
-                data = {
-                    'environment_id': env_id,
-                    'comment': comment or f"Noctis-MCP Detection Test - {datetime.now().isoformat()}"
-                }
+            import vt
 
-                response = requests.post(
-                    f"{self.base_url}/submit/file",
-                    headers=self.headers,
-                    files=files,
-                    data=data,
-                    timeout=60
-                )
-
-                if response.status_code == 201:
-                    result = response.json()
-                    logger.info(f"Submission successful! Job ID: {result.get('job_id')}")
-                    return result
-                elif response.status_code == 429:
-                    logger.error("Rate limit exceeded. Wait before retrying.")
-                    return None
-                else:
-                    logger.error(f"Submission failed: {response.status_code} - {response.text}")
-                    return None
-
-        except Exception as e:
-            logger.exception(f"Error submitting file: {e}")
-            return None
-
-    def get_report(self, job_id: str, max_wait: int = 600) -> Optional[Dict]:
-        """
-        Get analysis report for submitted file
-
-        Args:
-            job_id: Job ID from submission
-            max_wait: Maximum seconds to wait for analysis (default: 10 minutes)
-
-        Returns:
-            Full analysis report
-        """
-        if not self.api_key:
-            logger.error("No API key configured")
-            return None
-
-        logger.info(f"Waiting for analysis to complete (Job ID: {job_id})...")
-        start_time = time.time()
-
-        while time.time() - start_time < max_wait:
+            # Rate limit
             self._rate_limit()
 
-            try:
-                response = requests.get(
-                    f"{self.base_url}/report/{job_id}/state",
-                    headers=self.headers,
-                    timeout=10
-                )
+            # Check if file already scanned
+            with vt.Client(self.api_key) as client:
+                try:
+                    # Try to get existing analysis
+                    logger.info(f"Checking for existing scan: {file_hash}")
+                    file_obj = client.get_object(f"/files/{file_hash}")
 
-                if response.status_code == 200:
-                    state = response.json()
-                    status = state.get("state", "unknown")
+                    logger.info(f"Found existing scan - returning cached result")
+                    return {
+                        'sha256': file_hash,
+                        'stats': file_obj.last_analysis_stats,
+                        'results': file_obj.last_analysis_results,
+                        'scan_date': file_obj.last_analysis_date
+                    }
 
-                    logger.info(f"Analysis status: {status}")
+                except vt.APIError:
+                    # File not seen before, need to upload
+                    logger.info(f"File not seen before - uploading...")
+                    self._rate_limit()
 
-                    if status == "SUCCESS":
-                        # Get full report
-                        return self._fetch_full_report(job_id)
-                    elif status in ["ERROR", "FAILED"]:
-                        logger.error(f"Analysis failed: {state}")
-                        return None
-                    else:
-                        # Still processing
-                        time.sleep(30)  # Check every 30 seconds
-                else:
-                    logger.error(f"Status check failed: {response.status_code}")
+                    with open(file_path, 'rb') as f:
+                        analysis = client.scan_file(f)
+
+                    # Wait for analysis to complete
+                    logger.info("Waiting for analysis to complete...")
+                    analysis_id = analysis.id
+
+                    # Poll for results (usually takes 10-30 seconds)
+                    max_wait = 120  # 2 minutes max
+                    start_time = time.time()
+
+                    while time.time() - start_time < max_wait:
+                        self._rate_limit()
+
+                        analysis_obj = client.get_object(f"/analyses/{analysis_id}")
+
+                        if analysis_obj.status == "completed":
+                            # Get full file report
+                            self._rate_limit()
+                            file_obj = client.get_object(f"/files/{file_hash}")
+
+                            result = {
+                                'sha256': file_hash,
+                                'stats': file_obj.last_analysis_stats,
+                                'results': file_obj.last_analysis_results,
+                                'scan_date': file_obj.last_analysis_date
+                            }
+
+                            # Cache result
+                            self._save_cache(file_hash, result)
+                            return result
+
+                        logger.info(f"Analysis status: {analysis_obj.status}... waiting")
+                        time.sleep(10)
+
+                    logger.error("Analysis timeout")
                     return None
 
-            except Exception as e:
-                logger.exception(f"Error checking status: {e}")
-                return None
-
-        logger.error(f"Analysis timeout after {max_wait}s")
-        return None
-
-    def _fetch_full_report(self, job_id: str) -> Optional[Dict]:
-        """Fetch complete analysis report"""
-        self._rate_limit()
-
-        try:
-            response = requests.get(
-                f"{self.base_url}/report/{job_id}/summary",
-                headers=self.headers,
-                timeout=10
-            )
-
-            if response.status_code == 200:
-                return response.json()
-            else:
-                logger.error(f"Report fetch failed: {response.status_code}")
-                return None
-
-        except Exception as e:
-            logger.exception(f"Error fetching report: {e}")
+        except ImportError:
+            logger.error("vt-py not installed. Run: pip install vt-py")
             return None
-
-    def search_hash(self, file_hash: str) -> Optional[List[Dict]]:
-        """
-        Search for existing analysis by file hash
-        Useful to check if file was already analyzed
-
-        Args:
-            file_hash: SHA256 hash of file
-
-        Returns:
-            List of existing analysis reports
-        """
-        if not self.api_key:
-            logger.error("No API key configured")
-            return None
-
-        self._rate_limit()
-
-        try:
-            response = requests.post(
-                f"{self.base_url}/search/hash",
-                headers=self.headers,
-                data={"hash": file_hash},
-                timeout=10
-            )
-
-            if response.status_code == 200:
-                results = response.json()
-                return results
-            else:
-                logger.warning(f"Hash search failed: {response.status_code}")
-                return None
-
         except Exception as e:
-            logger.exception(f"Error searching hash: {e}")
+            logger.exception(f"Error submitting file: {e}")
             return None
 
 
@@ -310,9 +225,9 @@ class DetectionTester:
         Initialize detection tester
 
         Args:
-            api_key: Hybrid Analysis API key
+            api_key: VirusTotal API key
         """
-        self.hybrid_analysis = HybridAnalysisAPI(api_key)
+        self.virustotal = VirusTotalAPI(api_key)
         self.results_dir = Path("data/detection_results")
         self.results_dir.mkdir(parents=True, exist_ok=True)
 
@@ -323,17 +238,17 @@ class DetectionTester:
         environment: str = "Windows 10 64-bit"
     ) -> Dict:
         """
-        Test binary against AV/EDR in sandbox
+        Test binary against 70+ AV engines via VirusTotal
 
         Args:
             binary_path: Path to compiled binary
             target_av: Target AV name (for OPSEC score calculation)
-            environment: Target OS environment
+            environment: Ignored (kept for API compatibility)
 
         Returns:
             Detection results with OPSEC score
         """
-        logger.info(f"Testing {Path(binary_path).name} in {environment}")
+        logger.info(f"Testing {Path(binary_path).name} against 70+ AV engines")
 
         if not Path(binary_path).exists():
             return {
@@ -341,227 +256,199 @@ class DetectionTester:
                 "error": f"File not found: {binary_path}"
             }
 
-        # Check if already analyzed
-        file_hash = self.hybrid_analysis._get_file_hash(binary_path)
-        cached = self.hybrid_analysis._load_cache(file_hash)
-
-        if cached and "detection_result" in cached:
-            logger.info("Using cached detection result")
-            return cached["detection_result"]
-
         # Submit file
-        submission = self.hybrid_analysis.submit_file(
-            binary_path,
-            environment=environment,
-            comment=f"Noctis-MCP Test - Target: {target_av or 'General'}"
-        )
+        result = self.virustotal.submit_file(binary_path)
 
-        if not submission:
+        if not result:
             return {
                 "success": False,
                 "error": "Submission failed. Check API key and rate limits."
             }
 
-        # Wait for analysis
-        job_id = submission.get("job_id")
-        if not job_id:
-            return {
-                "success": False,
-                "error": "No job ID received from submission"
-            }
-
-        report = self.hybrid_analysis.get_report(job_id, max_wait=600)
-
-        if not report:
-            return {
-                "success": False,
-                "error": "Analysis failed or timed out"
-            }
-
         # Parse results
-        result = self._parse_detection_results(report, target_av)
-
-        # Cache result
-        self.hybrid_analysis._save_cache(file_hash, {"detection_result": result})
+        detection_result = self._parse_detection_results(result, target_av)
 
         # Save detailed report
-        self._save_report(binary_path, result, report)
+        self._save_report(binary_path, detection_result, result)
 
-        return result
+        return detection_result
 
-    def _parse_detection_results(self, report: Dict, target_av: Optional[str]) -> Dict:
-        """Parse Hybrid Analysis report into detection results"""
+    def _parse_detection_results(self, vt_result: Dict, target_av: Optional[str]) -> Dict:
+        """Parse VirusTotal result into detection results"""
 
-        # Extract key indicators
-        verdict = report.get("verdict", "unknown")
-        threat_score = report.get("threat_score", 0)  # 0-100
-        av_detections = report.get("av_detect", 0)  # Number of AV detections
-        total_signatures = report.get("total_signatures", 0)
+        stats = vt_result.get('stats', {})
+        results = vt_result.get('results', {})
 
-        # Extract AV results
-        av_results = report.get("av_results", [])
-        detected_by = [av["av_name"] for av in av_results if av.get("is_detected")]
+        # Extract detection counts
+        malicious = stats.get('malicious', 0)
+        suspicious = stats.get('suspicious', 0)
+        undetected = stats.get('undetected', 0)
+        total_engines = malicious + suspicious + undetected + stats.get('harmless', 0)
 
-        # Check if target AV detected it
+        # Extract which AVs detected it
+        detected_by = []
         target_detected = False
-        if target_av:
-            target_detected = any(
-                target_av.lower() in av.lower() for av in detected_by
-            )
 
-        # Calculate OPSEC score (1-10, higher = better evasion)
+        for av_name, av_data in results.items():
+            if av_data.get('category') in ['malicious', 'suspicious']:
+                detected_by.append({
+                    'name': av_name,
+                    'category': av_data.get('category'),
+                    'result': av_data.get('result', 'unknown')
+                })
+
+                # Check if target AV detected it
+                if target_av and target_av.lower() in av_name.lower():
+                    target_detected = True
+
+        # Calculate OPSEC score
         opsec_score = self._calculate_opsec_score(
-            verdict=verdict,
-            threat_score=threat_score,
-            av_detections=av_detections,
+            malicious=malicious,
+            suspicious=suspicious,
+            total_engines=total_engines,
             target_detected=target_detected
         )
 
-        # Extract triggered signatures
-        signatures = []
-        for sig in report.get("signatures", []):
-            signatures.append({
-                "name": sig.get("name"),
-                "severity": sig.get("severity"),
-                "threat_level": sig.get("threat_level")
-            })
+        # Generate recommendations
+        recommendations = self._generate_recommendations(
+            detected_by=detected_by,
+            target_detected=target_detected,
+            detection_rate=malicious / total_engines if total_engines > 0 else 0
+        )
 
         return {
             "success": True,
-            "detected": verdict in ["malicious", "suspicious"],
-            "verdict": verdict,
-            "threat_score": threat_score,
+            "detected": malicious > 0 or suspicious > 0,
+            "verdict": "malicious" if malicious > 0 else ("suspicious" if suspicious > 0 else "clean"),
             "opsec_score": opsec_score,
-            "av_detections": av_detections,
+            "detection_count": malicious,
+            "suspicious_count": suspicious,
+            "total_engines": total_engines,
+            "detection_rate": f"{(malicious / total_engines * 100):.1f}%" if total_engines > 0 else "0%",
             "detected_by": detected_by,
             "target_av": target_av,
             "target_detected": target_detected,
-            "signatures": signatures[:10],  # Top 10 signatures
-            "behavioral_alerts": self._extract_behavioral_alerts(report),
-            "recommendations": self._generate_recommendations(
-                signatures, detected_by, target_detected
-            ),
-            "analysis_time": report.get("analysis_start_time"),
-            "environment": report.get("environment_description"),
-            "sha256": report.get("sha256")
+            "recommendations": recommendations,
+            "scan_date": vt_result.get('scan_date'),
+            "sha256": vt_result.get('sha256')
         }
 
     def _calculate_opsec_score(
         self,
-        verdict: str,
-        threat_score: int,
-        av_detections: int,
+        malicious: int,
+        suspicious: int,
+        total_engines: int,
         target_detected: bool
     ) -> int:
         """
         Calculate OPSEC score (1-10)
 
-        10 = Undetected, clean
-        8-9 = Low detections, suspicious only
-        5-7 = Some detections, malicious verdict
-        1-4 = Heavily detected
+        10 = Undetected
+        8-9 = Low detections (1-10%)
+        5-7 = Moderate detections (10-30%)
+        3-4 = High detections (30-60%)
+        1-2 = Heavily detected (>60%)
         """
-        score = 10
+        if total_engines == 0:
+            return 1
 
-        # Verdict penalty
-        if verdict == "malicious":
-            score -= 3
-        elif verdict == "suspicious":
+        detection_rate = malicious / total_engines
+
+        # Start with base score
+        if detection_rate == 0:
+            score = 10
+        elif detection_rate < 0.05:  # <5%
+            score = 9
+        elif detection_rate < 0.10:  # <10%
+            score = 8
+        elif detection_rate < 0.20:  # <20%
+            score = 7
+        elif detection_rate < 0.30:  # <30%
+            score = 6
+        elif detection_rate < 0.50:  # <50%
+            score = 5
+        elif detection_rate < 0.70:  # <70%
+            score = 4
+        else:
+            score = 2
+
+        # Penalty for suspicious detections
+        if suspicious > 5:
             score -= 1
 
-        # Threat score penalty (0-100 scale)
-        if threat_score >= 80:
-            score -= 3
-        elif threat_score >= 50:
-            score -= 2
-        elif threat_score >= 20:
-            score -= 1
-
-        # AV detection penalty
-        if av_detections >= 10:
-            score -= 3
-        elif av_detections >= 5:
-            score -= 2
-        elif av_detections >= 1:
-            score -= 1
-
-        # Target AV detection (critical)
+        # Critical penalty if target AV detected it
         if target_detected:
             score -= 2
 
         return max(1, min(10, score))
 
-    def _extract_behavioral_alerts(self, report: Dict) -> List[Dict]:
-        """Extract behavioral detection alerts"""
-        alerts = []
-
-        for process in report.get("processes", []):
-            if process.get("normalized_path"):
-                alerts.append({
-                    "type": "process",
-                    "action": "created",
-                    "path": process["normalized_path"]
-                })
-
-        for network_call in report.get("network", []):
-            alerts.append({
-                "type": "network",
-                "action": network_call.get("protocol"),
-                "destination": network_call.get("url")
-            })
-
-        return alerts[:10]  # Top 10 alerts
-
     def _generate_recommendations(
         self,
-        signatures: List[Dict],
-        detected_by: List[str],
-        target_detected: bool
+        detected_by: List[Dict],
+        target_detected: bool,
+        detection_rate: float
     ) -> List[str]:
         """Generate OPSEC improvement recommendations"""
         recommendations = []
 
         if target_detected:
             recommendations.append(
-                f"CRITICAL: Target AV detected the binary. Consider different evasion technique."
+                f"🚨 CRITICAL: Target AV detected the binary. Different evasion technique required."
             )
 
-        if len(detected_by) > 5:
+        if detection_rate > 0.5:
             recommendations.append(
-                "Multiple AV detections. Add obfuscation and anti-analysis techniques."
+                f"⚠️  High detection rate ({detection_rate*100:.0f}%). Add obfuscation and anti-analysis."
+            )
+        elif detection_rate > 0.2:
+            recommendations.append(
+                f"⚠️  Moderate detection rate ({detection_rate*100:.0f}%). Consider additional evasion."
+            )
+        elif detection_rate > 0.05:
+            recommendations.append(
+                f"✓ Low detection rate ({detection_rate*100:.0f}%). Good OPSEC baseline."
+            )
+        else:
+            recommendations.append(
+                f"✅ Excellent! Very low detection rate ({detection_rate*100:.0f}%)."
             )
 
-        # Signature-based recommendations
-        sig_names = [s["name"].lower() for s in signatures if s.get("name")]
+        # Check for specific AV detections and suggest fixes
+        av_names = [av['name'].lower() for av in detected_by]
 
-        if any("createremotethread" in s for s in sig_names):
+        if any('defender' in name or 'windows' in name for name in av_names):
             recommendations.append(
-                "Avoid CreateRemoteThread - use NtCreateThreadEx or thread hijacking instead"
+                "💡 Windows Defender detected: Use indirect syscalls and sleep obfuscation"
             )
 
-        if any("rwx" in s or "executable memory" in s for s in sig_names):
+        if any('crowdstrike' in name or 'falcon' in name for name in av_names):
             recommendations.append(
-                "RWX memory detected - use RW → RX pattern with VirtualProtect"
+                "💡 CrowdStrike detected: Avoid user-mode hooks, use NTDLL direct calls"
             )
 
-        if any("suspicious" in s and "api" in s for s in sig_names):
+        if any('kaspersky' in name for name in av_names):
             recommendations.append(
-                "Suspicious API usage - implement API hashing or indirect syscalls"
+                "💡 Kaspersky detected: Add more string obfuscation and API hashing"
             )
 
-        if any("string" in s for s in sig_names):
+        if any('sophos' in name for name in av_names):
             recommendations.append(
-                "String signatures detected - encrypt strings at compile time"
+                "💡 Sophos detected: Avoid obvious process injection, use thread pool injection"
+            )
+
+        if len(detected_by) > 10 and not recommendations:
+            recommendations.append(
+                "💡 Multiple detections: Implement SysWhispers3, API hashing, and string encryption"
             )
 
         if not recommendations:
             recommendations.append(
-                "Good OPSEC! Binary shows low detection rates."
+                "✅ Excellent OPSEC! Binary shows very low detection."
             )
 
         return recommendations
 
-    def _save_report(self, binary_path: str, result: Dict, full_report: Dict):
+    def _save_report(self, binary_path: str, result: Dict, full_result: Dict):
         """Save detection report to file"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         binary_name = Path(binary_path).stem
@@ -571,7 +458,7 @@ class DetectionTester:
             "binary": str(binary_path),
             "timestamp": datetime.now().isoformat(),
             "result": result,
-            "full_report": full_report
+            "full_vt_result": full_result
         }
 
         try:

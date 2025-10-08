@@ -102,3 +102,6 @@ lxml>=5.1.0                      # XML/HTML parser
 #   pip install -r requirements.txt
 #   pip install -e .
 
+vt-py
+PyYAML>=6.0
+python-dotenv>=1.0.0

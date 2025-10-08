@@ -1,42 +1,43 @@
-# Live Detection Testing with Hybrid Analysis
+# Live Detection Testing with VirusTotal
 
 ## Overview
 
-Noctis-MCP integrates with Hybrid Analysis to provide live malware detection testing against real AV/EDR solutions. This validates if generated malware actually evades target defenses.
+Noctis-MCP integrates with VirusTotal to provide live malware detection testing against 70+ AV/EDR engines. This validates if generated malware actually evades target defenses.
 
 **Status:** Production Ready
-**API:** Hybrid Analysis v2
+**API:** VirusTotal v3
 **Tool:** `test_detection()`
 
 ---
 
 ## Features
 
-- Upload binaries to Hybrid Analysis sandbox
-- Test against specific AV/EDR configurations
-- Get detection verdicts and triggered signatures
+- Upload binaries to VirusTotal
+- Test against 70+ AV/EDR engines simultaneously
+- Get detection verdicts in **seconds** (not minutes)
 - Automated OPSEC score calculation (1-10 scale)
 - Smart caching (7-day TTL) to avoid redundant uploads
 - Actionable recommendations for OPSEC improvements
+- AV-specific evasion suggestions
 
 ---
 
 ## Quick Start
 
-### 1. Get Hybrid Analysis API Key
+### 1. Get VirusTotal API Key
 
-1. Register at https://www.hybrid-analysis.com/signup
+1. Register at https://www.virustotal.com/gui/join-us
 2. Navigate to Profile → API Key
-3. Copy your API key
+3. Copy your API key (Free tier: 4 requests/minute)
 
 ### 2. Set Environment Variable
 
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
-export HYBRID_ANALYSIS_API_KEY="your_api_key_here"
+export VT_API_KEY="your_api_key_here"
 
 # Or set temporarily
-export HYBRID_ANALYSIS_API_KEY="your_api_key_here"
+export VT_API_KEY="your_api_key_here"
 ```
 
 ### 3. Use in AI Workflow
@@ -49,8 +50,8 @@ AI:
 2. generate_code(["syscalls"], "CrowdStrike")
 3. [Writes code using guidance]
 4. compile_code(code, "crowdstrike_bypass")
-5. test_detection("compiled/crowdstrike_bypass.exe", "CrowdStrike Falcon")
-6. [Reviews detection results]
+5. test_detection("compiled/crowdstrike_bypass.exe", "CrowdStrike")
+6. [Reviews detection results - 70+ AVs tested]
 7. If detected: optimize_opsec() and rewrite
 8. If clean: record_feedback(["syscalls"], "CrowdStrike", False)
 ```
@@ -65,61 +66,42 @@ AI:
 test_detection(
     binary_path: str,
     target_av: str = None,
-    environment: str = "Windows 10 64-bit"
+    environment: str = "Windows 10 64-bit"  # Ignored, kept for compatibility
 ) -> DetectionResult
 ```
 
-**IMPORTANT:** Hybrid Analysis tests against **ALL AVs** installed in the sandbox (typically 10-20 AVs). You **CANNOT** choose to test against just one AV.
+**Tests against ALL 70+ AV engines simultaneously.**
 
 **Parameters:**
 - `binary_path`: Path to compiled binary
-- `target_av`: Your primary target AV for OPSEC scoring (doesn't limit which AVs test it)
+- `target_av`: Your primary target AV for OPSEC scoring
   - Used to calculate OPSEC score (penalizes if target detects it)
   - Used to highlight if YOUR target detected it
   - Used to tailor recommendations
-  - Does NOT prevent other AVs from testing it
-- `environment`: OS environment (Windows 7/10/11, Linux)
-
-**Testing Strategy:**
-
-**Single Target (Recommended for client work):**
-```python
-# Client only has CrowdStrike
-test_detection("malware.exe", target_av="CrowdStrike Falcon")
-
-# Focus on target_detected field in results
-# Ignore other AV detections if target shows clean
-# Stop testing once target is undetected
-```
-
-**Multi-Target (General tool):**
-```python
-# Tool for multiple clients
-test_detection("malware.exe")  # No specific target
-
-# Look at overall av_detections count
-# Target OPSEC score 7-8 (good enough)
-# Accept some detections (can't evade all)
-```
+- `environment`: Ignored (kept for API compatibility)
 
 **Returns:**
 ```json
 {
     "success": true,
     "detected": false,
-    "verdict": "no_threats",
+    "verdict": "clean",
     "opsec_score": 9,
-    "threat_score": 5,
-    "av_detections": 0,
-    "detected_by": [],
-    "target_av": "CrowdStrike Falcon",
-    "target_detected": false,
-    "signatures": [],
-    "behavioral_alerts": [],
-    "recommendations": [
-        "Good OPSEC! Binary shows low detection rates."
+    "detection_count": 2,
+    "suspicious_count": 1,
+    "total_engines": 71,
+    "detection_rate": "2.8%",
+    "detected_by": [
+        {"name": "Avira", "category": "malicious", "result": "TR/Crypt.XPACK.Gen"},
+        {"name": "Jiangmin", "category": "suspicious", "result": "Trojan.Generic"}
     ],
-    "environment": "Windows 10 64-bit (v2004, Build 19041)",
+    "target_av": "CrowdStrike",
+    "target_detected": false,
+    "recommendations": [
+        "✅ Excellent! Very low detection rate (2.8%).",
+        "✓ CrowdStrike did not detect the binary"
+    ],
+    "scan_date": "2025-10-08T12:34:56",
     "sha256": "abc123..."
 }
 ```
@@ -128,22 +110,21 @@ test_detection("malware.exe")  # No specific target
 
 ## OPSEC Score
 
-The system automatically calculates an OPSEC score (1-10) based on multiple factors:
+The system automatically calculates an OPSEC score (1-10) based on detection rate:
 
-| Score | Meaning | Criteria |
-|-------|---------|----------|
-| 9-10 | Excellent | Undetected, no/minimal signatures |
-| 7-8 | Good | Low detections, suspicious verdict |
-| 5-6 | Moderate | Some detections, malicious verdict |
-| 3-4 | Poor | Heavy detections across multiple AVs |
-| 1-2 | Failed | Detected by target AV + widespread |
+| Score | Meaning | Detection Rate |
+|-------|---------|----------------|
+| 9-10 | Excellent | 0-5% detected |
+| 8 | Very Good | 5-10% detected |
+| 7 | Good | 10-20% detected |
+| 6 | Moderate | 20-30% detected |
+| 5 | Fair | 30-50% detected |
+| 3-4 | Poor | 50-70% detected |
+| 1-2 | Failed | >70% detected |
 
-**Calculation Factors:**
-- Verdict (malicious/suspicious/clean)
-- Threat score (0-100 from Hybrid Analysis)
-- Number of AV detections
-- Target AV detection (critical factor)
-- Triggered behavioral signatures
+**Penalties:**
+- Target AV detection: **-2 points** (critical)
+- >5 suspicious detections: **-1 point**
 
 ---
 
@@ -151,40 +132,34 @@ The system automatically calculates an OPSEC score (1-10) based on multiple fact
 
 ### Verdict Types
 
-- `no_threats` - Clean, no threats detected
-- `suspicious` - Flagged for suspicious behavior
-- `malicious` - Confirmed malicious
-- `unknown` - Analysis inconclusive
+- `clean` - No threats detected
+- `suspicious` - Flagged by some engines
+- `malicious` - Confirmed malicious by multiple engines
 
-### Signatures
+### Common AV Detections & Fixes
 
-Common triggered signatures and their meanings:
-
-| Signature | Meaning | Fix |
-|-----------|---------|-----|
-| `CreateRemoteThread API` | Classic injection detected | Use NtCreateThreadEx or thread hijacking |
-| `RWX memory allocation` | Suspicious memory pattern | Use RW → RX with VirtualProtect |
-| `Suspicious API usage` | API patterns match known malware | Implement API hashing or syscalls |
-| `String signatures` | Static strings detected | Encrypt strings at compile time |
+| AV Engine | Detection | Recommended Fix |
+|-----------|-----------|-----------------|
+| Windows Defender | Behavior monitoring | Use indirect syscalls + sleep obfuscation |
+| CrowdStrike Falcon | User-mode hooks | NTDLL direct calls, avoid hooked APIs |
+| Kaspersky | Heuristic analysis | String obfuscation + API hashing |
+| Sophos | Process injection | Use thread pool injection (PoolParty) |
+| Avira | Signature match | More obfuscation, change patterns |
 
 ### Recommendations
 
 The system generates actionable recommendations:
 
 **Critical:**
-- "CRITICAL: Target AV detected the binary. Consider different evasion technique."
+- "🚨 CRITICAL: Target AV detected the binary. Different evasion technique required."
 
 **High Priority:**
-- "Multiple AV detections. Add obfuscation and anti-analysis techniques."
-- "Avoid CreateRemoteThread - use NtCreateThreadEx or thread hijacking instead"
-- "RWX memory detected - use RW → RX pattern with VirtualProtect"
-
-**Standard:**
-- "Suspicious API usage - implement API hashing or indirect syscalls"
-- "String signatures detected - encrypt strings at compile time"
+- "⚠️ High detection rate (65%). Add obfuscation and anti-analysis."
+- "💡 Windows Defender detected: Use indirect syscalls and sleep obfuscation"
+- "💡 CrowdStrike detected: Avoid user-mode hooks, use NTDLL direct calls"
 
 **Success:**
-- "Good OPSEC! Binary shows low detection rates."
+- "✅ Excellent! Very low detection rate (2.8%)."
 
 ---
 
@@ -192,7 +167,7 @@ The system generates actionable recommendations:
 
 Results are cached for 7 days to:
 - Avoid redundant API calls
-- Save API quota
+- Save API quota (4 req/min limit)
 - Speed up repeated tests
 
 Cache location: `data/detection_cache/`
@@ -202,19 +177,28 @@ Cache location: `data/detection_cache/`
 rm -rf data/detection_cache/*.json
 ```
 
+**Cache intelligence:**
+- If file was already scanned by VirusTotal → instant results (no upload)
+- If file is new → upload + wait 10-30 seconds for results
+
 ---
 
 ## Rate Limiting
 
-Hybrid Analysis free tier limits:
-- 100 requests per hour
+VirusTotal free tier limits:
+- **4 requests per minute**
+- **1000 requests per day**
 - Enforced automatically by SDK
-- Rate limit: 36 seconds between requests
 
 **Upgrade options:**
-- Community (Free): 100 req/hour
-- Professional ($99/month): 1000 req/hour
+- Free: 4 req/min, 1000 req/day
+- Premium ($): Higher limits, private scanning
 - Enterprise: Contact sales
+
+**Smart usage:**
+- First check: File hash lookup (instant if seen before)
+- New file: Upload + scan (one API call)
+- Results cached locally for 7 days
 
 ---
 
@@ -228,7 +212,7 @@ User: "Build ransomware that evades Defender and test it"
 
 # 2. AI Intelligence Gathering
 AI calls: search_intelligence("ransomware Windows Defender evasion")
-Returns: "Use AES encryption (OPSEC 8/10), Avoid obvious ransom notes"
+Returns: "Use AES encryption (OPSEC 8/10), indirect syscalls"
 
 # 3. AI Code Generation
 AI calls: generate_code(["encryption", "persistence"], "Windows Defender")
@@ -238,7 +222,7 @@ AI writes code using guidance
 AI calls: compile_code(ransomware_code, "defender_evade")
 Returns: "compiled/defender_evade.exe"
 
-# 5. Live Detection Testing
+# 5. Live Detection Testing (70+ AVs)
 AI calls: test_detection("compiled/defender_evade.exe", "Windows Defender")
 
 # 6. Results Analysis
@@ -247,24 +231,25 @@ Returns:
     "detected": true,
     "verdict": "malicious",
     "opsec_score": 4,
+    "detection_count": 45,
+    "total_engines": 71,
+    "detection_rate": "63.4%",
     "target_detected": true,
-    "signatures": [
-        {"name": "Suspicious file encryption loop", "severity": "high"},
-        {"name": "Registry persistence modification", "severity": "medium"}
-    ],
     "recommendations": [
-        "CRITICAL: Target AV detected the binary.",
-        "File encryption pattern detected - randomize encryption block sizes",
-        "Registry persistence detected - use alternative methods"
+        "🚨 CRITICAL: Target AV (Defender) detected the binary.",
+        "⚠️ High detection rate (63%). Add obfuscation and anti-analysis.",
+        "💡 Windows Defender detected: Use indirect syscalls and sleep obfuscation",
+        "💡 Multiple detections: Implement SysWhispers3, API hashing, string encryption"
     ]
 }
 
 # 7. AI Iteration
 AI calls: optimize_opsec(ransomware_code, "Windows Defender")
 AI rewrites code with:
-- Variable encryption block sizes
-- WMI-based persistence instead of registry
-- More obfuscation
+- SysWhispers3 indirect syscalls
+- API hashing
+- String encryption
+- Sleep obfuscation
 
 # 8. Retest
 AI calls: compile_code(improved_code, "defender_evade_v2")
@@ -272,15 +257,22 @@ AI calls: test_detection("compiled/defender_evade_v2.exe", "Windows Defender")
 
 Returns:
 {
-    "detected": false,
-    "verdict": "no_threats",
-    "opsec_score": 9,
-    "target_detected": false
+    "detected": true,
+    "verdict": "suspicious",
+    "opsec_score": 7,
+    "detection_count": 5,
+    "total_engines": 71,
+    "detection_rate": "7.0%",
+    "target_detected": false,
+    "recommendations": [
+        "✓ Low detection rate (7.0%). Good OPSEC baseline.",
+        "✅ Windows Defender did not detect the binary"
+    ]
 }
 
 # 9. Success - Record Feedback
-AI calls: record_feedback(["encryption", "persistence"], "Windows Defender", False)
-AI delivers: "Ransomware successfully bypasses Windows Defender (OPSEC 9/10)"
+AI calls: record_feedback(["encryption", "syscalls"], "Windows Defender", False)
+AI delivers: "Ransomware successfully bypasses Windows Defender (OPSEC 7/10, 7% detection rate)"
 ```
 
 ---
@@ -291,54 +283,36 @@ AI delivers: "Ransomware successfully bypasses Windows Defender (OPSEC 9/10)"
 
 ```bash
 # Check if environment variable is set
-echo $HYBRID_ANALYSIS_API_KEY
+echo $VT_API_KEY
 
 # If empty, set it
-export HYBRID_ANALYSIS_API_KEY="your_key"
+export VT_API_KEY="your_key"
 
 # Add to shell profile for persistence
-echo 'export HYBRID_ANALYSIS_API_KEY="your_key"' >> ~/.bashrc
+echo 'export VT_API_KEY="your_key"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
 ### "Rate limit exceeded"
 
-Wait 36 seconds between requests. Free tier: 100 req/hour.
+Free tier: 4 requests/minute. Space out tests.
 
-**Solution:** Upgrade to Professional tier or space out tests.
+**Solution:**
+- Wait 15 seconds between tests (automatic)
+- Upgrade to Premium tier
+- Use caching (file hash lookups are instant)
 
-### "Submission failed"
+### "vt-py not installed"
 
-Common causes:
-- Invalid API key
-- File size too large (>100MB)
-- Invalid file format
-- Network connectivity issues
-
-**Debug:**
-```python
-from server.detection_testing import test_file
-
-# Test with error output
-result = test_file("malware.exe", "CrowdStrike")
-print(result)
+```bash
+pip install vt-py
 ```
 
-### "Analysis timeout"
+### Results take long time
 
-Analysis can take 5-10 minutes. Default timeout: 10 minutes.
-
-**Increase timeout:**
-```python
-from server.detection_testing import DetectionTester
-
-tester = DetectionTester()
-result = tester.test_binary(
-    "malware.exe",
-    target_av="CrowdStrike",
-    max_wait=1800  # 30 minutes
-)
-```
+- **New file:** 10-30 seconds (normal, waiting for scan)
+- **Known file:** Instant (hash lookup)
+- **Timeout:** Rare, increase wait time in code if needed
 
 ---
 
@@ -346,29 +320,29 @@ result = tester.test_binary(
 
 ### **THE PROBLEM**
 
-Hybrid Analysis submissions are **PUBLIC**:
-- Community members can see your submissions
-- AV vendors **actively monitor** Hybrid Analysis for new samples
-- Popular malware analysis platform = goldmine for AV researchers
-- Your undetected binary = free sample for them to signature
+VirusTotal submissions are **PUBLIC**:
+- AV vendors **actively monitor** VirusTotal for new samples
+- Most popular malware analysis platform in the world
+- Your undetected binary = free sample for AV vendors to signature
+- Technique can be burned within **hours** of upload
 
 ### **THE SOLUTION**
 
-**NEVER upload your final working version:**
+**NEVER upload your final undetected version:**
 
 ```
 ❌ WRONG (Burns technique):
-1. Test v1 → Detected
-2. Test v2 → Detected
-3. Test v3 → UNDETECTED ← Uploaded to Hybrid Analysis
+1. Test v1 → 60% detection
+2. Test v2 → 30% detection
+3. Test v3 → 5% detection (OPSEC 9/10) ← Uploaded to VirusTotal
 4. AV vendors download your sample
 5. Technique gets signatured within days
 6. Your bypass no longer works
 
 ✅ RIGHT (Preserves technique):
-1. Test v1 → Detected (safe to upload)
-2. Test v2 → Detected (safe to upload)
-3. Test v3 → Getting close (OPSEC 7/10)
+1. Test v1 → 60% detection (safe to upload)
+2. Test v2 → 30% detection (safe to upload)
+3. Test v3 → 10% detection (getting close, OPSEC 7/10)
 4. STOP TESTING - switch to validate_code() (local, no upload)
 5. Deliver to user for offline testing
 6. User: "Tested in controlled environment - works!"
@@ -380,15 +354,19 @@ Hybrid Analysis submissions are **PUBLIC**:
 ```python
 # Iteration 1
 compile_code(code_v1)
-test_detection("v1.exe", "CrowdStrike")  # Detected ✓ Safe
+test_detection("v1.exe", "CrowdStrike")  # 60% detected ✓ Safe
 
 # Iteration 2
 compile_code(code_v2)
-test_detection("v2.exe", "CrowdStrike")  # Detected ✓ Safe
+test_detection("v2.exe", "CrowdStrike")  # 30% detected ✓ Safe
 
-# Iteration 3 - Getting close
+# Iteration 3 - Getting close (OPSEC 7)
 compile_code(code_v3)
-validate_code(code_v3)  # LOCAL CHECK - NO UPLOAD ✓
+test_detection("v3.exe", "CrowdStrike")  # 10% detected ✓ Still safe
+
+# Iteration 4 - OPSEC 8-9, STOP UPLOADING!
+compile_code(code_v4)
+validate_code(code_v4)  # LOCAL CHECK - NO UPLOAD ✓
 
 # If validation looks good: STOP
 # Deliver to user for real-world testing
@@ -402,14 +380,14 @@ record_feedback(["syscalls"], "CrowdStrike", detected=False)
 ### **WHEN IT'S SAFE TO UPLOAD**
 
 Upload is safe when:
-- ✅ Binary is DETECTED (already burned, can't make it worse)
+- ✅ Binary is DETECTED (>20% detection rate)
 - ✅ OPSEC score < 7 (clearly detected, safe to iterate)
 - ✅ Early iterations for testing
 
 Upload is DANGEROUS when:
-- ❌ Binary is UNDETECTED (gives AVs free sample)
+- ❌ Binary is UNDETECTED or low detection (<5%)
 - ❌ OPSEC score 8+ (almost/fully working)
-- ❌ Final version ready for delivery
+- ❌ Final version ready for deployment
 
 ---
 
@@ -418,25 +396,23 @@ Upload is DANGEROUS when:
 ### 1. Test Early and Often
 
 ```
-Don't wait until final version:
-❌ Write 1000 lines → Test once → Detected → Rewrite everything
 ✅ Write 100 lines → Test → Iterate → Build incrementally
+❌ Write 1000 lines → Test once → Detected → Rewrite everything
 ```
 
-### 2. Test Against Target AV First
+### 2. Stop at OPSEC 7-8
 
 ```
-Prioritize testing:
-1. Target AV (e.g., CrowdStrike for specific client)
-2. Common AVs (Defender, Symantec, McAfee)
-3. Obscure AVs (optional)
+OPSEC 4-6: Keep testing and iterating (safe)
+OPSEC 7-8: STOP uploading, switch to local validation
+OPSEC 9-10: NEVER upload - you have a working technique!
 ```
 
 ### 3. Use Recommendations
 
 ```
 AI should:
-1. Read all triggered signatures
+1. Read all detection results
 2. Apply ALL recommendations
 3. Retest after each major change
 4. Record successful techniques via record_feedback()
@@ -445,19 +421,9 @@ AI should:
 ### 4. Leverage Caching
 
 ```
-Same binary = Cached result (instant)
-Modified binary = New test
-Cache valid for 7 days
-```
-
-### 5. Monitor API Quota
-
-```
-Free tier: 100 req/hour
-Test strategically:
-- Test after significant changes only
-- Use validate_code() first (free, local)
-- Use test_detection() for final validation
+Same file = Cached result (instant)
+Modified file = New test
+Known file hash = Instant lookup (no upload)
 ```
 
 ---
@@ -472,7 +438,7 @@ AI calls: record_feedback(
     technique_ids=["NOCTIS-T004"],  # Syscalls
     target_av="CrowdStrike Falcon",
     detected=False,
-    details="OPSEC 9/10, undetected in sandbox"
+    details="OPSEC 9/10, 2% detection rate on VT"
 )
 
 # System updates:
@@ -482,7 +448,7 @@ AI calls: record_feedback(
 
 # Future searches benefit:
 search_intelligence("CrowdStrike bypass")
-# Now returns: "Syscalls effective (verified 2024-10-07, OPSEC 9/10)"
+# Now returns: "Syscalls effective (verified 2025-10-08, OPSEC 9/10, 2% VT detection)"
 ```
 
 ---
@@ -495,23 +461,23 @@ For advanced usage or scripting:
 from server.detection_testing import DetectionTester
 
 # Initialize
-tester = DetectionTester(api_key="your_key")  # or use env var
+tester = DetectionTester(api_key="your_key")  # or use VT_API_KEY env var
 
 # Test binary
 result = tester.test_binary(
     binary_path="payload.exe",
-    target_av="CrowdStrike Falcon",
-    environment="Windows 10 64-bit"
+    target_av="CrowdStrike Falcon"
 )
 
 # Check results
 if result['success']:
     print(f"Detected: {result['detected']}")
     print(f"OPSEC Score: {result['opsec_score']}/10")
+    print(f"Detection Rate: {result['detection_rate']}")
     print(f"Target AV Result: {result['target_detected']}")
 
     for rec in result['recommendations']:
-        print(f"- {rec}")
+        print(f"{rec}")
 else:
     print(f"Error: {result['error']}")
 ```
@@ -524,59 +490,60 @@ else:
 
 ```bash
 # ✅ Good: Environment variable
-export HYBRID_ANALYSIS_API_KEY="key"
+export VT_API_KEY="key"
 
 # ❌ Bad: Hardcoded in code
 api_key = "my_secret_key_123"  # Never do this!
 
 # ✅ Good: .env file (not committed)
-echo "HYBRID_ANALYSIS_API_KEY=key" > .env
+echo "VT_API_KEY=key" > .env
 # Add to .gitignore
 ```
 
 ### Binary Upload
 
-Binaries uploaded to Hybrid Analysis are:
-- Analyzed in isolated VMs
-- Stored on Hybrid Analysis servers
-- Publicly accessible (community submissions)
+Binaries uploaded to VirusTotal are:
+- Analyzed by 70+ AV engines
+- Stored on VirusTotal servers permanently
+- **Publicly accessible** (searchable by hash)
+- **Downloaded by AV vendors** for signature development
 
 **For private analysis:**
-- Use Hybrid Analysis private submission (paid)
+- Use VirusTotal private API (paid)
 - Or test locally with local AV/EDR
 - Or use private malware analysis platforms
 
----
-
-## Limitations
-
-- **Free tier quota:** 100 requests/hour
-- **Analysis time:** 5-10 minutes per submission
-- **Public submissions:** Results visible to community
-- **AV coverage:** Limited to AVs installed in sandbox
-- **False negatives:** Sandbox environment may differ from production
-- **No macOS/Linux malware testing:** Windows focus
+**Best practice:**
+- Only upload early iterations (high detection = already burned)
+- Stop uploading when OPSEC 7+ achieved
+- Final working versions: NEVER upload to VirusTotal
 
 ---
 
-## Future Enhancements
+## VirusTotal vs Local Testing
 
-Planned features:
-- VirusTotal integration (multi-AV testing)
-- ANY.RUN integration (interactive sandbox)
-- Local AV testing (offline mode)
-- Automated rewriting based on detection
-- Historical detection tracking
-- Custom sandbox configurations
+| Feature | VirusTotal | Local Testing |
+|---------|------------|---------------|
+| AV Coverage | 70+ engines | 1 engine |
+| Speed | 10-30 seconds | Instant |
+| Privacy | Public | Private |
+| Cost | Free (limits) | Free |
+| Best For | Broad testing | Final validation |
+
+**Recommended workflow:**
+1. Early iterations (60-30% detection): VirusTotal ✓
+2. Mid iterations (30-10% detection): VirusTotal ✓
+3. Late iterations (<10% detection): Local testing only ✓
+4. Final version: NEVER upload, local testing only ✓
 
 ---
 
 ## Resources
 
-- **Hybrid Analysis:** https://www.hybrid-analysis.com
-- **API Documentation:** https://www.hybrid-analysis.com/docs/api/v2
-- **Rate Limits:** https://www.hybrid-analysis.com/docs/api/v2#rate-limit
-- **Support:** support@hybrid-analysis.com
+- **VirusTotal:** https://www.virustotal.com
+- **API Documentation:** https://docs.virustotal.com/reference/overview
+- **Rate Limits:** https://docs.virustotal.com/docs/rate-limits
+- **vt-py Library:** https://github.com/VirusTotal/vt-py
 
 ---
 
