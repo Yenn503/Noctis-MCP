@@ -198,19 +198,19 @@ Noctis-MCP/
 │   ├── education_api.py            # Education system
 │   ├── utils/
 │   │   ├── intelligence_processor.py  # RAG → Intelligence
-│   │   └── pattern_extractor.py       # Extract patterns from Examples/
+│   │   └── pattern_extractor.py       # Extract patterns
 │   ├── rag/rag_engine.py           # RAG with caching
 │   ├── learning_engine.py          # Detection feedback
 │   └── code_assembler.py           # Code assembly
 ├── noctis_mcp_client/
-│   └── noctis_mcp.py               # 17 MCP tools
-├── techniques/
-│   ├── knowledge/                  # OPSEC guidance files
-│   └── security_blogs/             # Detection intelligence
-├── external/
-│   ├── github_repos/               # Implementation patterns
-│   └── VX-API/                     # Function signatures
-└── Examples/                       # Reference implementations
+│   └── noctis_mcp.py               # 21 MCP tools
+└── techniques/
+    ├── reference_implementations/  # Working loaders (MaldevAcademy, MyOwn)
+    ├── templates/                  # Code generation templates
+    ├── vx-api/                     # Function signatures (VX-Underground)
+    ├── knowledge/                  # OPSEC guidance files
+    ├── injection/                  # Technique implementations
+    └── ...                         # Other technique folders
 ```
 
 ---

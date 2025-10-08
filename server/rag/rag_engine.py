@@ -278,9 +278,9 @@ class RAGEngine:
 
         return all_results
 
-    def index_examples(self, examples_dir: str = "techniques/examples"):
+    def index_examples(self, examples_dir: str = "techniques/templates"):
         """
-        Index integration example templates into RAG
+        Index integration template files into RAG
 
         These are complete, working templates that show how to combine techniques.
         Indexed so AI can discover them when searching for implementation guidance.

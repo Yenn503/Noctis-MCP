@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 class VXAPIIndexer:
     """Indexes VX-API code into RAG with natural semantic understanding"""
 
-    def __init__(self, vx_api_path: str = "external/VX-API/VX-API"):
+    def __init__(self, vx_api_path: str = "techniques/vx-api/VX-API"):
         self.vx_api_path = Path(vx_api_path)
         self.rag = RAGEngine()
         self.indexed_count = 0
@@ -263,7 +263,7 @@ class VXAPIIndexer:
         """Index all VX-API C++ files into RAG with semantic understanding"""
         if not self.vx_api_path.exists():
             logger.error(f"VX-API path not found: {self.vx_api_path}")
-            logger.error("Run: git clone https://github.com/vxunderground/VX-API.git external/VX-API")
+            logger.error("Run: git clone https://github.com/vxunderground/VX-API.git techniques/vx-api")
             return False
 
         logger.info(f"Starting VX-API indexing from {self.vx_api_path}")

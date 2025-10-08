@@ -208,7 +208,7 @@ Noctis-MCP uses a **hybrid intelligence system** where AI agents (Claude, GPT, e
 }
 ```
 
-### 5. VX-API (external/VX-API/)
+### 5. VX-API (techniques/vx-api/)
 **Purpose**: Function signatures
 
 **Provides**:

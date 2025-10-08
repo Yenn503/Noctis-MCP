@@ -84,7 +84,7 @@ class GeneratedCode:
 class SourceFileReader:
     """Reads and parses C/C++ source files"""
 
-    def __init__(self, examples_root: str = "Examples", rag_engine=None):
+    def __init__(self, examples_root: str = "techniques/reference_implementations", rag_engine=None):
         self.examples_root = Path(examples_root)
         self.rag_engine = rag_engine
     
@@ -283,7 +283,7 @@ class CodeAssembler:
     Main code assembler that combines techniques into working code
     """
 
-    def __init__(self, examples_root: str = "Examples", metadata_path: str = "techniques/metadata", rag_engine=None):
+    def __init__(self, examples_root: str = "techniques/reference_implementations", metadata_path: str = "techniques/metadata", rag_engine=None):
         self.examples_root = Path(examples_root)
         self.metadata_path = Path(metadata_path)
         self.rag_engine = rag_engine

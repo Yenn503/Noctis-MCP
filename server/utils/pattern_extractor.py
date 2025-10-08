@@ -1,5 +1,5 @@
 """
-Pattern Extractor - Extracts reusable patterns from Examples/ code
+Pattern Extractor - Extracts reusable patterns from reference implementations
 
 Instead of copying code directly, this extracts:
 - Implementation approaches (HOW things are done)
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class PatternExtractor:
     """Extracts implementation patterns from source code"""
 
-    def __init__(self, examples_root: str = "Examples"):
+    def __init__(self, examples_root: str = "techniques/reference_implementations"):
         self.examples_root = Path(examples_root)
 
     def extract_patterns_for_technique(self, technique_id: str, source_files: List[str]) -> Dict:

@@ -702,7 +702,7 @@ def generate_code():
         if not template_recommendation:
             if target_av.lower() in ['crowdstrike', 'sentinelone']:
                 template_recommendation = {
-                    'template_file': 'techniques/examples/integrated_loader.c',
+                    'template_file': 'techniques/templates/integrated_loader.c',
                     'template_name': 'integrated_loader',
                     'use_case': 'Complete EDR bypass pipeline for advanced EDRs',
                     'detection_risk': '2-5%',
@@ -712,7 +712,7 @@ def generate_code():
                 }
             elif any(word in objective_lower for word in ['rat', 'beacon', 'c2']):
                 template_recommendation = {
-                    'template_file': 'techniques/examples/beacon_stealth.c',
+                    'template_file': 'techniques/templates/beacon_stealth.c',
                     'template_name': 'beacon_stealth',
                     'use_case': 'C2 beacon with memory obfuscation',
                     'detection_risk': '2-5% during sleep',
@@ -722,7 +722,7 @@ def generate_code():
                 }
             else:
                 template_recommendation = {
-                    'template_file': 'techniques/examples/process_injection_complete.c',
+                    'template_file': 'techniques/templates/process_injection_complete.c',
                     'template_name': 'process_injection_complete',
                     'use_case': 'Focused injection with moderate evasion',
                     'detection_risk': '3-5%',
