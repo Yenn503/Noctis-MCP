@@ -126,6 +126,17 @@ def recommend_template():
         recommendation = get_recommendation(objective)
         techniques = get_technique_files()
 
+        # Format techniques list for clean display
+        formatted_techniques = []
+        for tech_name, tech_info in techniques.items():
+            formatted_techniques.append({
+                'name': tech_name,
+                'file': tech_info['file'],
+                'description': tech_info['description'],
+                'opsec_score': f"{tech_info['opsec']}/10",
+                'bypasses': ', '.join(tech_info['bypasses'])
+            })
+
         # Create formatted output with clear instructions
         output = {
             'success': True,
@@ -142,11 +153,11 @@ def recommend_template():
                 f"1. Open file: {recommendation['template_file']}",
                 f"2. Go to line {recommendation.get('modify_line', 100)}",
                 f"3. {recommendation.get('modify_instructions', 'Replace shellcode placeholder')}",
-                "4. Compile: noctis_compile('your_file.c', 'windows', 'x64')",
+                "4. Compile: python3 build_beacon.py -s <shellcode> -t <edr> -o beacon.exe",
                 "5. Test and record: noctis_record_result(...)"
             ],
             'why_this_template': recommendation.get('recommendation', 'Best match for your objective'),
-            'available_techniques': techniques,
+            'available_techniques': formatted_techniques,
             'tip': f"Detection risk: {recommendation['detection_risk']} | OPSEC: {recommendation['opsec_score']}/10"
         }
 
