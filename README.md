@@ -24,6 +24,25 @@
 
 ---
 
+## 🎉 **NEW: Staged Payload Loader**
+
+**Automated EDR-bypassing loader system** - See `staged-loader/` directory!
+
+```bash
+cd staged-loader/
+./setup.sh        # One command setup!
+```
+
+**Features:**
+- ✅ Bypasses Windows Defender
+- ✅ Staged download (no MSFVenom in binary)
+- ✅ RC4 encryption
+- ✅ Fully automated
+
+**Docs:** [staged-loader/README.md](staged-loader/README.md) | [QUICKSTART](staged-loader/QUICKSTART.md)
+
+---
+
 ## 🚀 Quick Start
 
 ### 1. Install Dependencies

@@ -1,0 +1,31 @@
+# Compiled binaries
+*.exe
+*.o
+
+# Generated payloads
+payload.enc
+reverse_shell.bin
+*.bin
+
+# Generated keys
+payload_keys.h
+
+# Generated scripts
+start_server.sh
+start_listener.sh
+
+# Generated docs
+USAGE.md
+
+# Temporary files
+*.tmp
+*.bak
+
+# Keep source files
+!encrypt_payload.py
+!staged_loader.c
+!setup.sh
+!README.md
+!QUICKSTART.md
+!SETUP_COMPLETE.md
+!.gitignore
