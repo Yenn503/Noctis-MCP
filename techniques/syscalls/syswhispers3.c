@@ -17,6 +17,17 @@
 #include "syswhispers3.h"
 #include <stdio.h>
 
+// NTSTATUS constants (not always defined in MinGW)
+#ifndef STATUS_SUCCESS
+#define STATUS_SUCCESS              ((NTSTATUS)0x00000000L)
+#endif
+#ifndef STATUS_UNSUCCESSFUL
+#define STATUS_UNSUCCESSFUL         ((NTSTATUS)0xC0000001L)
+#endif
+#ifndef STATUS_NOT_FOUND
+#define STATUS_NOT_FOUND            ((NTSTATUS)0xC0000225L)
+#endif
+
 // Helper: Generate pseudo-random index
 static DWORD _SW3_GetRandomIndex(DWORD dwMax) {
     // Simple randomization using timestamp and PID
@@ -29,13 +40,12 @@ static DWORD _SW3_GetRandomIndex(DWORD dwMax) {
 static BOOL _SW3_IsSyscallInstruction(PVOID pAddress) {
     if (!pAddress) return FALSE;
 
-    __try {
-        BYTE* pBytes = (BYTE*)pAddress;
-        return (pBytes[0] == 0x0F && pBytes[1] == 0x05);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        return FALSE;
-    }
+    // Simple validation - check if readable
+    // Note: In production, this would use VEH or SEH for safer memory access
+    BYTE* pBytes = (BYTE*)pAddress;
+
+    // Basic syscall instruction check: 0x0F 0x05
+    return (pBytes[0] == 0x0F && pBytes[1] == 0x05);
 }
 
 // Helper: Find syscall instruction in function

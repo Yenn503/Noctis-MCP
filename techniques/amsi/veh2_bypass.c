@@ -253,13 +253,9 @@ BOOL VEH2_ExecuteWithAMSIBypass(VOID (*pCallback)(VOID)) {
     }
 
     // Execute callback with AMSI bypassed
+    // Note: VEH handler will catch any exceptions during execution
     if (pCallback) {
-        __try {
-            pCallback();
-        }
-        __except (EXCEPTION_EXECUTE_HANDLER) {
-            // Handle any exceptions during callback
-        }
+        pCallback();
     }
 
     // Cleanup

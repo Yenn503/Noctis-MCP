@@ -289,11 +289,9 @@ Noctis-MCP is designed for:
 
 ## Documentation
 
-- **[SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md)** - Complete system explanation
-- **[SETUP.md](docs/SETUP.md)** - Detailed setup instructions
-- **[INTELLIGENCE_SYSTEM.md](docs/INTELLIGENCE_SYSTEM.md)** - How intelligence works
-- **[EDUCATION_SYSTEM.md](docs/EDUCATION_SYSTEM.md)** - Learning system details
+- **[BEACON_BUILDER.md](docs/BEACON_BUILDER.md)** - Beacon compilation and EDR evasion
 - **[C2_INTEGRATION.md](docs/C2_INTEGRATION.md)** - C2 framework integration
+- **[SETUP.md](docs/SETUP.md)** - Detailed setup instructions
 
 ---
 

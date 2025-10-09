@@ -4,27 +4,6 @@
 #include "peruns_fart.h"
 #include <stdio.h>
 
-// PEB structures for remote process traversal
-typedef struct _PEB_LDR_DATA {
-    ULONG Length;
-    BOOLEAN Initialized;
-    PVOID SsHandle;
-    LIST_ENTRY InLoadOrderModuleList;
-    LIST_ENTRY InMemoryOrderModuleList;
-    LIST_ENTRY InInitializationOrderModuleList;
-} PEB_LDR_DATA, *PPEB_LDR_DATA;
-
-typedef struct _LDR_DATA_TABLE_ENTRY {
-    LIST_ENTRY InLoadOrderLinks;
-    LIST_ENTRY InMemoryOrderLinks;
-    LIST_ENTRY InInitializationOrderLinks;
-    PVOID DllBase;
-    PVOID EntryPoint;
-    ULONG SizeOfImage;
-    UNICODE_STRING FullDllName;
-    UNICODE_STRING BaseDllName;
-} LDR_DATA_TABLE_ENTRY, *PLDR_DATA_TABLE_ENTRY;
-
 // Initialize unhooking context
 BOOL PerunsFart_Initialize(
     PUNHOOK_CONTEXT pContext,
@@ -130,9 +109,9 @@ BOOL _PerunsFart_FindRemoteNtdll(PUNHOOK_CONTEXT pContext) {
         return FALSE;
     }
 
-    // Traverse InLoadOrderModuleList to find ntdll.dll
-    LIST_ENTRY* pListHead = &ldrData.InLoadOrderModuleList;
-    LIST_ENTRY* pCurrentEntry = ldrData.InLoadOrderModuleList.Flink;
+    // Traverse InMemoryOrderModuleList to find ntdll.dll
+    LIST_ENTRY* pListHead = &ldrData.InMemoryOrderModuleList;
+    LIST_ENTRY* pCurrentEntry = ldrData.InMemoryOrderModuleList.Flink;
 
     // CRITICAL FIX: Add iteration limit and null checks to prevent infinite loop
     DWORD dwMaxIterations = 1000;
@@ -144,22 +123,22 @@ BOOL _PerunsFart_FindRemoteNtdll(PUNHOOK_CONTEXT pContext) {
         LDR_DATA_TABLE_ENTRY ldrEntry = { 0 };
 
         if (!ReadProcessMemory(pContext->hSacrificialProcess,
-                              CONTAINING_RECORD(pCurrentEntry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks),
+                              CONTAINING_RECORD(pCurrentEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks),
                               &ldrEntry, sizeof(LDR_DATA_TABLE_ENTRY), &szBytesRead)) {
             return FALSE;
         }
 
         // Read module name with bounds checking
         WCHAR wzModuleName[MAX_PATH] = { 0 };
-        if (ldrEntry.BaseDllName.Length > 0 &&
-            ldrEntry.BaseDllName.Length < MAX_PATH * 2 &&
-            ldrEntry.BaseDllName.Buffer != NULL) {
+        if (ldrEntry.FullDllName.Length > 0 &&
+            ldrEntry.FullDllName.Length < MAX_PATH * 2 &&
+            ldrEntry.FullDllName.Buffer != NULL) {
 
-            if (ReadProcessMemory(pContext->hSacrificialProcess, ldrEntry.BaseDllName.Buffer,
-                                wzModuleName, ldrEntry.BaseDllName.Length, &szBytesRead)) {
+            if (ReadProcessMemory(pContext->hSacrificialProcess, ldrEntry.FullDllName.Buffer,
+                                wzModuleName, ldrEntry.FullDllName.Length, &szBytesRead)) {
 
                 // Validate read was successful
-                if (szBytesRead == ldrEntry.BaseDllName.Length) {
+                if (szBytesRead == ldrEntry.FullDllName.Length) {
                     if (_wcsicmp(wzModuleName, L"ntdll.dll") == 0) {
                         pContext->pRemoteNtdllBase = ldrEntry.DllBase;
                         return TRUE;
@@ -169,12 +148,12 @@ BOOL _PerunsFart_FindRemoteNtdll(PUNHOOK_CONTEXT pContext) {
         }
 
         // Validate Flink before advancing
-        if (ldrEntry.InLoadOrderLinks.Flink == NULL ||
-            ldrEntry.InLoadOrderLinks.Flink == pCurrentEntry) {
+        if (ldrEntry.InMemoryOrderLinks.Flink == NULL ||
+            ldrEntry.InMemoryOrderLinks.Flink == pCurrentEntry) {
             break;  // Circular reference or null - stop
         }
 
-        pCurrentEntry = ldrEntry.InLoadOrderLinks.Flink;
+        pCurrentEntry = ldrEntry.InMemoryOrderLinks.Flink;
     }
 
     return FALSE;

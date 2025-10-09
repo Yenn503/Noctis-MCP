@@ -3,6 +3,7 @@
 
 #include "poolparty.h"
 #include <tlhelp32.h>
+#include <psapi.h>
 #include <stdio.h>
 
 #pragma comment(lib, "ntdll.lib")
@@ -11,25 +12,20 @@
 BOOL PoolParty_GetTextSection(PVOID pModuleBase, PVOID* ppTextAddr, SIZE_T* pszTextSize) {
     if (!pModuleBase || !ppTextAddr || !pszTextSize) return FALSE;
 
-    __try {
-        PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)pModuleBase;
-        if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE) return FALSE;
+    PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)pModuleBase;
+    if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE) return FALSE;
 
-        PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)((BYTE*)pModuleBase + pDosHeader->e_lfanew);
-        if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE) return FALSE;
+    PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)((BYTE*)pModuleBase + pDosHeader->e_lfanew);
+    if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE) return FALSE;
 
-        PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNtHeaders);
-        for (WORD i = 0; i < pNtHeaders->FileHeader.NumberOfSections; i++) {
-            if (memcmp(pSection->Name, ".text", 5) == 0) {
-                *ppTextAddr = (BYTE*)pModuleBase + pSection->VirtualAddress;
-                *pszTextSize = pSection->Misc.VirtualSize;
-                return TRUE;
-            }
-            pSection++;
+    PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNtHeaders);
+    for (WORD i = 0; i < pNtHeaders->FileHeader.NumberOfSections; i++) {
+        if (memcmp(pSection->Name, ".text", 5) == 0) {
+            *ppTextAddr = (BYTE*)pModuleBase + pSection->VirtualAddress;
+            *pszTextSize = pSection->Misc.VirtualSize;
+            return TRUE;
         }
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        return FALSE;
+        pSection++;
     }
 
     return FALSE;

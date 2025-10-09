@@ -24,26 +24,6 @@
 #include <Windows.h>
 #include <winternl.h>
 
-// Transaction object attributes for TxF
-typedef struct _OBJECT_ATTRIBUTES {
-    ULONG Length;
-    HANDLE RootDirectory;
-    PUNICODE_STRING ObjectName;
-    ULONG Attributes;
-    PVOID SecurityDescriptor;
-    PVOID SecurityQualityOfService;
-} OBJECT_ATTRIBUTES, *POBJECT_ATTRIBUTES;
-
-// Initialize object attributes macro
-#define InitializeObjectAttributes(p, n, a, r, s) { \
-    (p)->Length = sizeof(OBJECT_ATTRIBUTES); \
-    (p)->RootDirectory = r; \
-    (p)->Attributes = a; \
-    (p)->ObjectName = n; \
-    (p)->SecurityDescriptor = s; \
-    (p)->SecurityQualityOfService = NULL; \
-}
-
 // NTDLL function typedefs for TxF
 typedef NTSTATUS (NTAPI *fnNtCreateTransaction)(
     PHANDLE TransactionHandle,

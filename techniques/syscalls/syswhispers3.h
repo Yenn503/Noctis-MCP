@@ -50,6 +50,7 @@ VOID SW3_Cleanup(PSYSCALL_CACHE pCache);
 
 // Common NT API wrappers using SysWhispers3
 NTSTATUS SW3_NtAllocateVirtualMemory(
+    PSYSCALL_CACHE pCache,
     HANDLE ProcessHandle,
     PVOID* BaseAddress,
     ULONG_PTR ZeroBits,
