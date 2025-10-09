@@ -77,7 +77,23 @@ def noctis_search_techniques(query: str, target_av: str = "Windows Defender", n_
         }, timeout=30)
 
         if response.status_code == 200:
-            return response.json()
+            data = response.json()
+
+            # Format results for clean display
+            if 'results' in data and isinstance(data['results'], list):
+                formatted_results = "\n\nSearch Results:\n" + "="*80 + "\n"
+                for idx, result in enumerate(data['results'][:5], 1):  # Show top 5 formatted
+                    formatted_results += f"\n[{idx}] Relevance: {result.get('relevance_score', 0):.1%}\n"
+                    formatted_results += f"Source: {result.get('metadata', {}).get('file', 'unknown')}\n"
+                    content = result.get('content', '')[:300]  # First 300 chars
+                    formatted_results += f"Content: {content}...\n"
+                    formatted_results += "-" * 80 + "\n"
+
+                # Add formatted results
+                data['results_formatted'] = formatted_results
+                data['results'] = f"See results_formatted for clean list (showing top 5 of {len(data['results'])} results)"
+
+            return data
         else:
             return {"error": f"Search failed: {response.text}"}
 
@@ -108,7 +124,23 @@ def noctis_recommend_template(objective: str) -> Dict[str, Any]:
         }, timeout=30)
 
         if response.status_code == 200:
-            return response.json()
+            data = response.json()
+
+            # Format techniques list for clean display
+            if 'available_techniques' in data and isinstance(data['available_techniques'], list):
+                formatted_techniques = "\n\nAvailable Techniques:\n" + "="*60 + "\n"
+                for tech in data['available_techniques']:
+                    formatted_techniques += f"\n{tech['name']}\n"
+                    formatted_techniques += f"  File: {tech['file']}\n"
+                    formatted_techniques += f"  Description: {tech['description']}\n"
+                    formatted_techniques += f"  OPSEC Score: {tech['opsec_score']}\n"
+                    formatted_techniques += f"  Bypasses: {tech['bypasses']}\n"
+
+                # Replace the list with formatted string for display
+                data['available_techniques_formatted'] = formatted_techniques
+                data['available_techniques'] = f"See available_techniques_formatted for clean list"
+
+            return data
         else:
             return {"error": f"Recommendation failed: {response.text}"}
 
