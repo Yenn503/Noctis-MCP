@@ -61,10 +61,16 @@ def search_techniques():
 
         formatted_results = []
         for r in results:
+            # Normalize rerank score (cross-encoder outputs can be negative)
+            # Convert to 0-1 scale where higher = more relevant
+            raw_score = r.get('rerank_score', 0.0)
+            # Min-max normalization: assume scores typically range from -10 to +10
+            normalized_score = max(0.0, min(1.0, (raw_score + 10) / 20))
+
             formatted_results.append({
                 'content': r.get('content', r.get('document', '')),
                 'source_file': r.get('metadata', {}).get('source', 'unknown'),
-                'relevance_score': r.get('rerank_score', 0.5),
+                'relevance_score': normalized_score,
                 'metadata': r.get('metadata', {})
             })
 
@@ -225,22 +231,48 @@ def generate_beacon():
         else:
             return jsonify({'error': f'Unsupported framework: {framework} (supported: sliver, mythic)'}), 400
 
-        # NOTE: is_available() check disabled - assume C2 framework is available
-        # if not adapter.is_available():
-        #     install_cmd = adapter.get_install_command()
-        #     return jsonify({
-        #         'success': False,
-        #         'error': f'{framework.capitalize()} not installed',
-        #         'install_command': install_cmd,
-        #         'install_instructions': f'Run: {install_cmd}'
-        #     }), 503
+        # Check if C2 framework is available
+        if not adapter.is_available():
+            install_cmd = adapter.get_install_command()
+            return jsonify({
+                'success': False,
+                'error': f'{framework.capitalize()} C2 server not detected',
+                'framework': framework,
+                'status': 'not_installed',
+                'install_instructions': {
+                    'command': install_cmd,
+                    'steps': [
+                        f"1. Install {framework.capitalize()}: {install_cmd}",
+                        f"2. Start {framework.capitalize()} server",
+                        f"3. Create listener on {listener_host}:{listener_port}",
+                        "4. Retry beacon generation"
+                    ]
+                },
+                'alternative': 'Use noctis_recommend_template() to build a standalone beacon without C2'
+            }), 503
 
-        result = adapter.generate_beacon({
-            'listener_host': listener_host,
-            'listener_port': listener_port,
-            'architecture': architecture,
-            'output_format': output_format
-        })
+        # Try to generate beacon
+        try:
+            result = adapter.generate_beacon({
+                'listener_host': listener_host,
+                'listener_port': listener_port,
+                'architecture': architecture,
+                'output_format': output_format
+            })
+        except Exception as e:
+            logger.error(f"[Beacon] Generation failed: {e}")
+            return jsonify({
+                'success': False,
+                'error': f'Beacon generation failed: {str(e)}',
+                'framework': framework,
+                'troubleshooting': [
+                    f"1. Verify {framework.capitalize()} server is running",
+                    "2. Check listener is active",
+                    f"3. Test connection: telnet {listener_host} {listener_port}",
+                    "4. Check firewall rules"
+                ],
+                'alternative': 'Use noctis_recommend_template() for standalone beacon'
+            }), 500
 
         if not result.success:
             return jsonify({
@@ -314,7 +346,7 @@ def compile_malware():
     Returns: Compiled binary path and compilation logs
     """
     try:
-        from compilation.windows_compiler import WindowsCompiler
+        import platform
         from compilation.linux_compiler import LinuxCompiler
 
         data = request.json
@@ -332,21 +364,42 @@ def compile_malware():
 
         logger.info(f"[Compile] source={source_file}, target_os={target_os}, arch={architecture}")
 
-        compilers = {
-            'windows': WindowsCompiler,
-            'linux': LinuxCompiler
-        }
+        # Detect host OS
+        host_os = platform.system().lower()
+        logger.info(f"[Compile] Host OS: {host_os}, Target OS: {target_os}")
 
-        if target_os not in compilers:
-            return jsonify({'error': f'Unsupported target OS: {target_os}'}), 400
+        # On Linux, always use LinuxCompiler (has MinGW for Windows cross-compile)
+        if host_os == 'linux':
+            compiler = LinuxCompiler()
+            logger.info(f"[Compile] Using LinuxCompiler with MinGW for cross-compilation")
+        else:
+            # On Windows/macOS, try to import platform-specific compiler
+            try:
+                from compilation.windows_compiler import WindowsCompiler
+                compiler = WindowsCompiler()
+            except ImportError:
+                return jsonify({
+                    'success': False,
+                    'error': 'Windows compiler not available',
+                    'solution': 'Install Visual Studio Build Tools or use Linux with MinGW'
+                }), 500
 
-        compiler = compilers[target_os]()
-
-        result = compiler.compile({
-            'source_file': str(source_path),
-            'architecture': architecture,
-            'optimization': optimization
-        })
+        # Compile with error handling
+        try:
+            result = compiler.compile({
+                'source_file': str(source_path),
+                'architecture': architecture,
+                'optimization': optimization
+            })
+        except Exception as compile_err:
+            logger.error(f"[Compile] Compilation error: {compile_err}")
+            return jsonify({
+                'success': False,
+                'error': f'Compilation failed: {str(compile_err)}',
+                'host_os': host_os,
+                'target_os': target_os,
+                'architecture': architecture
+            }), 500
 
         if not result['success']:
             return jsonify({
@@ -488,4 +541,174 @@ def record_result():
 
     except Exception as e:
         logger.exception(f"[Record] Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@agentic_bp.route('/test_binary', methods=['POST'])
+def test_binary():
+    """
+    Test compiled binary against 70+ AV engines via VirusTotal.
+
+    POST /api/v2/test_binary
+    {
+        "binary_path": "/path/to/malware.exe",
+        "target_av": "CrowdStrike",
+        "max_wait": 300
+    }
+
+    Returns: Detection results from VirusTotal
+    """
+    try:
+        from server.testing.virustotal_tester import VirusTotalTester
+
+        data = request.json
+        binary_path = data.get('binary_path')
+        target_av = data.get('target_av', 'Windows Defender')
+        max_wait = data.get('max_wait', 300)
+
+        if not binary_path:
+            return jsonify({'error': 'binary_path required'}), 400
+
+        logger.info(f"[Test] binary={binary_path}, target_av={target_av}")
+
+        # Initialize VirusTotal tester
+        vt = VirusTotalTester()
+
+        if not vt.is_available():
+            return jsonify({
+                'success': False,
+                'error': 'VirusTotal API key not configured',
+                'setup_instructions': {
+                    'step_1': 'Get free API key from https://www.virustotal.com/gui/my-apikey',
+                    'step_2': 'Add to .env file: VIRUSTOTAL_API_KEY=your_key_here',
+                    'step_3': 'Restart Noctis server',
+                    'limits': 'Free API: 4 requests/min, 500/day - perfect for testing'
+                },
+                'alternative': 'Use local Windows Defender testing if on Windows'
+            }), 503
+
+        # Test binary
+        results = vt.test_binary(binary_path, max_wait)
+
+        if not results.get('success'):
+            return jsonify(results), 500
+
+        # Format output
+        stats = results.get('stats', {})
+        detected = results.get('detected', False)
+        detection_rate = stats.get('detection_rate', 0)
+
+        # Check specific target AV
+        av_results = results.get('av_results', {})
+        target_av_detected = False
+        target_av_result = None
+
+        for av_name, av_data in av_results.items():
+            if target_av.lower() in av_name.lower():
+                target_av_detected = av_data.get('detected', False)
+                target_av_result = av_data.get('result', 'clean')
+                break
+
+        # Determine OPSEC assessment
+        if detection_rate == 0:
+            opsec_assessment = 'EXCELLENT - Fully undetected by all engines'
+        elif detection_rate < 5:
+            opsec_assessment = 'VERY GOOD - Only minor AVs detected'
+        elif detection_rate < 15:
+            opsec_assessment = 'GOOD - Bypasses most major AVs'
+        elif detection_rate < 30:
+            opsec_assessment = 'MODERATE - Detected by some major AVs'
+        else:
+            opsec_assessment = 'POOR - Widely detected, needs improvement'
+
+        output = {
+            'success': True,
+            'test_results': {
+                'binary': Path(binary_path).name,
+                'file_hash': results.get('file_hash', 'unknown'),
+                'scan_date': results.get('scan_date', 'unknown'),
+                'cached': results.get('cached', False)
+            },
+            'detection_summary': {
+                'total_engines': stats.get('total_engines', 0),
+                'detected_by': stats.get('malicious', 0) + stats.get('suspicious', 0),
+                'undetected_by': stats.get('undetected', 0),
+                'detection_rate': f"{detection_rate}%",
+                'opsec_assessment': opsec_assessment
+            },
+            'target_av_result': {
+                'av_name': target_av,
+                'detected': target_av_detected,
+                'result': target_av_result if target_av_result else 'AV not in results',
+                'status': '✗ DETECTED' if target_av_detected else '✓ BYPASSED'
+            },
+            'top_detections': [],
+            'insights': [],
+            'next_steps': []
+        }
+
+        # Extract top detections (AVs that detected)
+        detected_avs = {name: data for name, data in av_results.items() if data.get('detected')}
+        output['top_detections'] = [
+            {
+                'av': name,
+                'category': data['category'],
+                'signature': data['result']
+            }
+            for name, data in list(detected_avs.items())[:5]
+        ]
+
+        # Generate insights
+        if not detected:
+            output['insights'] = [
+                '🎉 Perfect! Binary is completely undetected',
+                f'✓ {stats.get("undetected", 0)} AV engines tested',
+                '✓ Safe to deploy in production',
+                f'✓ Target AV ({target_av}) did not detect'
+            ]
+            output['next_steps'] = [
+                'Record result with noctis_record_result()',
+                'Deploy in target environment',
+                'Monitor for any updates to AV signatures'
+            ]
+        elif detection_rate < 15:
+            output['insights'] = [
+                f'✓ Low detection rate: {detection_rate}%',
+                f'✓ {stats.get("undetected", 0)} engines did not detect',
+                '⚠ Mostly minor AVs detected',
+                f'{"✓" if not target_av_detected else "✗"} Target AV ({target_av}): {"bypassed" if not target_av_detected else "detected"}'
+            ]
+            output['next_steps'] = [
+                'Record result with noctis_record_result()',
+                'Consider additional obfuscation if target AV detected',
+                'Deploy if target AV bypassed'
+            ]
+        else:
+            output['insights'] = [
+                f'⚠ High detection rate: {detection_rate}%',
+                f'✗ Detected by {stats.get("malicious", 0)} engines',
+                f'✗ Target AV ({target_av}): {"detected" if target_av_detected else "bypassed"}',
+                '⚠ Needs significant improvement'
+            ]
+            output['next_steps'] = [
+                'Do NOT deploy - too risky',
+                'Try different technique combination',
+                'Use noctis_search_techniques() to find better techniques',
+                'Consider using integrated_loader.c template',
+                'Add more evasion layers (Zilean, Perun\'s Fart, etc.)'
+            ]
+
+        output['tip'] = (
+            'Record this result to improve future recommendations' if not detected
+            else 'High detection rate suggests AV signatures caught this technique'
+        )
+
+        # Add manual VT link
+        if results.get('file_hash'):
+            output['virustotal_link'] = f"https://www.virustotal.com/gui/file/{results['file_hash']}"
+
+        return jsonify(output)
+
+    except Exception as e:
+        logger.exception(f"[Test] Error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500

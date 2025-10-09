@@ -311,6 +311,135 @@ curl http://localhost:8888/api/v2/rag/stats
 
 ---
 
+## VirusTotal Setup (Optional - for Binary Testing)
+
+Noctis-MCP includes `noctis_test_binary()` to test your compiled binaries against 70+ AV engines via VirusTotal API.
+
+### Why Use VirusTotal Testing?
+
+- **Test against 70+ AVs**: CrowdStrike, Defender, SentinelOne, Cortex XDR, Sophos, and 65+ more
+- **Free API**: 4 requests/min, 500/day - perfect for testing individual binaries
+- **Automated workflow**: Compile → Test → Record results → Learn
+- **OPSEC assessment**: Get detection rate and specific AV results
+
+### Step 1: Get Free API Key
+
+1. Create account at https://www.virustotal.com/
+2. Get your API key: https://www.virustotal.com/gui/my-apikey
+3. Copy the API key (64-character string)
+
+### Step 2: Configure API Key
+
+**Option A: Using .env file (Recommended)**
+```bash
+cd /path/to/Noctis-MCP
+cp .env.example .env
+nano .env  # Or use your favorite editor
+```
+
+Add your API key:
+```
+VIRUSTOTAL_API_KEY=your_64_character_api_key_here
+```
+
+**Option B: Using environment variable**
+```bash
+# Linux/macOS (add to ~/.bashrc or ~/.zshrc)
+export VIRUSTOTAL_API_KEY="your_api_key_here"
+
+# Windows (PowerShell)
+$env:VIRUSTOTAL_API_KEY="your_api_key_here"
+```
+
+### Step 3: Restart Noctis Server
+
+```bash
+# Stop server (Ctrl+C)
+# Restart with:
+source venv/bin/activate
+python server/noctis_server.py --port 8888
+```
+
+### Step 4: Test It Works
+
+In Cursor/VSCode with Noctis-MCP:
+
+```
+You: Test if VirusTotal is configured
+
+AI: *calls noctis_test_binary("compiled/test.exe", "CrowdStrike")*
+
+Output:
+  ✓ VirusTotal configured successfully
+  OR
+  ❌ API key not configured (setup instructions shown)
+```
+
+### Example Workflow with Testing
+
+⚠️ **IMPORTANT: DO NOT test your final production binary on VirusTotal!**
+- VirusTotal shares samples with AV vendors
+- Use VT only for development iterations
+- Keep your final working binary OFF VirusTotal
+
+**Recommended workflow:**
+
+```
+You: "Build a CrowdStrike bypass and test it"
+
+AI workflow (ITERATION 1 - Testing prototype):
+1. noctis_search_techniques("bypass CrowdStrike")
+2. noctis_recommend_template("bypass CrowdStrike")
+3. Write code using recommended techniques
+4. noctis_compile("malware.c", "windows", "x64")
+5. noctis_test_binary("compiled/test_v1.exe", "CrowdStrike")  ← TEST PROTOTYPE
+   → Tests against 70+ AVs
+   → Result: 15% detection rate, CrowdStrike DETECTED
+
+You: "Improve evasion based on results"
+
+AI workflow (ITERATION 2 - Improving):
+1. Add more techniques (Zilean, Perun's Fart)
+2. Recompile: noctis_compile("malware_v2.c", "windows", "x64")
+3. noctis_test_binary("compiled/test_v2.exe", "CrowdStrike")  ← TEST V2
+   → Result: 5% detection rate, CrowdStrike BYPASSED ✓
+
+You: "Great! Make final production version"
+
+AI workflow (FINAL - Production ready):
+1. Compile final version: noctis_compile("malware_final.c", "windows", "x64")
+2. DO NOT call noctis_test_binary() on final version!  ← KEEP OFF VT
+3. noctis_record_result("integrated_loader", ["poolparty", "zilean"], "CrowdStrike", False, "Bypassed in v2")
+4. Final binary ready: compiled/malware_final.exe (never uploaded to VT)
+```
+
+**Summary:**
+- ✅ Test prototypes v1, v2, v3... on VT to iterate
+- ✅ Record results to improve learning
+- ❌ DO NOT test final production binary on VT
+- ✅ Keep final working binary private
+
+### Rate Limits (Free API)
+
+- **4 requests/minute** - Perfect for testing one binary at a time
+- **500 requests/day** - ~20 binaries per day if you test each 3-5 times
+- **15.5K requests/month** - More than enough for development
+
+**Tips:**
+- VirusTotal caches results by file hash - resubmitting same binary = instant results
+- Wait 15-30 seconds between tests to stay within rate limits
+- Analysis takes ~2-5 minutes per new binary
+
+### Without VirusTotal
+
+If you don't configure VirusTotal:
+- All other MCP tools work normally
+- `noctis_test_binary()` will show setup instructions when called
+- You can still use local Windows Defender testing (Windows only)
+- Recommended for production usage to avoid submitting payloads to VT
+
+---
+
 ## Daily Usage
 
 ### Starting Noctis-MCP

@@ -1,25 +1,40 @@
 """
-Simple Template Recommender - No Bullshit
+Simple Template Recommender with Learning Integration
 
 Maps user request → template file
-That's it. No AI, no complexity, no bugs.
+Now checks learning data to avoid recommending detected templates.
 """
 
 def recommend_template(objective: str) -> dict:
     """
-    Dead simple template recommendation based on keywords
+    Template recommendation with learning data integration
 
     Args:
         objective: User's objective (e.g., "bypass CrowdStrike")
 
     Returns:
-        Template info dict
+        Template info dict with detection warning if needed
     """
     obj_lower = objective.lower() if objective else ""
 
+    # Extract target AV from objective
+    target_av = None
+    av_keywords = {
+        'crowdstrike': 'CrowdStrike',
+        'defender': 'Windows Defender',
+        'sentinelone': 'SentinelOne',
+        'cortex': 'Cortex XDR',
+        'sophos': 'Sophos',
+        'trendmicro': 'Trend Micro'
+    }
+    for keyword, av_name in av_keywords.items():
+        if keyword in obj_lower:
+            target_av = av_name
+            break
+
     # Rule 1: Loader/Bypass → integrated_loader.c (has EVERYTHING)
     if any(word in obj_lower for word in ['loader', 'bypass', 'evasion', 'evade', 'edr', 'av']):
-        return {
+        recommendation = {
             'template_file': 'techniques/templates/integrated_loader.c',
             'template_name': 'Integrated Loader',
             'use_case': 'Complete EDR bypass pipeline',
@@ -31,10 +46,11 @@ def recommend_template(objective: str) -> dict:
             'modify_instructions': 'Replace shellcode buffer with your payload',
             'recommendation': 'Use integrated_loader.c - combines ALL evasion techniques for maximum stealth'
         }
+        return _check_detection_history(recommendation, 'integrated_loader', target_av)
 
     # Rule 2: RAT/C2/Beacon → beacon_stealth.c
     elif any(word in obj_lower for word in ['rat', 'c2', 'beacon', 'callback', 'implant', 'backdoor']):
-        return {
+        recommendation = {
             'template_file': 'techniques/templates/beacon_stealth.c',
             'template_name': 'Beacon Stealth',
             'use_case': 'C2 beacon with memory obfuscation',
@@ -46,10 +62,11 @@ def recommend_template(objective: str) -> dict:
             'modify_instructions': 'Replace shellcode with Sliver/Mythic/Havoc payload',
             'recommendation': 'Use beacon_stealth.c - optimized for persistent C2 implants'
         }
+        return _check_detection_history(recommendation, 'beacon_stealth', target_av)
 
     # Rule 3: Simple injection → process_injection_complete.c
     else:
-        return {
+        recommendation = {
             'template_file': 'techniques/templates/process_injection_complete.c',
             'template_name': 'Process Injection Complete',
             'use_case': 'Focused injection with moderate evasion',
@@ -61,6 +78,61 @@ def recommend_template(objective: str) -> dict:
             'modify_instructions': 'Replace shellcode buffer with your payload',
             'recommendation': 'Use process_injection_complete.c - lightweight injection template'
         }
+        return _check_detection_history(recommendation, 'process_injection_complete', target_av)
+
+
+def _check_detection_history(recommendation: dict, template_name: str, target_av: str = None) -> dict:
+    """
+    Check learning database for detection history of this template
+
+    Args:
+        recommendation: Base recommendation dict
+        template_name: Template identifier
+        target_av: Target AV/EDR to check
+
+    Returns:
+        Recommendation with detection warning if applicable
+    """
+    try:
+        from server.utils.learning import LearningTracker
+
+        tracker = LearningTracker()
+
+        # Get stats for this template
+        if target_av:
+            stats = tracker.get_stats(target_av=target_av, template_name=template_name)
+        else:
+            stats = tracker.get_stats(template_name=template_name)
+
+        if stats and stats.get('total_tests', 0) > 0:
+            detection_rate = stats.get('detection_rate', 0)
+            total_tests = stats.get('total_tests', 0)
+
+            # Add detection history to recommendation
+            recommendation['detection_history'] = {
+                'tested': total_tests,
+                'detection_rate': f"{detection_rate:.0%}",
+                'last_tested': stats.get('last_tested', 'unknown')
+            }
+
+            # Warn if detection rate is high (>50%)
+            if detection_rate > 0.5:
+                recommendation['warning'] = (
+                    f"⚠️  This template has {detection_rate:.0%} detection rate against "
+                    f"{target_av or 'various AVs'} in {total_tests} tests. "
+                    "Consider using alternative techniques or combining with additional evasion."
+                )
+                recommendation['opsec_score'] = max(5.0, recommendation['opsec_score'] - 2.0)
+
+            # Update recommendation text with real-world data
+            if detection_rate < 0.1:  # <10% detection
+                recommendation['recommendation'] += f" (Real-world success: {100-detection_rate*100:.0f}% in {total_tests} tests)"
+
+    except Exception as e:
+        # If learning tracker unavailable, just return original recommendation
+        pass
+
+    return recommendation
 
 
 def get_technique_files() -> dict:

@@ -18,9 +18,9 @@
 
 ---
 
-**Status:** Production Ready | **Version:** 2.0 | **Tools:** 5
+**Status:** Production Ready | **Version:** 2.0 | **Tools:** 6
 
-Noctis-MCP provides 5 core MCP tools that give AI agents (Claude, GPT-4, etc.) access to malware development intelligence, RAG-powered technique search, and automated compilation. The AI uses this intelligence to write code, not copy templates.
+Noctis-MCP provides 6 core MCP tools that give AI agents (Claude, GPT-4, etc.) access to malware development intelligence, RAG-powered technique search, automated compilation, and AV testing via VirusTotal. The AI uses this intelligence to write code, not copy templates.
 
 ---
 
@@ -54,7 +54,17 @@ AI calls: validate_code() → compile_code(final EXE)
 pip install -r requirements.txt
 ```
 
-### 2. Start Server
+### 2. (Optional) Configure VirusTotal for Binary Testing
+
+```bash
+# Get free API key from https://www.virustotal.com/gui/my-apikey
+cp .env.example .env
+# Add your API key to .env: VIRUSTOTAL_API_KEY=your_key_here
+```
+
+**Without VirusTotal:** All tools work except `noctis_test_binary()`. See [docs/SETUP.md](docs/SETUP.md#virustotal-setup-optional---for-binary-testing) for full setup.
+
+### 3. Start Server
 
 ```bash
 python server/noctis_server.py
@@ -62,9 +72,26 @@ python server/noctis_server.py
 
 Server starts on `http://localhost:8888`
 
-### 3. Configure MCP in Your IDE
+### 4. Configure MCP in Your IDE
 
-**For Cursor/Claude Desktop:**
+**For Cursor IDE:**
+
+Settings → Features → Model Context Protocol → Edit Config, then add:
+
+```json
+{
+  "mcpServers": {
+    "noctis-mcp": {
+      "command": "/absolute/path/to/Noctis-MCP/venv/bin/python",
+      "args": ["-m", "noctis_mcp_client.noctis_mcp"],
+      "cwd": "/absolute/path/to/Noctis-MCP",
+      "description": "Noctis-MCP v2.0 - 5 core malware development tools"
+    }
+  }
+}
+```
+
+**For Claude Desktop:**
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
@@ -72,15 +99,17 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "noctis-mcp": {
-      "command": "python",
-      "args": ["/path/to/Noctis-MCP/noctis_mcp_client/noctis_mcp.py"],
-      "env": {
-        "NOCTIS_SERVER_URL": "http://localhost:8888"
-      }
+      "command": "/absolute/path/to/Noctis-MCP/venv/bin/python",
+      "args": ["-m", "noctis_mcp_client.noctis_mcp"],
+      "cwd": "/absolute/path/to/Noctis-MCP"
     }
   }
 }
 ```
+
+**Note:** Replace `/absolute/path/to/Noctis-MCP` with your actual installation path.
+
+On Windows, use: `C:\\path\\to\\Noctis-MCP\\venv\\Scripts\\python.exe`
 
 ### 4. Use in IDE
 
@@ -96,7 +125,7 @@ AI will:
 
 ---
 
-## 5 MCP Tools
+## 6 MCP Tools
 
 | Tool | Purpose |
 |------|---------|
@@ -104,6 +133,7 @@ AI will:
 | `noctis_recommend_template(objective)` | Get template recommendation based on objective |
 | `noctis_generate_beacon(c2_framework, listener_host, listener_port, architecture, format)` | Generate C2 beacon shellcode (Sliver/Adaptix/Mythic) |
 | `noctis_compile(source_file, target_os, architecture, optimization)` | Compile malware for Windows/Linux |
+| `noctis_test_binary(binary_path, target_av, max_wait)` | Test binary against 70+ AV engines via VirusTotal |
 | `noctis_record_result(template, techniques, target_av, detected, notes)` | Record attack results for learning system |
 
 ---
@@ -159,11 +189,23 @@ BOOL InjectPayload(DWORD pid, LPVOID payload, SIZE_T size) {
 ```
 
 ```python
-4. validate_code(source_code) → Quality check
-5. compile_code(source_code) → Build binary
+4. compile_code(source_code) → Build test_v1.exe
+5. test_binary("compiled/test_v1.exe", "CrowdStrike")  # Test PROTOTYPE only
+   → Upload to VirusTotal
+   → Test against 70+ AV engines
+   → Check if CrowdStrike detected
+   → Get OPSEC assessment (e.g., "15% detection, CrowdStrike detected")
+6. Iterate: Improve code, compile test_v2.exe, test again
+   → Result: "5% detection, CrowdStrike BYPASSED" ✓
+7. Compile FINAL version (DO NOT test on VT - keep final binary private!)
+8. record_result(template, techniques, "CrowdStrike", detected=False)
+   → Save to learning database
+   → Improve future recommendations
 ```
 
-**Result:** Dynamic, OPSEC-aware code tailored to target AV.
+**⚠️ Production OPSEC:** Test prototypes on VT to iterate, but keep your final working binary OFF VirusTotal (VT shares with AV vendors).
+
+**Result:** Complete automated workflow from intelligence → code → iterative testing → production binary.
 
 ---
 

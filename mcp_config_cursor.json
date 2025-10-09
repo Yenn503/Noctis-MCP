@@ -1,15 +1,16 @@
 {
   "mcpServers": {
     "noctis-mcp": {
-      "command": "python",
+      "command": "/absolute/path/to/Noctis-MCP/venv/bin/python",
       "args": [
         "-m",
         "noctis_mcp_client.noctis_mcp"
       ],
-      "description": "Noctis-MCP - Professional Red Team Malware Development Platform (5 core tools)",
+      "cwd": "/absolute/path/to/Noctis-MCP",
+      "description": "Noctis-MCP v2.0 - 5 core malware development tools",
       "timeout": 300,
       "env": {
-        "PYTHONPATH": "."
+        "PYTHONPATH": "/absolute/path/to/Noctis-MCP"
       }
     }
   }

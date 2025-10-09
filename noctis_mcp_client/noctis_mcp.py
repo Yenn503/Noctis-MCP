@@ -10,7 +10,8 @@ Core Tools:
   2. noctis_recommend_template - Get template recommendation
   3. noctis_generate_beacon - Generate C2 beacon shellcode
   4. noctis_compile - Compile malware for target OS
-  5. noctis_record_result - Record attack results for learning
+  5. noctis_test_binary - Test binary against 70+ AVs via VirusTotal
+  6. noctis_record_result - Record attack results for learning
 
 For authorized red team operations only.
 """
@@ -337,6 +338,161 @@ def noctis_record_result(
 
     except Exception as e:
         return {"error": str(e)}
+
+
+@mcp.tool()
+def noctis_test_binary(
+    binary_path: str,
+    target_av: str = "Windows Defender",
+    max_wait: int = 300
+) -> str:
+    """
+    Test compiled binary against 70+ AV engines via VirusTotal.
+
+    ⚠️  IMPORTANT WARNINGS:
+    1. Requires VirusTotal API key in .env file (get free key at: https://www.virustotal.com/gui/my-apikey)
+    2. DO NOT test your final production binary on VirusTotal!
+       - VT shares samples with AV vendors
+       - Use VT only for development/testing iterations
+       - For production: Test locally, keep final binary off VT
+
+    RECOMMENDED WORKFLOW:
+    1. Test early prototypes on VT to see what's detected
+    2. Iterate and improve based on VT results
+    3. When happy with detection rate, compile final version
+    4. DO NOT upload final version to VT
+    5. Deploy final version in target environment
+
+    Rate limits (free API):
+    - 4 requests/minute (perfect for testing individual binaries)
+    - 500 requests/day
+    - 15.5K requests/month
+
+    Args:
+        binary_path: Path to compiled binary (e.g., "compiled/malware.exe")
+        target_av: Target AV to check specifically (e.g., "CrowdStrike", "Defender")
+        max_wait: Maximum seconds to wait for analysis (default: 300)
+
+    Returns:
+        Detection results with per-AV breakdown and OPSEC assessment
+
+    Example:
+        noctis_test_binary("compiled/test_v1.exe", "CrowdStrike", 300)
+    """
+    if not check_server():
+        return "ERROR: Noctis server not running. Start with: python3 server/noctis_server.py"
+
+    try:
+        response = session.post(f"{SERVER_URL}/api/v2/test_binary", json={
+            "binary_path": binary_path,
+            "target_av": target_av,
+            "max_wait": max_wait
+        }, timeout=max_wait + 60)  # Extra buffer for network overhead
+
+        if response.status_code == 200:
+            data = response.json()
+
+            # Build clean formatted output
+            output = []
+            output.append("=" * 80)
+            output.append("VIRUSTOTAL DETECTION TEST")
+            output.append("=" * 80)
+
+            if not data.get('success'):
+                output.append(f"\n❌ Error: {data.get('error', 'Unknown error')}")
+                if 'setup_instructions' in data:
+                    output.append("\n📋 SETUP INSTRUCTIONS:")
+                    for key, value in data['setup_instructions'].items():
+                        output.append(f"  {key}: {value}")
+                return "\n".join(output)
+
+            # Test results
+            test_results = data.get('test_results', {})
+            output.append(f"\n📦 Binary: {test_results.get('binary', 'N/A')}")
+            output.append(f"🔑 SHA256: {test_results.get('file_hash', 'N/A')}")
+            output.append(f"📅 Scan Date: {test_results.get('scan_date', 'N/A')}")
+            output.append(f"💾 Cached: {'Yes (previous scan)' if test_results.get('cached') else 'No (new scan)'}")
+
+            # Detection summary
+            summary = data.get('detection_summary', {})
+            output.append("\n" + "=" * 80)
+            output.append("DETECTION SUMMARY")
+            output.append("=" * 80)
+            output.append(f"Total Engines: {summary.get('total_engines', 0)}")
+            output.append(f"Detected By: {summary.get('detected_by', 0)}")
+            output.append(f"Undetected By: {summary.get('undetected_by', 0)}")
+            output.append(f"Detection Rate: {summary.get('detection_rate', '0%')}")
+            output.append(f"\n🎯 OPSEC Assessment: {summary.get('opsec_assessment', 'Unknown')}")
+
+            # Target AV result
+            target = data.get('target_av_result', {})
+            output.append("\n" + "=" * 80)
+            output.append(f"TARGET AV: {target.get('av_name', 'N/A')}")
+            output.append("=" * 80)
+            output.append(f"Status: {target.get('status', 'Unknown')}")
+            output.append(f"Result: {target.get('result', 'N/A')}")
+
+            # Top detections
+            if data.get('top_detections'):
+                output.append("\n" + "=" * 80)
+                output.append("TOP DETECTIONS (First 5)")
+                output.append("=" * 80)
+                for i, detection in enumerate(data['top_detections'][:5], 1):
+                    output.append(f"{i}. {detection['av']}")
+                    output.append(f"   Category: {detection['category']}")
+                    output.append(f"   Signature: {detection['signature']}")
+
+            # Insights
+            if data.get('insights'):
+                output.append("\n" + "=" * 80)
+                output.append("INSIGHTS")
+                output.append("=" * 80)
+                for insight in data['insights']:
+                    output.append(f"  {insight}")
+
+            # Next steps
+            if data.get('next_steps'):
+                output.append("\n" + "=" * 80)
+                output.append("NEXT STEPS")
+                output.append("=" * 80)
+                for i, step in enumerate(data['next_steps'], 1):
+                    output.append(f"  {i}. {step}")
+
+            # Tip
+            if data.get('tip'):
+                output.append(f"\n💡 Tip: {data['tip']}")
+
+            # VT link
+            if data.get('virustotal_link'):
+                output.append(f"\n🔗 View full report: {data['virustotal_link']}")
+
+            output.append("\n" + "=" * 80)
+
+            return "\n".join(output)
+
+        elif response.status_code == 503:
+            data = response.json()
+            output = []
+            output.append("=" * 80)
+            output.append("VIRUSTOTAL NOT CONFIGURED")
+            output.append("=" * 80)
+            output.append(f"\n❌ {data.get('error', 'VirusTotal unavailable')}")
+
+            if 'setup_instructions' in data:
+                output.append("\n📋 SETUP INSTRUCTIONS:")
+                for key, value in data['setup_instructions'].items():
+                    output.append(f"  {key.replace('_', ' ').title()}: {value}")
+
+            if data.get('alternative'):
+                output.append(f"\n💡 Alternative: {data['alternative']}")
+
+            return "\n".join(output)
+
+        else:
+            return f"ERROR: Test failed with status {response.status_code}: {response.text}"
+
+    except Exception as e:
+        return f"ERROR: {str(e)}"
 
 
 if __name__ == "__main__":

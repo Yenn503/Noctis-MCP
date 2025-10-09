@@ -38,8 +38,14 @@ class LearningTracker:
         self._init_database()
 
     def _init_database(self):
-        """Initialize database schema"""
-        with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+        """Initialize database schema with WAL mode for better concurrency"""
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
+
+        # Enable WAL mode for better concurrent access
+        conn.execute('PRAGMA journal_mode=WAL')
+        conn.execute('PRAGMA synchronous=NORMAL')  # Faster with WAL
+
+        with conn:
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS attacks (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,7 +102,7 @@ class LearningTracker:
         timestamp = datetime.utcnow().isoformat()
         techniques_json = json.dumps(techniques)
 
-        with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
             cursor = conn.execute(
                 '''
                 INSERT INTO attacks (timestamp, template, techniques, target_av, detected, notes)
@@ -123,7 +129,7 @@ class LearningTracker:
         Returns:
             Statistics dictionary
         """
-        with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
             query = 'SELECT template, target_av, detected FROM attacks WHERE 1=1'
             params = []
 
@@ -179,7 +185,7 @@ class LearningTracker:
         Returns:
             List of technique combinations with success rates
         """
-        with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
             cursor = conn.execute(
                 '''
                 SELECT template, techniques,
@@ -221,7 +227,7 @@ class LearningTracker:
         Returns:
             List of recent attacks
         """
-        with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
                 '''
