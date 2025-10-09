@@ -370,9 +370,10 @@ def start_http_server():
 
         # Check if it started successfully
         if process.poll() is not None:
+            stdout, stderr = process.communicate()
             return jsonify({
                 'success': False,
-                'error': 'HTTP server failed to start'
+                'error': f'HTTP server failed to start: {stderr.decode()}'
             }), 500
 
         return jsonify({
