@@ -79,21 +79,45 @@ def noctis_search_techniques(query: str, target_av: str = "Windows Defender", n_
         if response.status_code == 200:
             data = response.json()
 
-            # Format results for clean display
+            # Build clean formatted output
+            output = []
+            output.append("=" * 80)
+            output.append("TECHNIQUE SEARCH RESULTS")
+            output.append("=" * 80)
+
+            summary = data.get('summary', {})
+            output.append(f"\n🔍 Query: {summary.get('query', 'N/A')}")
+            output.append(f"🎯 Target AV: {summary.get('target_av', 'N/A')}")
+            output.append(f"📊 Results Found: {summary.get('results_found', 0)}")
+
+            if data.get('tip'):
+                output.append(f"\n💡 {data['tip']}")
+
+            # Format search results
             if 'results' in data and isinstance(data['results'], list):
-                formatted_results = "\n\nSearch Results:\n" + "="*80 + "\n"
-                for idx, result in enumerate(data['results'][:5], 1):  # Show top 5 formatted
-                    formatted_results += f"\n[{idx}] Relevance: {result.get('relevance_score', 0):.1%}\n"
-                    formatted_results += f"Source: {result.get('metadata', {}).get('file', 'unknown')}\n"
-                    content = result.get('content', '')[:300]  # First 300 chars
-                    formatted_results += f"Content: {content}...\n"
-                    formatted_results += "-" * 80 + "\n"
+                output.append("\n" + "=" * 80)
+                output.append("TOP RESULTS")
+                output.append("=" * 80)
 
-                # Add formatted results
-                data['results_formatted'] = formatted_results
-                data['results'] = f"See results_formatted for clean list (showing top 5 of {len(data['results'])} results)"
+                for idx, result in enumerate(data['results'][:5], 1):
+                    relevance = result.get('relevance_score', 0)
+                    source = result.get('source_file', result.get('metadata', {}).get('source', 'unknown'))
+                    content = result.get('content', '')[:250]
 
-            return data
+                    output.append(f"\n[{idx}] Relevance: {relevance:.1%}")
+                    output.append(f"    Source: {source}")
+                    output.append(f"    {content}...")
+                    output.append("-" * 80)
+
+            # Format next steps
+            if 'next_steps' in data:
+                output.append("\n" + "=" * 80)
+                output.append("NEXT STEPS")
+                output.append("=" * 80)
+                for step in data['next_steps']:
+                    output.append(f"  {step}")
+
+            return {"output": "\n".join(output)}
         else:
             return {"error": f"Search failed: {response.text}"}
 
@@ -126,21 +150,49 @@ def noctis_recommend_template(objective: str) -> Dict[str, Any]:
         if response.status_code == 200:
             data = response.json()
 
-            # Format techniques list for clean display
+            # Build clean formatted output
+            output = []
+            output.append("=" * 70)
+            output.append("TEMPLATE RECOMMENDATION")
+            output.append("=" * 70)
+
+            rec = data.get('recommendation', {})
+            output.append(f"\n📋 Template: {rec.get('template_file', 'N/A')}")
+            output.append(f"📊 OPSEC Score: {rec.get('opsec_score', 'N/A')}")
+            output.append(f"⚠️  Detection Risk: {rec.get('detection_risk', 'N/A')}")
+
+            techniques = rec.get('techniques_included', [])
+            if isinstance(techniques, list):
+                tech_str = ', '.join(techniques)
+            else:
+                tech_str = str(techniques)
+            output.append(f"🎯 Techniques: {tech_str}")
+
+            output.append(f"\n💡 Why This Template:")
+            output.append(f"   {data.get('why_this_template', 'N/A')}")
+
+            output.append(f"\n⚡ Tip: {data.get('tip', 'N/A')}")
+
+            # Format techniques list
             if 'available_techniques' in data and isinstance(data['available_techniques'], list):
-                formatted_techniques = "\n\nAvailable Techniques:\n" + "="*60 + "\n"
-                for tech in data['available_techniques']:
-                    formatted_techniques += f"\n{tech['name']}\n"
-                    formatted_techniques += f"  File: {tech['file']}\n"
-                    formatted_techniques += f"  Description: {tech['description']}\n"
-                    formatted_techniques += f"  OPSEC Score: {tech['opsec_score']}\n"
-                    formatted_techniques += f"  Bypasses: {tech['bypasses']}\n"
+                output.append("\n" + "=" * 70)
+                output.append("AVAILABLE TECHNIQUES")
+                output.append("=" * 70)
+                for i, tech in enumerate(data['available_techniques'], 1):
+                    output.append(f"\n[{i}] {tech['name']}")
+                    output.append(f"    File: {tech['file']}")
+                    output.append(f"    Description: {tech['description']}")
+                    output.append(f"    OPSEC: {tech['opsec_score']} | Bypasses: {tech['bypasses']}")
 
-                # Replace the list with formatted string for display
-                data['available_techniques_formatted'] = formatted_techniques
-                data['available_techniques'] = f"See available_techniques_formatted for clean list"
+            # Format next steps
+            if 'next_steps' in data:
+                output.append("\n" + "=" * 70)
+                output.append("NEXT STEPS")
+                output.append("=" * 70)
+                for step in data['next_steps']:
+                    output.append(f"  {step}")
 
-            return data
+            return {"output": "\n".join(output)}
         else:
             return {"error": f"Recommendation failed: {response.text}"}
 
