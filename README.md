@@ -18,9 +18,9 @@
 
 ---
 
-**Status:** Production Ready | **Version:** 2.0 | **Tools:** 21
+**Status:** Production Ready | **Version:** 2.0 | **Tools:** 5
 
-Noctis-MCP provides 21 MCP tools that give AI agents (Claude, GPT-4, etc.) access to malware development intelligence, live detection testing, and C2 integration. The AI uses this intelligence to write code, not copy templates.
+Noctis-MCP provides 5 core MCP tools that give AI agents (Claude, GPT-4, etc.) access to malware development intelligence, RAG-powered technique search, and automated compilation. The AI uses this intelligence to write code, not copy templates.
 
 ---
 
@@ -96,36 +96,15 @@ AI will:
 
 ---
 
-## 21 MCP Tools
-
-### Core Malware Tools (7)
+## 5 MCP Tools
 
 | Tool | Purpose |
 |------|---------|
-| `search_intelligence(query, target_av)` | Get RAG intelligence with MITRE TTPs, OPSEC scores |
-| `generate_code(techniques, target_av)` | Get guidance for AI to write code |
-| `optimize_opsec(code, target_av)` | Get OPSEC improvement recommendations |
-| `validate_code(code)` | Check code quality, get warnings |
-| `compile_code(code, arch)` | Build binary (Windows/Linux) |
-| `test_detection(binary, target_av)` | Test binary against 70+ AVs (VirusTotal) |
-| `record_feedback(techniques, av, detected)` | Record detection results for learning |
-
-### C2 Integration Tools (4)
-
-| Tool | Purpose |
-|------|---------|
-| `generate_c2_beacon(framework, host, port)` | Generate C2 shellcode from Sliver/Mythic |
-| `compile_malware(code, arch, name)` | Compile code to executable |
-| `setup_c2_listener(framework, host, port)` | Setup C2 listener instructions |
-| `install_c2_framework(framework)` | Auto-install C2 on Linux |
-
-### Education System (9)
-
-Interactive learning system with lessons, quizzes, and progress tracking.
-
-### Utility (1)
-
-- `rag_stats()` - RAG system health check
+| `noctis_search_techniques(query, target_av, n_results)` | Search RAG knowledge base for techniques, get OPSEC guidance |
+| `noctis_recommend_template(objective)` | Get template recommendation based on objective |
+| `noctis_generate_beacon(c2_framework, listener_host, listener_port, architecture, format)` | Generate C2 beacon shellcode (Sliver/Adaptix/Mythic) |
+| `noctis_compile(source_file, target_os, architecture, optimization)` | Compile malware for Windows/Linux |
+| `noctis_record_result(template, techniques, target_av, detected, notes)` | Record attack results for learning system |
 
 ---
 
@@ -203,7 +182,7 @@ Noctis-MCP/
 │   ├── learning_engine.py          # Detection feedback
 │   └── code_assembler.py           # Code assembly
 ├── noctis_mcp_client/
-│   └── noctis_mcp.py               # 21 MCP tools
+│   └── noctis_mcp.py               # 5 MCP tools
 └── techniques/
     ├── injection/                  # Process injection techniques
     ├── syscalls/                   # Direct syscall implementations
@@ -267,9 +246,9 @@ Returns **HOW** real code works, not the code itself.
 
 ## System Metrics
 
-- **Tools:** 21 (Core: 7, C2: 4, Education: 9, Utility: 1)
-- **Endpoints:** ~30 active v2 endpoints
-- **Intelligence:** 400+ indexed sources
+- **MCP Tools:** 5 (search, recommend, generate_beacon, compile, record_result)
+- **Server Endpoints:** ~15 active v2 API endpoints
+- **Intelligence:** 400+ indexed sources (RAG knowledge base)
 - **RAG:** ChromaDB with cross-encoder re-ranking
 - **Caching:** 24-hour TTL for performance
 
@@ -298,22 +277,21 @@ Noctis-MCP is designed for:
 ## What Changed in v2.0
 
 ### Removed (Redundant/Old)
-- 4 redundant tools (20 → 16 core tools)
 - Old agent system (`server/agents/`)
 - Old v1 endpoints
+- Test files and reference code (cleaned up)
 - Obfuscation/polymorphic modules (not used)
 
 ### Added (v2.0)
-- Live detection testing with Hybrid Analysis sandbox
+- RAG-powered intelligence search (539 knowledge chunks)
 - Automated intelligence updates (35+ security blogs, GitHub, arXiv)
 - MITRE ATT&CK extraction in all intelligence
-- Updated tool descriptions (AI knows to write code)
+- 5 focused MCP tools (search, recommend, generate_beacon, compile, record_result)
 - C2 integration (Sliver/Mythic/Adaptix)
-- C2 auto-installation on Linux
-- OS-aware workflow routing
-- 4 new C2 tools (21 total tools)
+- Automated beacon builder with EDR-specific targeting
+- Cross-platform compilation (MinGW-w64)
+- Professional documentation
 - Cleaner architecture
-- Better documentation
 
 ### Advanced Evasion Techniques (2024-2025 Research)
 
@@ -368,7 +346,7 @@ python -c "from server import agentic_api; print('Server loads successfully')"
 
 # Check tool count
 grep -c "^@mcp.tool()" noctis_mcp_client/noctis_mcp.py
-# Should output: 21
+# Should output: 5
 
 # Start server with debug
 python server/noctis_server.py --debug
