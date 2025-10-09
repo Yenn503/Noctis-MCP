@@ -291,18 +291,34 @@ BOOL Zilean_Sleep(PZILEAN_CONTEXT pContext, DWORD dwMilliseconds) {
     pContext->bSleeping = TRUE;
     g_pZileanContext = pContext; // Set global for callback
 
-    // Wait for completion (synchronous version)
-    // In async version, this would return immediately and callback handles wake
-    while (pContext->bSleeping) {
-        Sleep(10); // Minimal sleep to avoid busy-wait
+    // Wait for timer to signal (proper async wait - no CPU usage)
+    // WaitForSingleObject blocks until timer fires, then callback executes
+    DWORD dwWaitResult = WaitForSingleObject(pContext->hTimer, dwMilliseconds + 1000);
+
+    if (dwWaitResult != WAIT_OBJECT_0) {
+        // Wait failed or timeout - decrypt memory and cleanup
+        Zilean_DecryptMemory(pContext);
+        pContext->bSleeping = FALSE;
+
+        // Deregister wait
+        fnRtlDeregisterWait pRtlDeregisterWait = (fnRtlDeregisterWait)GetProcAddress(hNtdll, "RtlDeregisterWait");
+        if (pRtlDeregisterWait && pContext->hWaitObject) {
+            pRtlDeregisterWait(pContext->hWaitObject);
+        }
+        return FALSE;
     }
+
+    // Timer signaled - callback should have executed
+    // Small delay to ensure callback completes
+    Sleep(50);
 
     // Deregister wait
     fnRtlDeregisterWait pRtlDeregisterWait = (fnRtlDeregisterWait)GetProcAddress(hNtdll, "RtlDeregisterWait");
-    if (pRtlDeregisterWait) {
+    if (pRtlDeregisterWait && pContext->hWaitObject) {
         pRtlDeregisterWait(pContext->hWaitObject);
     }
 
+    pContext->bSleeping = FALSE;
     return TRUE;
 }
 

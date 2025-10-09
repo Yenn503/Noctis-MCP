@@ -276,8 +276,17 @@ PVOID SilentMoonwalk_CallWithSpoofedStack8(
     return _SilentMoonwalk_ExecuteSpoofedCall(pContext, pFunction, args, 8);
 }
 
-// Internal: Execute spoofed call (simplified reference implementation)
-// NOTE: Production implementation requires assembly trampoline with ROP chain
+// ========================================================================
+// Assembly trampoline declarations (implemented in silentmoonwalk_stub.asm)
+// ========================================================================
+#ifdef _WIN64
+extern PVOID SilentMoonwalk_CallFunction(PSPOOF_CONTEXT pContext, PVOID pFunction, PVOID arg1, PVOID arg2, PVOID arg3, PVOID arg4);
+extern PVOID SilentMoonwalk_CallFunction4(PSPOOF_CONTEXT pContext, PVOID pFunction, PVOID arg1, PVOID arg2, PVOID arg3, PVOID arg4);
+#else
+#error "SilentMoonwalk requires x64 architecture"
+#endif
+
+// Internal: Execute spoofed call using assembly trampoline
 PVOID _SilentMoonwalk_ExecuteSpoofedCall(
     PSPOOF_CONTEXT pContext,
     PVOID pFunction,
@@ -286,78 +295,25 @@ PVOID _SilentMoonwalk_ExecuteSpoofedCall(
 ) {
     if (!pContext || !pFunction || !args) return NULL;
 
-    // WARNING: This is a REFERENCE implementation showing the concept
-    // A real implementation requires inline assembly or external .asm file
-    // to manipulate stack frames and execute ROP gadgets properly
-
-    // The actual implementation would:
-    // 1. Save original RSP/RBP
-    // 2. Build synthetic stack frames using ROP gadgets
-    // 3. Set RSP to point to synthetic stack
-    // 4. Call target function with x64 calling convention (RCX, RDX, R8, R9, stack)
-    // 5. Use ROP gadget to restore original stack on return
-    // 6. Return function result
-
-    // For reference purposes, here's the conceptual flow:
-    /*
-    Assembly pseudocode:
-
-    ; Save original state
-    mov [pContext->pOriginalRsp], rsp
-    mov [pContext->pOriginalRbp], rbp
-
-    ; Build synthetic stack
-    ; Frame 3 (deepest)
-    push [pContext->frames[2].returnAddress]
-    mov rbp, [pContext->frames[2].rbpValue]
-
-    ; Frame 2
-    push [pContext->frames[1].returnAddress]
-    mov rbp, [pContext->frames[1].rbpValue]
-
-    ; Frame 1 (closest to target)
-    push [pContext->frames[0].returnAddress]
-    mov rbp, [pContext->frames[0].rbpValue]
-
-    ; Push ROP gadget address (for stack restoration on return)
-    push [pContext->gadgets.addRsp28Ret.pAddress]
-
-    ; Setup arguments (x64 fastcall convention)
-    mov rcx, [args[0]]  ; arg1
-    mov rdx, [args[1]]  ; arg2
-    mov r8,  [args[2]]  ; arg3
-    mov r9,  [args[3]]  ; arg4
-
-    ; Stack args for args 5-8 (if SYNTHETIC mode)
-    if (dwArgCount > 4) {
-        push [args[7]]
-        push [args[6]]
-        push [args[5]]
-        push [args[4]]
+    // Validate frame count
+    if (pContext->dwFrameCount == 0) {
+        // No frames to spoof - call directly
+        typedef PVOID(*fnGeneric4)(PVOID, PVOID, PVOID, PVOID);
+        fnGeneric4 pFunc = (fnGeneric4)pFunction;
+        return pFunc(args[0], args[1], args[2], args[3]);
     }
 
-    ; Call target function
-    call pFunction
+    // Use assembly trampoline for spoofed execution
+    // Limited to 4 arguments for now (can be extended)
+    if (dwArgCount > 4) dwArgCount = 4;
 
-    ; ROP gadget executes here (add rsp, 0x28; ret)
-    ; This skips over synthetic frames and returns to real caller
+    PVOID arg1 = (dwArgCount > 0) ? args[0] : NULL;
+    PVOID arg2 = (dwArgCount > 1) ? args[1] : NULL;
+    PVOID arg3 = (dwArgCount > 2) ? args[2] : NULL;
+    PVOID arg4 = (dwArgCount > 3) ? args[3] : NULL;
 
-    ; Restore original RBP
-    mov rbp, [pContext->pOriginalRbp]
-
-    ; Return value is in RAX
-    ret
-    */
-
-    // Since inline assembly is not portable in C, production code would use:
-    // 1. External .asm file with the above assembly
-    // 2. Function pointer casting and careful stack manipulation
-    // 3. Compiler-specific intrinsics (__asm blocks in MSVC)
-
-    // For this reference implementation, we mark it as unimplemented
-    // The technique is documented for educational purposes
-
-    return NULL; // Placeholder - requires assembly implementation
+    // Call assembly trampoline
+    return SilentMoonwalk_CallFunction4(pContext, pFunction, arg1, arg2, arg3, arg4);
 }
 
 // Cleanup spoofing context

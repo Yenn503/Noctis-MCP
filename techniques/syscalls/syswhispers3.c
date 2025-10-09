@@ -177,28 +177,27 @@ PVOID SW3_GetRandomSyscallAddr(PSYSCALL_CACHE pCache) {
 }
 
 // ============================================================================
-// INCOMPLETE: Assembly stub for syscall execution (x64)
+// Assembly stub declarations (implemented in sw3_stub.asm)
 // ============================================================================
-// This is a REFERENCE IMPLEMENTATION showing the technique pattern.
-// Production code requires actual assembly stub in separate .asm file.
+// These functions are implemented in external assembly file for x64 platforms
+// They provide direct syscall execution with randomized jump points
 //
-// The stub performs:
-// 1. Copies SSN to EAX register
-// 2. Jumps to random syscall instruction from cached address
-// 3. Syscall instruction executes with randomized location
-//
-// Example assembly (x64):
-//   mov r10, rcx          ; Standard syscall prologue
-//   mov eax, [dwSSN]      ; Load SSN from parameter
-//   jmp [pSyscallAddr]    ; Jump to random syscall instruction
-//
-// AI should generate similar logic when writing custom implementations.
+// SW3_Syscall: Executes syscall by jumping to random cached syscall instruction
+// SW3_SyscallInline: Fallback that executes syscall instruction directly
 // ============================================================================
-extern NTSTATUS SW3_SyscallStub(DWORD dwSSN, PVOID pSyscallAddr, ...);
-// For now, this is a placeholder. Production code needs inline assembly or .asm file
+
+// Declare assembly functions (external linkage)
+#ifdef _WIN64
+extern NTSTATUS SW3_Syscall(DWORD dwSSN, PVOID pSyscallAddr, ...);
+extern NTSTATUS SW3_SyscallInline(DWORD dwSSN, ...);
+#else
+#error "SysWhispers3 requires x64 architecture"
+#endif
 
 // Wrapper: NtAllocateVirtualMemory
+// Example showing how to use SW3_Syscall with the cache
 NTSTATUS SW3_NtAllocateVirtualMemory(
+    PSYSCALL_CACHE pCache,
     HANDLE ProcessHandle,
     PVOID* BaseAddress,
     ULONG_PTR ZeroBits,
@@ -206,18 +205,34 @@ NTSTATUS SW3_NtAllocateVirtualMemory(
     ULONG AllocationType,
     ULONG Protect
 ) {
-    // This is a simplified example
-    // Production code would use proper assembly stub
+    if (!pCache || pCache->dwCacheSize == 0) {
+        return STATUS_UNSUCCESSFUL;
+    }
 
-    typedef NTSTATUS(NTAPI* fnNtAllocateVirtualMemory)(
-        HANDLE, PVOID*, ULONG_PTR, PSIZE_T, ULONG, ULONG);
+    // Resolve SSN for NtAllocateVirtualMemory
+    DWORD dwSSN = 0;
+    if (!SW3_ResolveFunction(pCache, "NtAllocateVirtualMemory", &dwSSN)) {
+        return STATUS_NOT_FOUND;
+    }
 
-    HMODULE hNtdll = GetModuleHandleA("ntdll.dll");
-    fnNtAllocateVirtualMemory pNtAllocateVirtualMemory =
-        (fnNtAllocateVirtualMemory)GetProcAddress(hNtdll, "NtAllocateVirtualMemory");
+    // Get random syscall address from cache
+    PVOID pSyscallAddr = SW3_GetRandomSyscallAddr(pCache);
+    if (!pSyscallAddr) {
+        return STATUS_UNSUCCESSFUL;
+    }
 
-    return pNtAllocateVirtualMemory(
-        ProcessHandle, BaseAddress, ZeroBits, RegionSize, AllocationType, Protect);
+    // Execute syscall with randomized jump
+    // Calling convention: SW3_Syscall(SSN, SyscallAddr, arg1, arg2, arg3, arg4, arg5, arg6)
+    return SW3_Syscall(
+        dwSSN,
+        pSyscallAddr,
+        ProcessHandle,
+        BaseAddress,
+        ZeroBits,
+        RegionSize,
+        AllocationType,
+        Protect
+    );
 }
 
 // Cleanup
