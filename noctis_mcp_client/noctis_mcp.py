@@ -51,7 +51,7 @@ def check_server() -> bool:
 
 
 @mcp.tool()
-def noctis_search_techniques(query: str, target_av: str = "Windows Defender", n_results: int = 10) -> Dict[str, Any]:
+def noctis_search_techniques(query: str, target_av: str = "Windows Defender", n_results: int = 10) -> str:
     """
     Search technique knowledge base using RAG.
 
@@ -67,7 +67,7 @@ def noctis_search_techniques(query: str, target_av: str = "Windows Defender", n_
         noctis_search_techniques("bypass CrowdStrike", "CrowdStrike", 5)
     """
     if not check_server():
-        return {"error": "Noctis server not running. Start with: ./start_server.sh"}
+        return "ERROR: Noctis server not running. Start with: python3 server/noctis_server.py"
 
     try:
         response = session.post(f"{SERVER_URL}/api/v2/search", json={
@@ -117,16 +117,16 @@ def noctis_search_techniques(query: str, target_av: str = "Windows Defender", n_
                 for step in data['next_steps']:
                     output.append(f"  {step}")
 
-            return {"output": "\n".join(output)}
+            return "\n".join(output)
         else:
-            return {"error": f"Search failed: {response.text}"}
+            return f"ERROR: Search failed - {response.text}"
 
     except Exception as e:
-        return {"error": str(e)}
+        return f"ERROR: {str(e)}"
 
 
 @mcp.tool()
-def noctis_recommend_template(objective: str) -> Dict[str, Any]:
+def noctis_recommend_template(objective: str) -> str:
     """
     Get template recommendation based on your objective.
 
@@ -140,7 +140,7 @@ def noctis_recommend_template(objective: str) -> Dict[str, Any]:
         noctis_recommend_template("C2 beacon to bypass CrowdStrike")
     """
     if not check_server():
-        return {"error": "Noctis server not running. Start with: ./start_server.sh"}
+        return "ERROR: Noctis server not running. Start with: python3 server/noctis_server.py"
 
     try:
         response = session.post(f"{SERVER_URL}/api/v2/recommend", json={
@@ -192,12 +192,12 @@ def noctis_recommend_template(objective: str) -> Dict[str, Any]:
                 for step in data['next_steps']:
                     output.append(f"  {step}")
 
-            return {"output": "\n".join(output)}
+            return "\n".join(output)
         else:
-            return {"error": f"Recommendation failed: {response.text}"}
+            return f"ERROR: Recommendation failed - {response.text}"
 
     except Exception as e:
-        return {"error": str(e)}
+        return f"ERROR: {str(e)}"
 
 
 @mcp.tool()
