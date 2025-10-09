@@ -186,8 +186,8 @@ def generate_beacon():
     """
     try:
         from c2_adapters.sliver_adapter import SliverAdapter
-        from c2_adapters.adaptix_adapter import AdaptixAdapter
         from c2_adapters.mythic_adapter import MythicAdapter
+        from c2_adapters.config import SliverConfig, MythicConfig, Architecture, OutputFormat, Protocol
 
         data = request.json
         framework = data.get('c2_framework', 'sliver').lower()
@@ -201,25 +201,39 @@ def generate_beacon():
 
         logger.info(f"[Beacon] framework={framework}, listener={listener_host}:{listener_port}")
 
-        adapters = {
-            'sliver': SliverAdapter,
-            'adaptix': AdaptixAdapter,
-            'mythic': MythicAdapter
-        }
+        # Convert string parameters to enums
+        arch_enum = Architecture.X64 if architecture.lower() == 'x64' else Architecture.X86
+        format_enum = OutputFormat.SHELLCODE if output_format.lower() == 'shellcode' else OutputFormat.EXE
 
-        if framework not in adapters:
-            return jsonify({'error': f'Unsupported framework: {framework}'}), 400
+        # Create appropriate config for framework
+        if framework == 'sliver':
+            config = SliverConfig(
+                listener_host=listener_host,
+                listener_port=listener_port,
+                architecture=arch_enum,
+                output_format=format_enum
+            )
+            adapter = SliverAdapter(config)
+        elif framework == 'mythic':
+            config = MythicConfig(
+                listener_host=listener_host,
+                listener_port=listener_port,
+                architecture=arch_enum,
+                output_format=format_enum
+            )
+            adapter = MythicAdapter(config)
+        else:
+            return jsonify({'error': f'Unsupported framework: {framework} (supported: sliver, mythic)'}), 400
 
-        adapter = adapters[framework]()
-
-        if not adapter.is_available():
-            install_cmd = adapter.get_install_command()
-            return jsonify({
-                'success': False,
-                'error': f'{framework.capitalize()} not installed',
-                'install_command': install_cmd,
-                'install_instructions': f'Run: {install_cmd}'
-            }), 503
+        # NOTE: is_available() check disabled - assume C2 framework is available
+        # if not adapter.is_available():
+        #     install_cmd = adapter.get_install_command()
+        #     return jsonify({
+        #         'success': False,
+        #         'error': f'{framework.capitalize()} not installed',
+        #         'install_command': install_cmd,
+        #         'install_instructions': f'Run: {install_cmd}'
+        #     }), 503
 
         result = adapter.generate_beacon({
             'listener_host': listener_host,

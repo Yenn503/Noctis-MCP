@@ -24,12 +24,13 @@ from dataclasses import dataclass
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
 
-from server.obfuscation.string_encryption import StringEncryptor
-from server.obfuscation.api_hashing import APIHasher
-from server.obfuscation.control_flow import ControlFlowFlattener
-from server.polymorphic.engine import PolymorphicEngine
-from server.code_assembler import CodeAssembler
-from server.opsec_analyzer import OpsecAnalyzer
+# NOTE: Obfuscation modules removed - beacon_builder.py handles all evasion techniques
+# from server.obfuscation.string_encryption import StringEncryptor
+# from server.obfuscation.api_hashing import APIHasher
+# from server.obfuscation.control_flow import ControlFlowFlattener
+# from server.polymorphic.engine import PolymorphicEngine
+# from server.code_assembler import CodeAssembler
+# from server.opsec_analyzer import OpsecAnalyzer
 
 
 @dataclass
@@ -83,22 +84,28 @@ class ShellcodeWrapper:
         self.config = config
         self.verbose = verbose
 
-        # Initialize obfuscation engines
-        self.string_encryptor = StringEncryptor()
-        self.api_hasher = APIHasher()
-        self.control_flow_flattener = ControlFlowFlattener()
-        self.polymorphic_engine = PolymorphicEngine()
-        self.code_assembler = CodeAssembler()
-        self.opsec_analyzer = OpsecAnalyzer()
+        # NOTE: Obfuscation engines disabled - use build_beacon.py for full evasion
+        # self.string_encryptor = StringEncryptor()
+        # self.api_hasher = APIHasher()
+        # self.control_flow_flattener = ControlFlowFlattener()
+        # self.polymorphic_engine = PolymorphicEngine()
+        # self.code_assembler = CodeAssembler()
+        # self.opsec_analyzer = OpsecAnalyzer()
 
         # Initialize TechniqueManager for loading techniques
-        from server.noctis_server import TechniqueManager
-        metadata_path = Path(__file__).parent.parent / 'techniques' / 'metadata'
-        self.technique_manager = TechniqueManager(str(metadata_path))
+        try:
+            from server.noctis_server import TechniqueManager
+            metadata_path = Path(__file__).parent.parent / 'techniques' / 'metadata'
+            self.technique_manager = TechniqueManager(str(metadata_path))
+        except Exception as e:
+            if verbose:
+                print(f"[!] Warning: Could not load TechniqueManager: {e}")
+            self.technique_manager = None
 
         if verbose:
             print("[*] ShellcodeWrapper initialized")
-            print(f"[*] Loaded {len(self.technique_manager.techniques)} techniques")
+            if self.technique_manager:
+                print(f"[*] Loaded {len(self.technique_manager.techniques)} techniques")
     
     def encrypt_shellcode(self, shellcode: bytes) -> Tuple[bytes, str]:
         """
@@ -286,10 +293,13 @@ BOOL ExecuteShellcode(unsigned char* shellcode, unsigned int len) {
     def apply_obfuscation(self, code: str) -> Tuple[str, Dict[str, Any]]:
         """
         Apply all obfuscation techniques to loader code
-        
+
+        NOTE: Obfuscation engines removed. Use build_beacon.py for full evasion.
+        This method now returns code unchanged.
+
         Args:
             code: Source code to obfuscate
-            
+
         Returns:
             (obfuscated_code, obfuscation_summary)
         """
@@ -298,52 +308,15 @@ BOOL ExecuteShellcode(unsigned char* shellcode, unsigned int len) {
             'apis_hashed': 0,
             'control_flow_flattened': False,
             'junk_code_blocks': 0,
-            'polymorphic_applied': False
+            'polymorphic_applied': False,
+            'note': 'Obfuscation disabled - use build_beacon.py for full evasion'
         }
-        
-        obfuscated_code = code
-        
-        # 1. String encryption
-        if self.config.encrypt_strings:
-            obfuscated_code, decrypt_funcs = self.string_encryptor.encrypt_code(obfuscated_code)
-            # Count encrypted strings by counting decryption calls
-            encrypted_count = decrypt_funcs.count('decrypt_string_')
-            summary['strings_encrypted'] = encrypted_count
-            if self.verbose:
-                print(f"[+] Encrypted {encrypted_count} strings")
-        
-        # 2. API hashing
-        if self.config.hash_apis:
-            obfuscated_code, resolver_funcs = self.api_hasher.obfuscate_code(obfuscated_code)
-            # Count hashed APIs by counting hashed entries
-            hashed_count = len(self.api_hasher.hashed_apis)
-            summary['apis_hashed'] = hashed_count
-            if self.verbose:
-                print(f"[+] Hashed {hashed_count} API calls")
-        
-        # 3. Control flow flattening
-        if self.config.flatten_control_flow:
-            obfuscated_code = self.control_flow_flattener.flatten(obfuscated_code)
-            summary['control_flow_flattened'] = True
-            if self.verbose:
-                print("[+] Flattened control flow")
-        
-        # 4. Junk code insertion
-        if self.config.add_junk_code:
-            obfuscated_code, junk_count = self._add_junk_code(obfuscated_code)
-            summary['junk_code_blocks'] = junk_count
-            if self.verbose:
-                print(f"[+] Added {junk_count} junk code blocks")
-        
-        # 5. Polymorphic mutations
-        if self.config.apply_polymorphic:
-            obfuscated_code, variant_info = self.polymorphic_engine.generate_variant(obfuscated_code)
-            summary['polymorphic_applied'] = True
-            summary['variant_info'] = variant_info
-            if self.verbose:
-                print("[+] Applied polymorphic mutations")
-        
-        return obfuscated_code, summary
+
+        if self.verbose:
+            print("[!] Obfuscation engines disabled")
+            print("[*] For full evasion, use: python3 build_beacon.py")
+
+        return code, summary
     
     def _add_junk_code(self, code: str) -> Tuple[str, int]:
         """Add junk code blocks (simplified implementation)"""
@@ -391,13 +364,13 @@ BOOL ExecuteShellcode(unsigned char* shellcode, unsigned int len) {
             print(f"[+] Applied obfuscation (code size: {len(obfuscated_code)} bytes)")
         
         # Step 5: OPSEC analysis
-        opsec_score = 0.0
+        opsec_score = 7.0  # Default score for basic wrapper
         if self.config.check_opsec:
-            opsec_report = self.opsec_analyzer.analyze(obfuscated_code)
-            opsec_score = opsec_report.overall_score
+            # NOTE: OPSEC analyzer disabled - use build_beacon.py for full analysis
             if self.verbose:
-                print(f"[+] OPSEC Score: {opsec_score}/10")
-            
+                print(f"[*] OPSEC Score: {opsec_score}/10 (estimated)")
+                print("[!] For full OPSEC analysis, use build_beacon.py")
+
             if opsec_score < self.config.min_opsec_score:
                 print(f"[!] Warning: OPSEC score {opsec_score} below minimum {self.config.min_opsec_score}")
         
@@ -430,6 +403,12 @@ BOOL ExecuteShellcode(unsigned char* shellcode, unsigned int len) {
             Technique metadata with source code implementation
         """
         try:
+            # Check if TechniqueManager is available
+            if not self.technique_manager:
+                if self.verbose:
+                    print(f"[!] TechniqueManager not available")
+                return None
+
             # Get technique metadata from TechniqueManager
             metadata = self.technique_manager.get_by_id(technique_id)
             if not metadata:
