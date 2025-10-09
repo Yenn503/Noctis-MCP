@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "hexstrike-ai": {
+      "command": "/home/yenn/hexstrike-ai/hexstrike-env/bin/python3",
+      "args": [
+        "/home/yenn/hexstrike-ai/hexstrike_mcp.py",
+        "--server",
+        "http://localhost:8000",
+        "--debug"
+      ],
+      "description": "HexStrike AI v6.0 - Advanced Cybersecurity Automation Platform with 69+ Security Tools",
+      "timeout": 300,
+      "alwaysAllow": []
+    },
+    "noctis-mcp-v3": {
+      "command": "/home/yenn/Documents/Noctis-AI/Noctis-MCP/venv/bin/python3",
+      "args": [
+        "-m",
+        "noctis_mcp.noctis_tools"
+      ],
+      "cwd": "/home/yenn/Documents/Noctis-AI/Noctis-MCP",
+      "description": "Noctis MCP v3.0 - Fully Automated Malware Generator (Sliver/Msfvenom)",
+      "timeout": 300,
+      "env": {
+        "PYTHONPATH": "/home/yenn/Documents/Noctis-AI/Noctis-MCP"
+      },
+      "alwaysAllow": []
+    }
+  }
+}
