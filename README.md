@@ -84,7 +84,22 @@ sudo apt install metasploit-framework
 brew install metasploit
 ```
 
-### 3. Start MCP Server
+### 3. (Optional) Configure VirusTotal Testing
+
+**Only needed if you want to test binaries for detection during development:**
+
+```bash
+# 1. Get free API key from: https://www.virustotal.com/gui/my-apikey
+#    Free tier: 4 requests/min, 500/day (perfect for testing)
+
+# 2. Copy example env file and add your key:
+cp .env.example .env
+nano .env  # Add: VIRUSTOTAL_API_KEY=your_key_here
+```
+
+**Skip this step if you don't need VT testing** - the system works fine without it.
+
+### 4. Start MCP Server
 
 ```bash
 ./start_server.sh
@@ -95,7 +110,11 @@ python3 server/noctis_server.py
 
 Server starts on **http://localhost:8888**
 
-### 4. Configure MCP in Cursor
+**Server will show:**
+- `[+] VirusTotal Testing: ENABLED` (if API key configured)
+- `[-] VirusTotal Testing: DISABLED` (if no API key - still works fine)
+
+### 5. Configure MCP in Cursor
 
 Settings → Features → Model Context Protocol → Edit Config
 
@@ -116,7 +135,7 @@ Add this to your MCP config (update the path to match your installation):
 
 **Important:** Replace `/absolute/path/to/Noctis-MCP` with your actual installation path.
 
-### 5. Use in Cursor
+### 6. Use in Cursor
 
 In Cursor, just ask:
 ```
@@ -191,27 +210,58 @@ noctis_stop_servers()
 # - Metasploit listener
 ```
 
-### 5. `noctis_test_binary(file_path)`
+### 5. `noctis_test_binary(file_path)` - Optional Development Tool
 **Test binary against VirusTotal (70+ AV engines)**
+
+**Configuration Required:**
+```bash
+# Get free API key: https://www.virustotal.com/gui/my-apikey
+# Add to .env: VIRUSTOTAL_API_KEY=your_key_here
+```
 
 **WARNING:** Only use during development when improving stealth. VirusTotal shares samples with AV vendors!
 
 ```python
 noctis_test_binary("/path/to/stageless_loader.exe")
 
-# Returns:
-# - Detection rate (X/70+ engines)
-# - Which specific AVs detected it
-# - What signatures they flagged
-# - Permalink to full report
+# Returns detailed report:
+# ======================================================================
+#   VIRUSTOTAL SCAN RESULTS
+# ======================================================================
+# File: stageless_loader.exe
+# SHA256: a1b2c3d4...
+# Detection Rate: 3/72 engines
 #
-# Use when:
-# - Loader is getting detected
-# - Need to identify which AVs flag it
-# - Working on evasion improvements
+# [WARNING] LOW detection - Good stealth, minor flags
 #
-# OPSEC: Binary becomes public after scanning
+# ======================================================================
+#   DETECTION BREAKDOWN BY ENGINE
+# ======================================================================
+# Engines that DETECTED (3):
+#   [DETECTED] MicrosoftDefender    -> Trojan:Win32/Meterpreter
+#   [DETECTED] AVG                  -> Generic.Malware
+#   [DETECTED] Avast                -> Win32:Malware-gen
+#
+# Engines that passed (69):
+#   [CLEAN]    CrowdStrike
+#   [CLEAN]    SentinelOne
+#   [CLEAN]    Sophos
+#   ... and 66 more
+#
+# ======================================================================
+#   OPSEC WARNING
+# ======================================================================
+# This binary is now in VirusTotal's database and shared
+# with AV vendors. Do NOT reuse this exact binary.
+# Recompile with new polymorphic keys before deployment.
 ```
+
+**Use when:**
+- Loader is getting detected, need to identify which AVs
+- Testing evasion technique improvements
+- Comparing different polymorphic variations
+
+**Free API Limits:** 4 requests/min, 500/day (perfect for testing)
 
 ---
 
@@ -335,6 +385,30 @@ The system manages background processes for you:
 
 Use `noctis_stop_servers()` to cleanly shut them down.
 
+### VirusTotal Testing (Optional)
+
+**For development/stealth improvement only:**
+
+When your loader starts getting detected and you need to identify which AV engines are flagging it:
+
+```bash
+# In Cursor, ask:
+"Test my stageless_loader.exe against VirusTotal"
+
+# Results show:
+# - Detection rate (e.g., 3/72 engines)
+# - Which specific AVs detected it
+# - What signatures they flagged
+# - Permalink to full report
+```
+
+**Use cases:**
+- Loader getting detected, need to know which AVs
+- Testing evasion technique improvements
+- Comparing polymorphic variations
+
+**OPSEC Warning:** VirusTotal shares samples with AV vendors. Only use during development. Never upload production binaries. Always recompile with new polymorphic keys after testing.
+
 ---
 
 ## Key Features
@@ -347,6 +421,7 @@ Use `noctis_stop_servers()` to cleanly shut them down.
 - **Polymorphic:** New RC4 key per build
 - **Stageless:** No multi-stage download failures
 - **Tested:** Working Meterpreter sessions confirmed on Windows Defender
+- **VirusTotal Integration:** Test against 70+ AVs during development (optional)
 
 **Workflow:**
 1. User: "Generate stageless loader for [IP]:[PORT]"
