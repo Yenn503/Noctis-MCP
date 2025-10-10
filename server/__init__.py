@@ -1,1 +1,1 @@
-# Noctis MCP Server v3.0
+# Noctis MCP Server
