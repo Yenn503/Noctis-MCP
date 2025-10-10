@@ -27,7 +27,7 @@
 ### Installation
 
 ```bash
-cd /home/yenn/Desktop/beacons
+cd stageless-loader
 ./setup.sh
 ```
 
@@ -243,6 +243,5 @@ For authorized security testing only. Use at your own risk.
 
 ---
 
-**Created:** $(date '+%Y-%m-%d')
 **Version:** 1.0
 **Status:** Production Ready

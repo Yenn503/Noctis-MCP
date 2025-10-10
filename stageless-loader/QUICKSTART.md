@@ -1,6 +1,6 @@
 # Quick Start Guide - Stageless Loader
 
-**Get up and running in 3 commands!**
+**Get up and running in 4 simple steps!**
 
 ---
 
@@ -28,7 +28,7 @@
 ### 1. Setup (One Time)
 
 ```bash
-cd /home/yenn/Desktop/beacons
+cd stageless-loader
 ./setup.sh
 ```
 
@@ -227,5 +227,3 @@ CTRL+C           # In HTTP server
 ---
 
 **For detailed docs:** See `README.md`
-
-**Generated:** $(date)
