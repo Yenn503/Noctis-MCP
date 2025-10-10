@@ -2,10 +2,10 @@
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20Noctis-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/invite/bBtyAWSkW)
 
-# NOCTIS MCP
+# NOCTIS MCP v3.0
 ## Automated Stageless Loader with MCP Integration
 
-**Status:** Production Ready
+**Status:** Production Ready | **Version:** 3.0.0
 
 ---
 
@@ -60,7 +60,7 @@
 ### 1. Clone Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Yenn503/Noctis-MCP.git
 cd Noctis-MCP
 ```
 
@@ -105,7 +105,7 @@ Add this to your MCP config (update the path to match your installation):
 ```json
 {
   "mcpServers": {
-    "noctis-mcp": {
+    "noctis-mcp-v3": {
       "command": "python3",
       "args": ["-m", "noctis_mcp.noctis_tools"],
       "cwd": "/absolute/path/to/Noctis-MCP",
@@ -121,7 +121,7 @@ Add this to your MCP config (update the path to match your installation):
 
 In Cursor, just ask:
 ```
-"Generate stageless loader for 192.168.1.56:4444"
+"Generate stageless loader for 192.xxx.x.x:4444"
 ```
 
 The AI will:
@@ -345,5 +345,6 @@ Never use against systems you don't own or have written permission to test.
 ---
 
 **Built by:** Noctis Team
+**Version:** 3.0.0 (Clean Rebuild)
 **Status:** Production Ready
 **Discord:** [Join Noctis Community](https://discord.com/invite/bBtyAWSkW)
