@@ -1,4 +1,4 @@
-# Quick Start Guide - Staged Loader
+# Quick Start Guide - Stageless Loader
 
 **Get up and running in 3 commands!**
 

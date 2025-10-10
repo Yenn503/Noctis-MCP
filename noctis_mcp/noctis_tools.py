@@ -61,7 +61,7 @@ def noctis_generate_stageless_loader(
 
         output = []
         output.append("=" * 70)
-        output.append("  ✅ STAGELESS LOADER GENERATED!")
+        output.append("  [OK] STAGELESS LOADER GENERATED!")
         output.append("=" * 70)
         output.append("")
         output.append(f"LHOST: {data['lhost']}")
@@ -79,7 +79,7 @@ def noctis_generate_stageless_loader(
         # Step 2: Auto-start servers if requested
         if auto_start_servers:
             output.append("=" * 70)
-            output.append("  🚀 STARTING SERVERS AUTOMATICALLY...")
+            output.append("  [STARTING] STARTING SERVERS AUTOMATICALLY...")
             output.append("=" * 70)
             output.append("")
 
@@ -93,13 +93,13 @@ def noctis_generate_stageless_loader(
             if http_response.status_code == 200:
                 http_data = http_response.json()
                 if http_data.get('success'):
-                    output.append(f"✅ HTTP Server: RUNNING on port {http_data['port']}")
+                    output.append(f"[OK] HTTP Server: RUNNING on port {http_data['port']}")
                     output.append(f"   Serving: {http_data['payload_url']}")
                     output.append(f"   PID: {http_data['pid']}")
                 else:
-                    output.append(f"⚠️  HTTP Server: {http_data.get('error')}")
+                    output.append(f"[WARNING]  HTTP Server: {http_data.get('error')}")
             else:
-                output.append(f"⚠️  HTTP Server: Failed to start")
+                output.append(f"[WARNING]  HTTP Server: Failed to start")
 
             output.append("")
 
@@ -113,19 +113,19 @@ def noctis_generate_stageless_loader(
             if msf_response.status_code == 200:
                 msf_data = msf_response.json()
                 if msf_data.get('success'):
-                    output.append(f"✅ Metasploit Listener: RUNNING")
+                    output.append(f"[OK] Metasploit Listener: RUNNING")
                     output.append(f"   Listening: {msf_data['lhost']}:{msf_data['lport']}")
                     output.append(f"   Payload: {msf_data['payload']}")
                     output.append(f"   PID: {msf_data['pid']}")
                 else:
-                    output.append(f"⚠️  Metasploit Listener: {msf_data.get('error')}")
+                    output.append(f"[WARNING]  Metasploit Listener: {msf_data.get('error')}")
             else:
-                output.append(f"⚠️  Metasploit Listener: Failed to start")
+                output.append(f"[WARNING]  Metasploit Listener: Failed to start")
 
             output.append("")
 
         output.append("=" * 70)
-        output.append("  🎯 READY TO TEST!")
+        output.append("  [READY] READY TO TEST!")
         output.append("=" * 70)
         output.append("")
         output.append("Next steps:")
@@ -178,23 +178,23 @@ def noctis_check_status() -> str:
         if file_response.status_code == 200:
             file_data = file_response.json()
             if file_data.get('success'):
-                output.append(f"📁 Files: {file_data['work_dir']}")
+                output.append(f"[FILES] Files: {file_data['work_dir']}")
                 output.append("")
 
                 for filename, info in file_data['files'].items():
                     if info['exists']:
                         size = info['size']
                         desc = info['description']
-                        output.append(f"  ✓ {filename:25s} {size:>10,} bytes - {desc}")
+                        output.append(f"  [+] {filename:25s} {size:>10,} bytes - {desc}")
                     else:
                         desc = info['description']
-                        output.append(f"  ✗ {filename:25s} MISSING - {desc}")
+                        output.append(f"  [-] {filename:25s} MISSING - {desc}")
 
                 output.append("")
                 if file_data['all_ready']:
-                    output.append("✅ All files present")
+                    output.append("[OK] All files present")
                 else:
-                    output.append("❌ Missing files - run noctis_generate_stageless_loader()")
+                    output.append("[FAILED] Missing files - run noctis_generate_stageless_loader()")
 
         output.append("")
 
@@ -202,20 +202,20 @@ def noctis_check_status() -> str:
         if process_response.status_code == 200:
             proc_data = process_response.json()
             if proc_data.get('success'):
-                output.append("🔧 Running Services:")
+                output.append("[SERVICES] Running Services:")
                 output.append("")
 
                 http_status = proc_data['processes']['http_server']
                 if http_status['running']:
-                    output.append(f"  ✅ HTTP Server: RUNNING (PID: {http_status['pid']})")
+                    output.append(f"  [OK] HTTP Server: RUNNING (PID: {http_status['pid']})")
                 else:
-                    output.append(f"  ⚪ HTTP Server: NOT RUNNING")
+                    output.append(f"  [NOT RUNNING] HTTP Server: NOT RUNNING")
 
                 msf_status = proc_data['processes']['msf_listener']
                 if msf_status['running']:
-                    output.append(f"  ✅ MSF Listener: RUNNING (PID: {msf_status['pid']})")
+                    output.append(f"  [OK] MSF Listener: RUNNING (PID: {msf_status['pid']})")
                 else:
-                    output.append(f"  ⚪ MSF Listener: NOT RUNNING")
+                    output.append(f"  [NOT RUNNING] MSF Listener: NOT RUNNING")
 
         output.append("")
         output.append("=" * 70)
@@ -244,7 +244,7 @@ def noctis_start_servers(lhost: str, lport: int = 4444, http_port: int = 8080) -
     try:
         output = []
         output.append("=" * 70)
-        output.append("  🚀 STARTING SERVERS...")
+        output.append("  [STARTING] STARTING SERVERS...")
         output.append("=" * 70)
         output.append("")
 
@@ -258,14 +258,14 @@ def noctis_start_servers(lhost: str, lport: int = 4444, http_port: int = 8080) -
         if http_response.status_code == 200:
             http_data = http_response.json()
             if http_data.get('success'):
-                output.append(f"✅ HTTP Server: RUNNING")
+                output.append(f"[OK] HTTP Server: RUNNING")
                 output.append(f"   Port: {http_data['port']}")
                 output.append(f"   Payload URL: {http_data['payload_url']}")
                 output.append(f"   PID: {http_data['pid']}")
             else:
-                output.append(f"❌ HTTP Server: {http_data.get('error')}")
+                output.append(f"[FAILED] HTTP Server: {http_data.get('error')}")
         else:
-            output.append(f"❌ HTTP Server: Failed to start")
+            output.append(f"[FAILED] HTTP Server: Failed to start")
 
         output.append("")
 
@@ -279,14 +279,14 @@ def noctis_start_servers(lhost: str, lport: int = 4444, http_port: int = 8080) -
         if msf_response.status_code == 200:
             msf_data = msf_response.json()
             if msf_data.get('success'):
-                output.append(f"✅ Metasploit Listener: RUNNING")
+                output.append(f"[OK] Metasploit Listener: RUNNING")
                 output.append(f"   Listening: {msf_data['lhost']}:{msf_data['lport']}")
                 output.append(f"   Payload: {msf_data['payload']}")
                 output.append(f"   PID: {msf_data['pid']}")
             else:
-                output.append(f"❌ Metasploit Listener: {msf_data.get('error')}")
+                output.append(f"[FAILED] Metasploit Listener: {msf_data.get('error')}")
         else:
-            output.append(f"❌ Metasploit Listener: Failed to start")
+            output.append(f"[FAILED] Metasploit Listener: Failed to start")
 
         output.append("")
         output.append("=" * 70)
@@ -310,7 +310,7 @@ def noctis_stop_servers() -> str:
     try:
         output = []
         output.append("=" * 70)
-        output.append("  🛑 STOPPING SERVERS...")
+        output.append("  [STOPPING] STOPPING SERVERS...")
         output.append("=" * 70)
         output.append("")
 
@@ -324,11 +324,11 @@ def noctis_stop_servers() -> str:
         if http_response.status_code == 200:
             http_data = http_response.json()
             if http_data.get('success'):
-                output.append(f"✅ HTTP Server: STOPPED")
+                output.append(f"[OK] HTTP Server: STOPPED")
             else:
-                output.append(f"⚠️  HTTP Server: {http_data.get('error')}")
+                output.append(f"[WARNING]  HTTP Server: {http_data.get('error')}")
         else:
-            output.append(f"❌ HTTP Server: Failed to stop")
+            output.append(f"[FAILED] HTTP Server: Failed to stop")
 
         output.append("")
 
@@ -342,11 +342,11 @@ def noctis_stop_servers() -> str:
         if msf_response.status_code == 200:
             msf_data = msf_response.json()
             if msf_data.get('success'):
-                output.append(f"✅ Metasploit Listener: STOPPED")
+                output.append(f"[OK] Metasploit Listener: STOPPED")
             else:
-                output.append(f"⚠️  Metasploit Listener: {msf_data.get('error')}")
+                output.append(f"[WARNING]  Metasploit Listener: {msf_data.get('error')}")
         else:
-            output.append(f"❌ Metasploit Listener: Failed to stop")
+            output.append(f"[FAILED] Metasploit Listener: Failed to stop")
 
         output.append("")
         output.append("=" * 70)

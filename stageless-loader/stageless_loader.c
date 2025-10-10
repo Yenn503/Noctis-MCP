@@ -1,5 +1,5 @@
 /*
- * Staged Loader - Simple RC4 Encryption
+ * Stageless Loader - Simple RC4 Encryption
  * Downloads encrypted payload from: http://192.168.1.56:8080/payload.enc
  * Decrypts with RC4 and executes
  */

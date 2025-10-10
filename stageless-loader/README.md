@@ -1,11 +1,11 @@
-# Staged Payload Loader
+# Stageless Payload Loader
 
 **Automated system for generating AV-bypassing Windows loaders that download and execute encrypted MSFVenom payloads.**
 
 ## Features
 
 - **Bypasses Windows Defender** - No MSFVenom in the binary
-- **Staged Download** - Payload fetched at runtime from your server
+- **Stageless Download** - Complete payload fetched at runtime from your server
 - **RC4 Encryption** - Payload encrypted to avoid detection
 - **Fully Automated** - One command setup
 - **Polymorphic** - New encryption key per build
@@ -80,7 +80,7 @@ Copy `stageless_loader.exe` to Windows target and execute.
 [Binary with MSFVenom] → AV scans → DETECTED
 ```
 
-### Staged Loader (Bypasses Signature-Based AV)
+### Stageless Loader (Bypasses Signature-Based AV)
 ```
 [Clean Loader] → AV scans → CLEAN
        ↓

