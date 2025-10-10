@@ -70,10 +70,10 @@ def noctis_generate_stageless_loader(
         output.append(f"Output: {data['work_dir']}")
         output.append("")
         output.append("Generated files:")
-        output.append(f"  ✓ staged_loader.exe ({data['loader_size']:,} bytes) - CLEAN, NO MSFVenom!")
-        output.append(f"  ✓ payload.enc ({data['payload_size']:,} bytes) - RC4 encrypted")
-        output.append(f"  ✓ start_server.sh - HTTP server script")
-        output.append(f"  ✓ start_listener.sh - Metasploit listener script")
+        output.append(f"  stageless_loader.exe ({data['loader_size']:,} bytes) - CLEAN, NO MSFVenom!")
+        output.append(f"  payload.enc ({data['payload_size']:,} bytes) - RC4 encrypted")
+        output.append(f"  start_server.sh - HTTP server script")
+        output.append(f"  start_listener.sh - Metasploit listener script")
         output.append("")
 
         # Step 2: Auto-start servers if requested

