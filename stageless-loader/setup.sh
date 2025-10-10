@@ -10,8 +10,8 @@ echo "========================================"
 echo ""
 
 # Get user configuration
-read -p "Enter your Kali IP (LHOST) [192.168.1.56]: " LHOST
-LHOST=${LHOST:-192.168.1.56}
+read -p "Enter your Kali IP (LHOST) [10.10.10.100]: " LHOST
+LHOST=${LHOST:-10.10.10.100}
 
 read -p "Enter listener port (LPORT) [4444]: " LPORT
 LPORT=${LPORT:-4444}

