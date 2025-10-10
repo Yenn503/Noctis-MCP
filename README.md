@@ -136,7 +136,7 @@ Then you:
 
 ---
 
-## MCP Tools (4 Available)
+## MCP Tools (5 Available)
 
 ### 1. `noctis_generate_stageless_loader(lhost, lport, http_port, auto_start_servers=True)`
 **Main tool - FULLY AUTOMATED! Does everything for you!**
@@ -189,6 +189,28 @@ noctis_stop_servers()
 # Stops:
 # - HTTP server
 # - Metasploit listener
+```
+
+### 5. `noctis_test_binary(file_path)`
+**Test binary against VirusTotal (70+ AV engines)**
+
+**WARNING:** Only use during development when improving stealth. VirusTotal shares samples with AV vendors!
+
+```python
+noctis_test_binary("/path/to/stageless_loader.exe")
+
+# Returns:
+# - Detection rate (X/70+ engines)
+# - Which specific AVs detected it
+# - What signatures they flagged
+# - Permalink to full report
+#
+# Use when:
+# - Loader is getting detected
+# - Need to identify which AVs flag it
+# - Working on evasion improvements
+#
+# OPSEC: Binary becomes public after scanning
 ```
 
 ---

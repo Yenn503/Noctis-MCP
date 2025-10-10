@@ -359,8 +359,111 @@ def noctis_stop_servers() -> str:
         return f"ERROR: {str(e)}"
 
 
+@mcp.tool()
+def noctis_test_binary(file_path: str) -> str:
+    """
+    Test a compiled binary against VirusTotal (70+ AV engines).
+
+    WARNING: Only use during development when working on stealth improvements.
+    VirusTotal shares samples with AV vendors - NEVER upload production binaries.
+
+    Use case: When loader is getting detected and you need to identify which
+    engines are flagging it to improve evasion techniques.
+
+    Args:
+        file_path: Absolute path to the binary to test (e.g., stageless_loader.exe)
+
+    Returns:
+        Detection results from 70+ AV engines including CrowdStrike, Defender,
+        SentinelOne, Sophos, and more.
+    """
+    try:
+        response = requests.post(
+            f"{SERVER_URL}/api/test_binary",
+            json={'file_path': file_path},
+            timeout=300  # VT scans can take a while
+        )
+
+        if response.status_code != 200:
+            data = response.json()
+            return f"ERROR: VT testing failed\n{data.get('error', response.text)}"
+
+        data = response.json()
+        if not data.get('success'):
+            return f"ERROR: {data.get('error')}"
+
+        output = []
+        output.append("=" * 70)
+        output.append("  VIRUSTOTAL SCAN RESULTS")
+        output.append("=" * 70)
+        output.append("")
+        output.append(f"File: {data['filename']}")
+        output.append(f"SHA256: {data['sha256']}")
+        output.append(f"File Size: {data['size']:,} bytes")
+        output.append("")
+        output.append(f"Detection Rate: {data['positives']}/{data['total']} engines")
+        output.append(f"Scan Date: {data['scan_date']}")
+        output.append(f"Permalink: {data['permalink']}")
+        output.append("")
+
+        if data['positives'] == 0:
+            output.append("[OK] CLEAN - No detections! Perfect stealth!")
+        elif data['positives'] <= 5:
+            output.append("[WARNING] LOW detection - Good stealth, minor flags")
+        elif data['positives'] <= 15:
+            output.append("[WARNING] MODERATE detection - Needs improvement")
+        else:
+            output.append("[FAILED] HIGH detection - Requires major stealth work")
+
+        output.append("")
+        output.append("=" * 70)
+        output.append("  DETECTION BREAKDOWN BY ENGINE")
+        output.append("=" * 70)
+        output.append("")
+
+        # Group by detected/clean
+        detected = []
+        clean = []
+
+        for engine, result in data['scans'].items():
+            if result['detected']:
+                detected.append(f"  [DETECTED] {engine:25s} -> {result['result']}")
+            else:
+                clean.append(f"  [CLEAN]    {engine:25s}")
+
+        if detected:
+            output.append(f"Engines that DETECTED ({len(detected)}):")
+            output.extend(detected[:20])  # Show first 20
+            if len(detected) > 20:
+                output.append(f"  ... and {len(detected) - 20} more")
+
+        output.append("")
+        output.append(f"Engines that passed ({len(clean)}):")
+        output.extend(clean[:10])  # Show first 10
+        if len(clean) > 10:
+            output.append(f"  ... and {len(clean) - 10} more")
+
+        output.append("")
+        output.append("=" * 70)
+        output.append("  OPSEC WARNING")
+        output.append("=" * 70)
+        output.append("")
+        output.append("This binary is now in VirusTotal's database and shared")
+        output.append("with AV vendors. Do NOT reuse this exact binary.")
+        output.append("Recompile with new polymorphic keys before deployment.")
+        output.append("")
+        output.append("=" * 70)
+
+        return "\n".join(output)
+
+    except requests.exceptions.ConnectionError:
+        return f"ERROR: Server not running. Start with:\n  python3 server/noctis_server.py"
+    except Exception as e:
+        return f"ERROR: {str(e)}"
+
+
 if __name__ == "__main__":
     print("[*] Noctis MCP Starting...")
     print("[*] Server URL:", SERVER_URL)
-    print("[*] Tools: Fully Automated Stageless Loader")
+    print("[*] Tools: Fully Automated Stageless Loader + VT Testing")
     mcp.run(transport='stdio')

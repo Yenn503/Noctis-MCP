@@ -8,8 +8,22 @@ import os
 import re
 import signal
 import time
+import hashlib
 from pathlib import Path
 from flask import Flask, request, jsonify
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# VirusTotal API (optional - only for testing)
+try:
+    import vt
+    VT_API_KEY = os.getenv('VIRUSTOTAL_API_KEY')
+    VT_AVAILABLE = bool(VT_API_KEY)
+except ImportError:
+    VT_AVAILABLE = False
+    VT_API_KEY = None
 
 app = Flask(__name__)
 
@@ -562,10 +576,95 @@ def process_status():
     })
 
 
+@app.route('/api/test_binary', methods=['POST'])
+def test_binary():
+    """
+    Test a binary against VirusTotal.
+    WARNING: Only for development/stealth testing - shares samples with AV vendors!
+    """
+    try:
+        if not VT_AVAILABLE:
+            return jsonify({
+                'success': False,
+                'error': 'VirusTotal not configured. Install: pip install vt-py\nAdd VIRUSTOTAL_API_KEY to .env file'
+            }), 400
+
+        data = request.get_json()
+        file_path = data.get('file_path')
+
+        if not file_path:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required parameter: file_path'
+            }), 400
+
+        file_path = Path(file_path)
+        if not file_path.exists():
+            return jsonify({
+                'success': False,
+                'error': f'File not found: {file_path}'
+            }), 404
+
+        # Calculate SHA256
+        sha256_hash = hashlib.sha256()
+        with open(file_path, 'rb') as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(chunk)
+        file_hash = sha256_hash.hexdigest()
+
+        # Upload to VirusTotal
+        with vt.Client(VT_API_KEY) as client:
+            # Upload file
+            with open(file_path, 'rb') as f:
+                analysis = client.scan_file(f)
+
+            # Wait for analysis
+            while True:
+                analysis = client.get_object(f"/analyses/{analysis.id}")
+                if analysis.status == "completed":
+                    break
+                time.sleep(15)
+
+            # Get results
+            file_report = client.get_object(f"/files/{file_hash}")
+
+            # Parse results
+            scans = {}
+            for engine_name, engine_result in file_report.last_analysis_results.items():
+                scans[engine_name] = {
+                    'detected': engine_result['category'] in ['malicious', 'suspicious'],
+                    'result': engine_result.get('result', 'clean')
+                }
+
+            positives = sum(1 for r in scans.values() if r['detected'])
+            total = len(scans)
+
+            return jsonify({
+                'success': True,
+                'filename': file_path.name,
+                'sha256': file_hash,
+                'size': file_path.stat().st_size,
+                'positives': positives,
+                'total': total,
+                'scan_date': file_report.last_analysis_date.isoformat() if hasattr(file_report, 'last_analysis_date') else 'N/A',
+                'permalink': f"https://www.virustotal.com/gui/file/{file_hash}",
+                'scans': scans
+            })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint."""
-    return jsonify({'status': 'ok'})
+    return jsonify({
+        'status': 'ok',
+        'vt_available': VT_AVAILABLE
+    })
 
 
 if __name__ == '__main__':
@@ -581,7 +680,13 @@ if __name__ == '__main__':
     print("  POST /api/check_status")
     print("  POST /api/get_server_instructions")
     print("  POST /api/get_listener_instructions")
+    print("  POST /api/test_binary              # VirusTotal testing")
     print("  GET  /health")
+    print()
+    if VT_AVAILABLE:
+        print("[+] VirusTotal Testing: ENABLED")
+    else:
+        print("[-] VirusTotal Testing: DISABLED (no API key)")
     print()
     print("=" * 70)
 
