@@ -12,14 +12,14 @@
       "timeout": 300,
       "alwaysAllow": []
     },
-    "noctis-mcp-v3": {
+    "noctis-mcp": {
       "command": "/home/yenn/Documents/Noctis-AI/Noctis-MCP/venv/bin/python3",
       "args": [
         "-m",
         "noctis_mcp.noctis_tools"
       ],
       "cwd": "/home/yenn/Documents/Noctis-AI/Noctis-MCP",
-      "description": "Noctis MCP v3.0 - Fully Automated Malware Generator (Sliver/Msfvenom)",
+      "description": "Noctis MCP - Fully Automated Stageless Loader (AV Bypass)",
       "timeout": 300,
       "env": {
         "PYTHONPATH": "/home/yenn/Documents/Noctis-AI/Noctis-MCP"

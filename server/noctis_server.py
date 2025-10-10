@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Noctis MCP Server v3.0
+Noctis MCP Server
 Stageless Loader Automation Server
 """
 import subprocess
@@ -565,12 +565,12 @@ def process_status():
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint."""
-    return jsonify({'status': 'ok', 'version': '3.0'})
+    return jsonify({'status': 'ok'})
 
 
 if __name__ == '__main__':
     print("=" * 70)
-    print("  Noctis MCP Server v3.0")
+    print("  Noctis MCP Server")
     print("  Stageless Loader Automation")
     print("=" * 70)
     print()

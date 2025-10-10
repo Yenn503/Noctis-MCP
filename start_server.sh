@@ -1,8 +1,8 @@
 #!/bin/bash
-# Start Noctis MCP Server v3.0
+# Start Noctis MCP Server
 
 echo "========================================"
-echo "  Noctis MCP Server v3.0"
+echo "  Noctis MCP Server"
 echo "  Stageless Loader Automation"
 echo "========================================"
 echo ""

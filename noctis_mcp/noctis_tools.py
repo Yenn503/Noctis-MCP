@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Noctis MCP v3.0 - Stageless Loader MCP Tools
-Fully automated EDR-bypassing stageless loaders
+Noctis MCP - Stageless Loader MCP Tools
+Fully automated AV-bypassing stageless loaders
 """
 import sys
 import requests
@@ -13,7 +13,7 @@ except ImportError:
     print("[!] FastMCP not installed: pip install fastmcp")
     sys.exit(1)
 
-mcp = FastMCP("Noctis-MCP-v3")
+mcp = FastMCP("Noctis-MCP")
 SERVER_URL = "http://localhost:8888"
 
 
@@ -360,7 +360,7 @@ def noctis_stop_servers() -> str:
 
 
 if __name__ == "__main__":
-    print("[*] Noctis MCP v3.0 Starting...")
+    print("[*] Noctis MCP Starting...")
     print("[*] Server URL:", SERVER_URL)
     print("[*] Tools: Fully Automated Stageless Loader")
     mcp.run(transport='stdio')

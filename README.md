@@ -2,10 +2,10 @@
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20Noctis-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/invite/bBtyAWSkW)
 
-# NOCTIS MCP v3.0
+# NOCTIS MCP
 ## Automated Stageless Loader with MCP Integration
 
-**Status:** Production Ready | **Version:** 3.0.0
+**Status:** Production Ready
 
 ---
 
@@ -105,7 +105,7 @@ Add this to your MCP config (update the path to match your installation):
 ```json
 {
   "mcpServers": {
-    "noctis-mcp-v3": {
+    "noctis-mcp": {
       "command": "python3",
       "args": ["-m", "noctis_mcp.noctis_tools"],
       "cwd": "/absolute/path/to/Noctis-MCP",
@@ -345,6 +345,5 @@ Never use against systems you don't own or have written permission to test.
 ---
 
 **Built by:** Noctis Team
-**Version:** 3.0.0 (Clean Rebuild)
 **Status:** Production Ready
 **Discord:** [Join Noctis Community](https://discord.com/invite/bBtyAWSkW)
